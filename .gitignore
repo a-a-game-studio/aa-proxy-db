@@ -1,5 +1,5 @@
 node_modules
 build
-src/Config/LocalConfig.ts
+src/Config/MainConfig.ts
 .env
 node_modules
