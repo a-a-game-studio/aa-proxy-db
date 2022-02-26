@@ -1,27 +1,65 @@
-//Конфигурация
+// ==============================================================
+// Подключения баз данных
+// ==============================================================
 
-import * as dotenv from 'dotenv'
-import * as localConfig from './LocalConfig'
-let envConfig = dotenv.config().parsed;
+export const cfDbProxy = { // Knex mysql
+    client: "mysql",
+    connection: {
+        host: "localhost",
+        user: "root",
+        port:3000,
+        password: "Angel13q24w35e",
+        database: "test_proxy_master"
+    },
+    pool: { "min": 0, "max": 7 },
+    acquireConnectionTimeout: 5000
+};
 
+export const cfDbProxy2 = { // Knex mysql
+    client: "mysql",
+    connection: {
+        host: "localhost",
+        user: "root",
+        port:3001,
+        password: "Angel13q24w35e",
+        database: "test_proxy_master"
+    },
+    pool: { "min": 0, "max": 7 },
+    acquireConnectionTimeout: 5000
+};
 
+export const cfDbMaster = { // Knex mysql
+    client: "mysql",
+    connection: {
+        host: "localhost",
+        user: "root",
+        password: "Angel13q24w35e",
+        database: "test_proxy_master"
+    },
+    pool: { "min": 0, "max": 7 },
+    acquireConnectionTimeout: 5000
+};
 
-// Устанавливаем локальный или серверный конфиг
-let conf = null;
-conf = localConfig;
+export const cfDbSlave1 = { // Knex mysql
+    client: "mysql",
+    connection: {
+        host: "localhost",
+        user: "root",
+        password: "Angel13q24w35e",
+        database: "test_proxy_slave1"
+    },
+    pool: { "min": 0, "max": 7 },
+    acquireConnectionTimeout: 5000
+};
 
-// Конфигурация базы данных
-export const mysql = conf.mysql;
-
-// Общие настройки
-export const common = conf.common;
-
-// Редис
-export const redis = conf.redis;
-
-// // Кролик система очередей
-// export const rabbit = conf.rabbit;
-
-// S3 хранилище
-export const S3 = conf.S3;
-
+export const cfDbSlave2 = { // Knex mysql
+    client: "mysql",
+    connection: {
+        host: "localhost",
+        user: "root",
+        password: "Angel13q24w35e",
+        database: "test_proxy_slave2"
+    },
+    pool: { "min": 0, "max": 7 },
+    acquireConnectionTimeout: 5000
+};

@@ -18,19 +18,25 @@ const gComStmtPrepare = 22;
 
 import { dbProxy2 } from "./System/DBConnect";
 
+
+
+
+
 // async function run (){
 //     await dbProxy2.raw('SHOW TABLES');
+//     await dbProxy2('user').select('*').limit(2);
 // }
 // run()
 
+// let sSrvProtocol = '';
+// let sSrvAuth = '';
 
 
-// let remoteSocket2 = new net.Socket();
-// var server2 = null;
+
 // {
-//     server2 = net.createServer(function (clientSocket:net.Socket) {
+//     var server2 = net.createServer(function (clientSocket:net.Socket) {
 //         console.log('CONNECT CLIENT ',cntConnect)
-
+//         let remoteSocket2 = new net.Socket();
 //         cntConnect++;
 
 //         console.log(clientSocket.eventNames());
@@ -75,6 +81,7 @@ import { dbProxy2 } from "./System/DBConnect";
 
 //         clientSocket.on("End", function (data:any) {
 //             console.log('<< End client to proxy', data.toString());
+            
 //             remoteSocket2.end();
 //         });
 
@@ -86,6 +93,15 @@ import { dbProxy2 } from "./System/DBConnect";
 //         });
 
 //         remoteSocket2.on("data", function (data:any) {
+
+//             if(cntConnect == 1){
+//                 sSrvProtocol = data;
+//                 console.log('|>>',data.toString());
+//             }
+//             if(cntConnect == 2){
+//                 sSrvAuth = data;
+//                 console.log('|>>',data.toString());
+//             }
 //             // console.log('<< From remote to proxy DATA>>>', data.toString());
 //             clientSocket.write(data);
 //             // console.log('>> From proxy to client DATA>>>', data.toString());
@@ -114,20 +130,31 @@ import { dbProxy2 } from "./System/DBConnect";
 
 
 // =============================================================
+// var remoteSocket = new net.Socket();
+let bConnect = false;
 
 
 var server = net.createServer(function (clientSocket:net.Socket) {
+    console.log('==============================');
     console.log('CONNECT CLIENT ',cntConnect)
+    console.log('==============================');
     var remoteSocket = new net.Socket();
 
-    cntConnect++;
+    let iConnect = 0;
+
+    
+
 
     console.log(clientSocket.eventNames());
     clientSocket.on('data', function (msg) {
 
+        iConnect++;
+
         console.log('==============================');
         console.log('>>>>HEAD<<<<');
         console.log('>>>>',Number(msg[0]|msg[1]|msg[2]), Number(msg[3]), Number(msg[4]));
+        console.log('>>>>BODY<<<<');
+        console.log('>>>>[', msg.toString(), ']');
         console.log('==============================');
 
         const iBodyLen = Number(msg[0]|msg[1]|msg[2])
@@ -149,49 +176,74 @@ var server = net.createServer(function (clientSocket:net.Socket) {
         if (bRead && !bWrite){
             iQRSlave++;
 
-            console.log('<< From client to proxy SLAVE [',iQRSlave,'] DATA>>>[', sMsg, ']');
+            // console.log('<< From client to proxy SLAVE [',iQRSlave,'] DATA>>>[', sMsg, ']');
         } else {
             iQRMaster++;
 
-            console.log('<< From client to proxy MASTER [',iQRMaster,'] DATA>>>[', sMsg, ']');
+            // console.log('<< From client to proxy MASTER [',iQRMaster,'] DATA>>>[', msg, ']');
         }
 
-        
+        if(iConnect == 2){
+            remoteSocket.off('data', () => { console.log('connect close hard')})
+        }
 
-        remoteSocket.write(msg);
+        if(iConnect > 2){
+
+            console.log('*******')
+            // clientSocket.write(Buffer.from([0,9,4,3]));
+        }
+
+        if(iConnect <= 2){
+            remoteSocket.write(msg);
+        }
         
     });
 
-    clientSocket.on("End", function (data:any) {
-        console.log('<< End client to proxy', data.toString());
-        remoteSocket.end();
-    });
+    // clientSocket.on("End", (data:any) => {
+    //     console.log('<< End client to proxy', data.toString());
+
+    //     if(iConnect){
+    //         remoteSocket.end();
+    //     }
+    // });
 
     // ====================================
+
+
+        remoteSocket.connect(REMOTE_PORT, REMOTE_ADDR, () => {
+            console.log('>> From proxy to remote CONNECT');
+        });
+
+    //     bConnect = true;
     
-    remoteSocket.connect(REMOTE_PORT, REMOTE_ADDR, function () {
-        console.log('>> From proxy to remote CONNECT');
-
-    });
-
-    remoteSocket.on("data", function (data:any) {
+    
+    remoteSocket.on("data", (data:any) => {
+        console.log('')
+        console.log('==================================')
+        console.log('data_outb>>>',data);
+        console.log('----------------------------------')
+        console.log('data_outs>>>',data.toString());
+        console.log('==================================')
         // console.log('<< From remote to proxy DATA>>>', data.toString());
         clientSocket.write(data);
         // console.log('>> From proxy to client DATA>>>', data.toString());
     });
 
-    remoteSocket.on("End", function (data:any) {
-        console.log('<< End remote to proxy', data.toString());
-        clientSocket.end();
-    });
+    // remoteSocket.on("End", (data:any) => {
+    //     console.log('<< End remote to proxy', data.toString());
+    //     clientSocket.end();
+    // });
 
-    
+
+    // console.log('----',sSrvProtocol.toString());
+    // clientSocket.write(Buffer.from([]))
+
 
     
 
     // fSync(socket, serviceSocket, '');
 
-    console.log(clientSocket.bytesRead)
+    // console.log(clientSocket.bytesRead)
 
     // socket.end('goodbye\n');
 });
