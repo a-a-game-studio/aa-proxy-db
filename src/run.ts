@@ -10,9 +10,11 @@ async function run(){
 
     // const aDamage =  await dbProxy('user').select('*').where('id', '>=', 1).limit(2);
 
-    const aDamage1 =  await dbProxy('user').select('id').limit(1);
+    const aDamage1 =  await dbProxy('user').select('int2').limit(1).orderBy('id');
 
-    const aDamage2 =  await dbProxy('user').select('id').limit(1);
+    const aDamage2 =  await dbProxy('user').select('int2').limit(5).orderBy('id');
+
+    // const aDamage2 =  await dbProxy('user').select('id').limit(1);
 
     // const aDamag3 =  await dbProxy.raw('SELECT * FROM user WHERE rand >= :rand LIMIT 2', {rand:1});
 
