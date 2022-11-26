@@ -1,12 +1,13 @@
 import knex from "knex";
-import { cfDbMaster, cfDbProxy, cfDbProxy2, cfDbSlave1, cfDbSlave2 } from "../Config/MainConfig";
+import { cfDb, cfDbMaster, cfDbProxy } from "../Config/MainConfig";
 
 export const dbProxy = knex(cfDbProxy);
 
-export const dbProxy2 = knex(cfDbProxy2);
-
 export const dbMaster = knex(cfDbMaster);
 
-export const dbSlave1 = knex(cfDbSlave1);
+export const adb:knex.QueryBuilder[] = [];
 
-export const dbSlave2 = knex(cfDbSlave2);
+for (let i = 0; i < cfDb.length; i++) {
+    adb.push(knex(cfDb[i]));
+    
+}

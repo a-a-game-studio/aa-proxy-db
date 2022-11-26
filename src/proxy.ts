@@ -16,7 +16,7 @@ console.log(Buffer.from('select'))
 const gComQuery = 3;
 const gComStmtPrepare = 22;
 
-import { dbProxy2 } from "./System/DBConnect";
+// import { dbProxy2 } from "./System/DBConnect";
 
 
 

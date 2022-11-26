@@ -1,46 +1,134 @@
 
-import { dbProxy } from "./System/DBConnect";
-import { v4 as uuid4 } from 'uuid';
-import { mRandomInteger } from "./Helper/NumberH";
-
-async function run(){
+import { AAContext, AARoute, AAServer } from '@a-a-game-studio/aa-server';
 
 
-    // await dbProxy('user').insert({name:uuid4(),rand:mRandomInteger(0,10)});
+// import { MqServerSys } from './System/MqServerSys';
+import { faSendRouter as faSend } from './System/ResponseSys';
 
-    // const aDamage =  await dbProxy('user').select('*').where('id', '>=', 1).limit(2);
+import { MsgContextI, MsgT } from './interface/CommonI';
+import { common } from './Config/MainConfig';
 
-    // const aDamage3 =  await dbProxy('user1 as a').select('id', 'id as i1').limit(1).orderBy('id');
-    // const aDamage1 =  await dbProxy('user1 as a').select('id', 'id as i1').limit(1).orderBy('id');
+let cntConnect = 0;
 
-    const aDamage1 =  await dbProxy({a:'user1'})
-        .leftJoin({us:'user_setting'}, 'us.user_id', '=', 'a.id')
-        .limit(1)
-        .orderBy('id')
-        .select('id', 'us.address_id as i1', 'us.city as aa');
+// const gMqServerSys = new MqServerSys();
 
-    const aDamage2 =  await dbProxy({a:'user1'})
-        .leftJoin({us:'user_setting'}, 'us.user_id', '=', 'a.id')
-        .limit(1)
-        .orderBy('id')
-        .select('id', 'us.address_id as i1', 'us.city as aa');
+// gMqServerSys.dbInit();
 
-    // const aDamage2 =  await dbProxy('user').select('id').limit(1);
 
-    // const aDamag3 =  await dbProxy.raw('SELECT * FROM user WHERE rand >= :rand LIMIT 2', {rand:1});
 
-    // console.log(dbLocal.client);
+// =============================================================
+// var remoteSocket = new net.Socket();
+let bConnect = false;
 
-    console.log('user>>>',aDamage1);
-    console.log('user2>>>',aDamage2);
+const app = new AAServer();
+// if (config.common.env === 'dev' || config.common.env === 'test') {
+    app.use((ctx: AAContext) => {
+        console.log(`>:${ctx.req.url}`);
+        ctx.next();
+    });
+// }
 
-    console.log('=========================');
-    console.log('END');
-    console.log('=========================');
-    process.exit(0)
-}
 
-run().catch((error) => {
-    console.log('>>>ERROR>>>',error);
-    process.exit(1)
+   
+const router = new AARoute();
+
+/**
+ * Уход сообщений
+ */
+router.ws(MsgT.id, async (ctx: AAContext) => {
+
+    // const data = gMqServerSys.get(ctx.body);
+    // console.log('ask>>>',ctx.body, data)
+
+    return faSend(ctx, {});
+
+
+});
+
+/**
+ * Уход сообщений
+ */
+ router.ws(MsgT.select, async (ctx: AAContext) => {
+
+    // const data = gMqServerSys.get(ctx.body);
+    // console.log('ask>>>',ctx.body, data)
+
+    return faSend(ctx, {});
+
+
+});
+
+/**
+ * Уход сообщений
+ */
+ router.ws(MsgT.insert, async (ctx: AAContext) => {
+
+    // const data = gMqServerSys.get(ctx.body);
+    // console.log('ask>>>',ctx.body, data)
+
+    return faSend(ctx, {});
+
+
+});
+
+/**
+ * Уход сообщений
+ */
+ router.ws(MsgT.insert, async (ctx: AAContext) => {
+
+    // const data = gMqServerSys.get(ctx.body);
+    // console.log('ask>>>',ctx.body, data)
+
+    return faSend(ctx, {});
+
+
+});
+
+/**
+ * Уход сообщений
+ */
+ router.ws(MsgT.update, async (ctx: AAContext) => {
+
+    // const data = gMqServerSys.get(ctx.body);
+    // console.log('ask>>>',ctx.body, data)
+
+    return faSend(ctx, {});
+});
+
+/**
+ * Уход сообщений
+ */
+ router.ws(MsgT.delete, async (ctx: AAContext) => {
+
+    // const data = gMqServerSys.get(ctx.body);
+    // console.log('ask>>>',ctx.body, data)
+
+    return faSend(ctx, {});
+});
+
+
+
+app.route(router)
+
+// Обработчик ошибок
+app.error((AAContext) => {
+    console.log('[]>>>ERROR<<<]');
+    console.log(AAContext.err.getTraceList());
+});
+
+console.log(`
+
+ █████╗ ██████╗ ██╗
+██╔══██╗██╔══██╗██║
+███████║██████╔╝██║
+██╔══██║██╔═══╝ ██║
+██║  ██║██║     ██║
+╚═╝  ╚═╝╚═╝     ╚═╝
+
+`);
+
+app.listenWs(common.port, common.host, () => {
+    console.log(`server start at ${common.host}:${common.port}`);
+
+    return true;
 });
