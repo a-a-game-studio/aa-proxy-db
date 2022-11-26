@@ -2,17 +2,17 @@
 import { AAContext, AARoute, AAServer } from '@a-a-game-studio/aa-server';
 
 
-// import { MqServerSys } from './System/MqServerSys';
 import { faSendRouter as faSend } from './System/ResponseSys';
 
 import { MsgContextI, MsgT } from './interface/CommonI';
 import { common } from './Config/MainConfig';
+import { MqServerSys } from './System/MqServerSys';
 
 let cntConnect = 0;
 
-// const gMqServerSys = new MqServerSys();
+const gMqServerSys = new MqServerSys();
 
-// gMqServerSys.dbInit();
+gMqServerSys.dbInit();
 
 
 
@@ -35,14 +35,20 @@ const router = new AARoute();
 /**
  * Уход сообщений
  */
-router.ws(MsgT.id, async (ctx: AAContext) => {
+router.ws(MsgT.connect, async (ctx: AAContext) => {
+    return faSend(ctx, null);
+});
 
-    // const data = gMqServerSys.get(ctx.body);
-    // console.log('ask>>>',ctx.body, data)
+/**
+ * Уход сообщений
+ */
+router.ws(MsgT.aid, async (ctx: AAContext) => {
 
-    return faSend(ctx, {});
+    console.log('[aid]:',ctx.body);
+    const aid = await gMqServerSys.aid(ctx.body);
+    console.log('get list id>>>',ctx.body, aid)
 
-
+    return faSend(ctx, aid);
 });
 
 /**
@@ -54,8 +60,6 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
     // console.log('ask>>>',ctx.body, data)
 
     return faSend(ctx, {});
-
-
 });
 
 /**

@@ -16,18 +16,44 @@ const mqClientSys = new DbClientSys({
 
 async function run(){
 
-    for (let i = 0; i < 10000; i++) {
+    // mqClientSys.connect('test', null);
+
+    const aMsg = []
+    for (let i = 0; i < 3; i++) {
         const sMsg = '['+i+'] СообщениЕ ['+i+']';
 
-        mqClientSys.send('test', {text:sMsg})
-
+        aMsg.push({text:sMsg});
         if(i % 1000 == 0){
             process.stdout.write('.');
         }
         
     }
 
-    await mWait(1000);
+    await mWait(2000);
+
+    const row = await mqClientSys.fillID('test', aMsg);
+
+    console.log('[run]:',row);
+
+    const aMsg1 = []
+    for (let i = 0; i < 2; i++) {
+        const sMsg = '['+i+'] Е ['+i+']';
+
+        aMsg1.push({text:sMsg});
+        if(i % 1000 == 0){
+            process.stdout.write('.');
+        }
+        
+    }
+
+    const row1 = await mqClientSys.fillID('test', aMsg1);
+
+    console.log('[run1]:',row1);
+
+    await mWait(5000);
+
+
+
 
 
     console.log('=========================');

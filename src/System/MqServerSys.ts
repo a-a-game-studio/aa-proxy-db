@@ -18,14 +18,16 @@ export class DbTableC {
     /** инициализация таблицы */
     async faInit(sTable:string){
         this.table = sTable;
-        this.status = await dbMaster.raw(`SHOW TABLE STATUS FROM :db LIKE :table;`,{
-            db:conf.cfDbMaster.connection.database,
+        this.status = (await dbMaster.raw(`SHOW TABLE STATUS LIKE :table;`,{
+            // db:conf.cfDbMaster.connection.database,
             table:sTable
-        })
+        }))[0]
+
+        console.log(this.status);
 
         // TODO так-же нужно получать автоинкремент из proxy DB на случай если нет свежей БД master
 
-        this.id = this.status['Auto_Increment'];
+        this.id = this.status['Auto_Increment'] || 0;
     }
 
     getLastID(){
@@ -55,6 +57,7 @@ export class MqServerSys {
         }
 
         const vTableC = this.ixTable[msg.table];
+
 
         return vTableC.getNewID(msg.data.cnt);
     }

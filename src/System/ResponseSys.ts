@@ -10,6 +10,7 @@ import { AAContext } from "@a-a-game-studio/aa-server";
         ctx.ws.send(JSON.stringify({
             ok: true,
             e: false,
+            n:ctx.n,
             data: data
         }));
 	} catch (e) {

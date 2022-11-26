@@ -50,70 +50,95 @@ export class DbClientSys {
         this.querySys = new QuerySys()
         this.querySys.fConfigWs(conf);
         this.conf = conf;
+
+
+        // Соединение
+       
+
     }
 
     /** Заполнить инкрементный ID */
-    public fillID(sTable:string, data:any|any[]){
-
-        let cntID = 0;
-        
-        if(data.length){
-            for (let i = 0; i < data.length; i++) {
-                const vRow = data[i];
-
-                if(!vRow.id){
-                    
-                    cntID++;
-                }
-            }
-        } else {
-            if(!data.uid){
-                cntID++;
-            }
-        }
-
-        // ==============
-
-        const vMsg:QueryContextI = {
-            uid:uuidv4(),
-            app:this.conf.nameApp,
-            ip:ip.address(),
-            table:sTable,
-            type:MsgT.id,
-            data:{cnt:cntID},
-            time:Date.now()
-        }
-
+    public connect(sTable:string, aRows:any[]){
         this.querySys.fInit();
-        this.querySys.fActionOk((data: string[]) => {
-
-            console.log('[id]:',data);
-            this.iSendComplete++;
-
+        this.querySys.fActionOk((data: any) => {
         });
         this.querySys.fActionErr((err:any) => {
-            this.iSendErr++;
-            console.error(err);
         });
-        this.querySys.fSend(MsgT.insert, vMsg);
-        this.iSend++;
+        this.querySys.fSend(MsgT.connect, null);
+    }
 
-        // ==============
+    /** Заполнить инкрементный ID */
+    public fillID(sTable:string, aRowsIn:any[]):any{
+       
+        return new Promise((resolve, reject) => {
 
-        if(data.length){
-            for (let i = 0; i < data.length; i++) {
-                const vRow = data[i];
+           
 
-                if(!vRow.id){
-                    
-                    vRow
+            this.querySys.fInit();
+
+            let aRows = aRowsIn;
+
+            let cntID = 0;
+            
+            
+            if(aRows.length){
+                for (let i = 0; i < aRows.length; i++) {
+                    const vRow = aRows[i];
+
+                    if(!vRow.id){
+                        
+                        cntID++;
+                    }
                 }
             }
-        } else {
-            if(!data.uid){
-                cntID++;
+
+            // ==============
+
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                ip:ip.address(),
+                table:sTable,
+                type:MsgT.aid,
+                data:{cnt:cntID},
+                time:Date.now()
             }
-        }
+
+            
+            this.querySys.fActionOk((data: any) => {
+
+                console.log('[id_in]:',data,aRows);
+                this.iSendComplete++;
+
+
+                // ==============
+                let iFillID = 0;
+                if(data.length){
+                    for (let i = 0; i < aRows.length; i++) {
+                        const vRows = aRows[i];
+
+                        if(!vRows.id){
+                            
+                            vRows.id = data[iFillID];
+                            iFillID++;
+                        }
+                    }
+                }
+
+                console.log('[id_fill]:',aRows);
+
+                resolve(aRows)
+
+            });
+            this.querySys.fActionErr((err:any) => {
+                this.iSendErr++;
+                console.error(err);
+                reject(err)
+            });
+            this.querySys.fSend(MsgT.aid, vMsg);
+            this.iSend++;
+        })
+        
     }
 
     /** Заполнить инкрементный ID */

@@ -3,7 +3,7 @@
 // ==============================================================
 
 export const cfDbProxy = { // Knex mysql
-    client: "mysql",
+    client: "mysql2",
     connection: {
         host: "localhost",
         user: "root",
@@ -15,12 +15,12 @@ export const cfDbProxy = { // Knex mysql
 };
 
 export const cfDbMaster = { // Наиболее свежая БД
-    client: "mysql",
+    client: "mysql2",
     connection: {
         host: "localhost",
         user: "root",
         password: "Angel13q24w35e",
-        database: "test_proxy"
+        database: "test_proxy_master0"
     },
     pool: { "min": 0, "max": 7 },
     acquireConnectionTimeout: 5000
@@ -28,7 +28,7 @@ export const cfDbMaster = { // Наиболее свежая БД
 
 export const cfDb = [
     { // Knex mysql
-        client: "mysql",
+        client: "mysql2",
         connection: {
             host: "localhost",
             user: "root",
@@ -38,7 +38,7 @@ export const cfDb = [
         pool: { "min": 0, "max": 7 },
         acquireConnectionTimeout: 5000
     } ,{
-        client: "mysql",
+        client: "mysql2",
         connection: {
             host: "localhost",
             user: "root",
@@ -48,7 +48,7 @@ export const cfDb = [
         pool: { "min": 0, "max": 7 },
         acquireConnectionTimeout: 5000
     } ,{
-        client: "mysql",
+        client: "mysql2",
         connection: {
             host: "localhost",
             user: "root",

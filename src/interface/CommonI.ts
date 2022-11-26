@@ -2,7 +2,7 @@
 export enum MsgT {
     connect = '/connect', // Сообщение о соединении
     check = '/check', // Проверка соединения
-    id = '/id', // получить id
+    aid = '/aid', // получить id
     select = '/select', // Получить сообщение
     insert = '/insert', // Отправить сообщение
     update = '/update', // Получить сообщение
