@@ -18,43 +18,24 @@ async function run(){
 
     // mqClientSys.connect('test', null);
 
-    const aMsg = []
-    for (let i = 0; i < 3; i++) {
-        const sMsg = '['+i+'] СообщениЕ ['+i+']';
+    // for (let c = 0; c < 3; c++) {
 
-        aMsg.push({text:sMsg});
-        if(i % 1000 == 0){
-            process.stdout.write('.');
+        const aMsg = []
+        for (let i = 0; i < 2; i++) {
+            const sMsg = '['+i+'] СообщениЕ ['+i+']';
+    
+            aMsg.push({text:sMsg});
+            if(i % 1000 == 0){
+                process.stdout.write('.');
+            }
         }
         
-    }
+        const row = await mqClientSys.insert('test', aMsg);
 
-    await mWait(2000);
-
-    const row = await mqClientSys.fillID('test', aMsg);
-
-    console.log('[run]:',row);
-
-    const aMsg1 = []
-    for (let i = 0; i < 2; i++) {
-        const sMsg = '['+i+'] Е ['+i+']';
-
-        aMsg1.push({text:sMsg});
-        if(i % 1000 == 0){
-            process.stdout.write('.');
-        }
-        
-    }
-
-    const row1 = await mqClientSys.fillID('test', aMsg1);
-
-    console.log('[run1]:',row1);
+        console.log('[run]:',':',row);
+    // }
 
     await mWait(5000);
-
-
-
-
 
     console.log('=========================');
     console.log('END');

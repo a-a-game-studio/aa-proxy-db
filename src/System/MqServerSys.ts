@@ -6,8 +6,9 @@ import { mFormatDateTime } from '../Helper/DateTimeH';
 import _, { now, NumericDictionaryIterateeCustom } from 'lodash';
 import { MsgContextI } from '../interface/CommonI';
 import * as conf from '../Config/MainConfig'
-import { Knex } from 'knex';
+import  knex, { Knex } from 'knex';
 import { setInterval } from 'timers';
+import { mRandomInteger } from '../Helper/NumberH';
 
 /** Компонент Очередь */
 export class DbTableC {
@@ -50,7 +51,7 @@ export class MqServerSys {
     private ixTable:Record<string, DbTableC> = {};
 
     /** Получить из очереди */
-    public async aid(msg:MsgContextI):Promise<number[]>{
+    public async id(msg:MsgContextI):Promise<number[]>{
         if(!this.ixTable[msg.table]){
             this.ixTable[msg.table] = new DbTableC();
             await this.ixTable[msg.table].faInit(msg.table);
@@ -70,6 +71,13 @@ export class MqServerSys {
         }
 
         const vTableC = this.ixTable[msg.table];
+
+        // Случайно отдаем одну базу данных из пула
+        const iRand = mRandomInteger(0, adb.length - 1)
+        const db = adb[iRand];
+        const out = db.raw(msg.query);
+
+        return out
         
     }
     
@@ -81,6 +89,15 @@ export class MqServerSys {
         }
 
         const vTableC = this.ixTable[msg.table];
+
+        console.log('t>>>',msg.table,msg.data);
+
+        const aPromiseQuery:Promise<Knex>[] = [];
+        for (let i = 0; i < adb.length; i++) {
+            const db = adb[i];
+            aPromiseQuery.push(db(msg.table).insert(msg.data))
+        }
+        await Promise.all(aPromiseQuery);
 
         process.stdout.write('.')
 
@@ -94,6 +111,19 @@ export class MqServerSys {
         }
 
         const vTableC = this.ixTable[msg.table];
+
+        // Случайно отдаем одну базу данных из пула
+        const iRand = mRandomInteger(0, adb.length - 1)
+        const dbSelect = adb[iRand];
+
+        const aid = (await dbSelect.raw(msg.query))[0];
+        
+        const aPromiseQuery:Promise<Knex>[] = [];
+        for (let i = 0; i < adb.length; i++) {
+            const db = adb[i];
+            aPromiseQuery.push(db(msg.table).whereIn('id', aid).update(msg.data));
+        }
+        await Promise.all(aPromiseQuery);
     }
 
     /** Получить информацию по очереди */
@@ -105,6 +135,19 @@ export class MqServerSys {
         }
 
         const vTableC = this.ixTable[msg.table];
+
+        // Случайно отдаем одну базу данных из пула
+        const iRand = mRandomInteger(0, adb.length - 1)
+        const dbSelect = adb[iRand];
+
+        const aid = (await dbSelect.raw(msg.query))[0];
+
+        const aPromiseQuery:Promise<Knex>[] = [];
+        for (let i = 0; i < adb.length; i++) {
+            const db = adb[i];
+            aPromiseQuery.push(db(msg.table).whereIn('id', aid).delete(msg.data));
+        }
+        await Promise.all(aPromiseQuery);
 
         // return vTableC.info();
     }

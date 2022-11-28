@@ -9,7 +9,7 @@ import { reject } from "lodash";
 import { mWait } from "../Helper/WaitH";
 import { MsgContextI as QueryContextI, MsgT } from "../interface/CommonI";
 
-import knex from "knex";
+import knex, { Knex } from "knex";
 
 
 export class DbClientSys {
@@ -25,6 +25,11 @@ export class DbClientSys {
     iSend:number = 0;
     iSendComplete:number = 0;
     iSendErr:number = 0;
+
+    private iSelect = 0;
+    private iInsert = 0;
+    private iUpdate = 0;
+    private iDelete = 0;
     
 
     // Работа с буфером
@@ -99,7 +104,7 @@ export class DbClientSys {
                 app:this.conf.nameApp,
                 ip:ip.address(),
                 table:sTable,
-                type:MsgT.aid,
+                type:MsgT.id,
                 data:{cnt:cntID},
                 time:Date.now()
             }
@@ -107,7 +112,7 @@ export class DbClientSys {
             
             this.querySys.fActionOk((data: any) => {
 
-                console.log('[id_in]:',data,aRows);
+                // console.log('[id_in]:',data,aRows);
                 this.iSendComplete++;
 
 
@@ -125,7 +130,7 @@ export class DbClientSys {
                     }
                 }
 
-                console.log('[id_fill]:',aRows);
+                // console.log('[id_fill]:',aRows);
 
                 resolve(aRows)
 
@@ -135,7 +140,7 @@ export class DbClientSys {
                 console.error(err);
                 reject(err)
             });
-            this.querySys.fSend(MsgT.aid, vMsg);
+            this.querySys.fSend(MsgT.id, vMsg);
             this.iSend++;
         })
         
@@ -160,54 +165,132 @@ export class DbClientSys {
     }
 
     /** SELECT */
-    public select(query:knex.QueryBuilder){
+    public select(query:Knex){
+        return new Promise((resolve, reject) => {
 
+            
+            this.querySys.fInit();
+
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                ip:ip.address(),
+                table:'',
+                type:MsgT.id,
+                query:query.toString(),
+                time:Date.now()
+            }
+
+            this.querySys.fActionOk((data: any) => {
+
+                console.log('[id_in]:',data);
+                // this.iSendComplete++;
+                resolve(data)
+            });
+            this.querySys.fActionErr((err:any) => {
+                this.iSendErr++;
+                console.error(err);
+                reject(err)
+            });
+            this.querySys.fSend(MsgT.id, vMsg);
+            this.iSelect++;
+        });
     }
 
     /** INSERT */
-    public insert(data:any|any[]){
+    public async insert(table:string, dataIn:any|any[]){
+        await this.fillID(table, dataIn)
 
+        return new Promise((resolve, reject) => {
+
+            this.querySys.fInit();
+
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                ip:ip.address(),
+                table:table,
+                type:MsgT.insert,
+                data:dataIn,
+                time:Date.now()
+            }
+
+            this.querySys.fActionOk((dataOut: any) => {
+                console.log('insert end')
+                resolve(dataIn)
+            });
+            this.querySys.fActionErr((err:any) => {
+                console.error(err);
+                reject(err)
+            });
+            this.querySys.fSend(MsgT.insert, vMsg);
+            this.iInsert++;
+
+            console.log('insert init')
+        });
     }
 
     /** UPDATE */
-    public update(query:knex.QueryBuilder, data:any|any[]){
+    public update(table:string, query:knex.QueryBuilder, dataIn:any|any[]){
+        return new Promise((resolve, reject) => {
+            this.querySys.fInit();
 
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                ip:ip.address(),
+                table:table,
+                type:MsgT.update,
+                query:query.toString(),
+                data:dataIn,
+                time:Date.now()
+            }
+
+            this.querySys.fActionOk((dataOut: any) => {
+
+                console.log('[id_in]:',dataOut);
+                // this.iSendComplete++;
+                resolve(dataOut)
+            });
+            this.querySys.fActionErr((err:any) => {
+                this.iSendErr++;
+                console.error(err);
+                reject(err)
+            });
+            this.querySys.fSend(MsgT.update, vMsg);
+            this.iUpdate++;
+        });
     }
 
     /** DELETE */
-    public delete(query:knex.QueryBuilder){
+    public delete(table:string, query:Knex) {
+        return new Promise((resolve, reject) => {
+            this.querySys.fInit();
 
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                ip:ip.address(),
+                table:'',
+                type:MsgT.delete,
+                query:query.toString(),
+                time:Date.now()
+            }
+
+            this.querySys.fActionOk((dataOut: any) => {
+
+                console.log('[dataOut]:',dataOut);
+                // this.iSendComplete++;
+                resolve(dataOut)
+            });
+            this.querySys.fActionErr((err:any) => {
+                this.iSendErr++;
+                console.error(err);
+                reject(err)
+            });
+            this.querySys.fSend(MsgT.delete, vMsg);
+            this.iUpdate++;
+        });
     }
-
-    /**
-	 * Отправить сообщение в очередь
-	 * @param sQueue
-	 * @param msg
-	 */
-	public send(sQueue: string, msg: any): void {
-
-        const uidMsg = uuidv4();
-        const vMsg = {
-            uid:uidMsg,
-            app:this.conf.nameApp,
-            ip:ip.address(),
-            queue:sQueue,
-            data:msg,
-            time:Date.now()
-        }
-
-        this.querySys.fInit();
-        this.querySys.fActionOk((data: string[]) => {
-
-            this.iSendComplete++;
-
-        });
-        this.querySys.fActionErr((err:any) => {
-            this.iSendErr++;
-            console.error(err);
-        });
-        this.querySys.fSend(MsgT.insert, vMsg);
-        this.iSend++;
-	}
 
 }

@@ -42,10 +42,10 @@ router.ws(MsgT.connect, async (ctx: AAContext) => {
 /**
  * Уход сообщений
  */
-router.ws(MsgT.aid, async (ctx: AAContext) => {
+router.ws(MsgT.id, async (ctx: AAContext) => {
 
     console.log('[aid]:',ctx.body);
-    const aid = await gMqServerSys.aid(ctx.body);
+    const aid = await gMqServerSys.id(ctx.body);
     console.log('get list id>>>',ctx.body, aid)
 
     return faSend(ctx, aid);
@@ -67,21 +67,9 @@ router.ws(MsgT.aid, async (ctx: AAContext) => {
  */
  router.ws(MsgT.insert, async (ctx: AAContext) => {
 
-    // const data = gMqServerSys.get(ctx.body);
-    // console.log('ask>>>',ctx.body, data)
-
-    return faSend(ctx, {});
-
-
-});
-
-/**
- * Уход сообщений
- */
- router.ws(MsgT.insert, async (ctx: AAContext) => {
-
-    // const data = gMqServerSys.get(ctx.body);
-    // console.log('ask>>>',ctx.body, data)
+    console.log('insert>>>',ctx.body)
+    const data = gMqServerSys.insert(ctx.body);
+    
 
     return faSend(ctx, {});
 
@@ -97,6 +85,8 @@ router.ws(MsgT.aid, async (ctx: AAContext) => {
     // console.log('ask>>>',ctx.body, data)
 
     return faSend(ctx, {});
+
+
 });
 
 /**
