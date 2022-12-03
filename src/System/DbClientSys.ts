@@ -10,6 +10,7 @@ import { mWait } from "../Helper/WaitH";
 import { MsgContextI as QueryContextI, MsgT } from "../interface/CommonI";
 
 import knex, { Knex } from "knex";
+import _ from "lodash";
 
 
 export class DbClientSys {
@@ -72,12 +73,11 @@ export class DbClientSys {
         this.querySys.fSend(MsgT.connect, null);
     }
 
+
     /** Заполнить инкрементный ID */
     public fillID(sTable:string, aRowsIn:any[]):any{
        
         return new Promise((resolve, reject) => {
-
-           
 
             this.querySys.fInit();
 
@@ -231,24 +231,56 @@ export class DbClientSys {
     }
 
     /** UPDATE */
-    public update(table:string, query:knex.QueryBuilder, dataIn:any|any[]){
+    public update(query:Knex.QueryBuilder, dataIn:any|any[]){
         return new Promise((resolve, reject) => {
+
+            // Парсинг запроса
+            const sql = query.toQuery();
+
+            const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
+
+            const aMatch = sQueryStart.match(/^select\s+([a-z0-9]+\.id)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where/);
+
+            let sSqlNew = ''
+            let sWhereKey = ''
+            let sTable = ''
+
+            // Проверка синтаксиса
+            if(aMatch){
+                const aQueryStartNew = [];
+                aQueryStartNew.push(...['select', aMatch[1], 'as', aMatch[2], 'from', aMatch[3], ' '])
+
+                const iWhere = sql.indexOf('where');
+
+                // результат парсинга
+                sSqlNew = aQueryStartNew.join(' ') + sql.substr(iWhere)
+                sWhereKey = aMatch[2];
+                sTable = aMatch[3];
+                
+            } else {
+                reject(new Error(
+                    'Запрос не корректный, не подходит под правило - \n' + 
+                    'select\s+([a-z0-9]+\.id)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where'
+                ))
+            }
+
             this.querySys.fInit();
 
             const vMsg:QueryContextI = {
                 uid:uuidv4(),
                 app:this.conf.nameApp,
                 ip:ip.address(),
-                table:table,
+                table:sTable,
                 type:MsgT.update,
-                query:query.toString(),
+                key_in:sWhereKey,
+                query:sSqlNew,
                 data:dataIn,
                 time:Date.now()
             }
 
             this.querySys.fActionOk((dataOut: any) => {
 
-                console.log('[id_in]:',dataOut);
+                console.log('[update]:',dataOut);
                 // this.iSendComplete++;
                 resolve(dataOut)
             });
@@ -263,15 +295,46 @@ export class DbClientSys {
     }
 
     /** DELETE */
-    public delete(table:string, query:Knex) {
+    public delete(query:Knex.QueryBuilder) {
         return new Promise((resolve, reject) => {
+
+            // Парсинг запроса
+            const sql = query.toQuery();
+
+            const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
+
+            const aMatch = sQueryStart.match(/^select\s+([a-z0-9]+\.id)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where/);
+
+            let sSqlNew = ''
+            let sWhereKey = ''
+            let sTable = ''
+
+            // Проверка синтаксиса
+            if(aMatch){
+                const aQueryStartNew = [];
+                aQueryStartNew.push(...['select', aMatch[1], 'as', aMatch[2], 'from', aMatch[3], ' '])
+
+                const iWhere = sql.indexOf('where');
+
+                // результат парсинга
+                sSqlNew = aQueryStartNew.join(' ') + sql.substr(iWhere)
+                sWhereKey = aMatch[2];
+                sTable = aMatch[3];
+                
+            } else {
+                reject(new Error(
+                    'Запрос не корректный, не подходит под правило - \n' + 
+                    'select\s+([a-z0-9]+\.id)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where'
+                ))
+            }
+
             this.querySys.fInit();
 
             const vMsg:QueryContextI = {
                 uid:uuidv4(),
                 app:this.conf.nameApp,
                 ip:ip.address(),
-                table:'',
+                table:sTable,
                 type:MsgT.delete,
                 query:query.toString(),
                 time:Date.now()

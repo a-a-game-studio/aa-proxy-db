@@ -24,11 +24,21 @@ export class DbTableC {
             table:sTable
         }))[0]
 
-        console.log(this.status);
+        // const lastid = (await dbMaster.raw(`SELECT LAST_INSERT_ID() as id`))[0][0]?.id;
+
+        const idAutoMaster = this.status['Auto_Increment'] || 0;
+        const idLastInsertMaster = (await dbMaster.raw(`SELECT LAST_INSERT_ID() as id`))[0][0]?.id || 0;
+        const idMaxMaster = (await dbMaster.raw(`SELECT MAX(id) AS id FROM ${sTable}`))[0][0]?.id || 0;
+
+        this.id = idAutoMaster 
+        this.id = this.id < idLastInsertMaster ? idLastInsertMaster : this.id;
+        this.id = this.id < idMaxMaster ? idMaxMaster : this.id;
+
+        console.log('=====',this.id );
 
         // TODO так-же нужно получать автоинкремент из proxy DB на случай если нет свежей БД master
 
-        this.id = this.status['Auto_Increment'] || 0;
+        // this.id = this.status['Auto_Increment'] || 0;
     }
 
     getLastID(){
@@ -46,7 +56,7 @@ export class DbTableC {
 }
 
 /** Система очередей */
-export class MqServerSys {
+export class DbServerSys {
     
     private ixTable:Record<string, DbTableC> = {};
 
@@ -116,12 +126,13 @@ export class MqServerSys {
         const iRand = mRandomInteger(0, adb.length - 1)
         const dbSelect = adb[iRand];
 
-        const aid = (await dbSelect.raw(msg.query))[0];
+        const a = (await dbSelect.raw(msg.query))[0];
+        const aid = a.map((el:any) => el[msg.key_in])[0];
         
         const aPromiseQuery:Promise<Knex>[] = [];
         for (let i = 0; i < adb.length; i++) {
             const db = adb[i];
-            aPromiseQuery.push(db(msg.table).whereIn('id', aid).update(msg.data));
+            aPromiseQuery.push(db(msg.table).whereIn(msg.key_in, aid).update(msg.data));
         }
         await Promise.all(aPromiseQuery);
     }
@@ -140,12 +151,13 @@ export class MqServerSys {
         const iRand = mRandomInteger(0, adb.length - 1)
         const dbSelect = adb[iRand];
 
-        const aid = (await dbSelect.raw(msg.query))[0];
+        const a = (await dbSelect.raw(msg.query))[0];
+        const aid = a.map((el:any) => el[msg.key_in])[0];
 
         const aPromiseQuery:Promise<Knex>[] = [];
         for (let i = 0; i < adb.length; i++) {
             const db = adb[i];
-            aPromiseQuery.push(db(msg.table).whereIn('id', aid).delete(msg.data));
+            aPromiseQuery.push(db(msg.table).whereIn(msg.key_in, aid).delete(msg.data));
         }
         await Promise.all(aPromiseQuery);
 

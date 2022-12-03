@@ -6,13 +6,13 @@ import { faSendRouter as faSend } from './System/ResponseSys';
 
 import { MsgContextI, MsgT } from './interface/CommonI';
 import { common } from './Config/MainConfig';
-import { MqServerSys } from './System/MqServerSys';
+import { DbServerSys } from './System/DbServerSys';
 
 let cntConnect = 0;
 
-const gMqServerSys = new MqServerSys();
+const gDbServerSys = new DbServerSys();
 
-gMqServerSys.dbInit();
+gDbServerSys.dbInit();
 
 
 
@@ -45,7 +45,7 @@ router.ws(MsgT.connect, async (ctx: AAContext) => {
 router.ws(MsgT.id, async (ctx: AAContext) => {
 
     console.log('[aid]:',ctx.body);
-    const aid = await gMqServerSys.id(ctx.body);
+    const aid = await gDbServerSys.id(ctx.body);
     console.log('get list id>>>',ctx.body, aid)
 
     return faSend(ctx, aid);
@@ -68,7 +68,7 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  router.ws(MsgT.insert, async (ctx: AAContext) => {
 
     console.log('insert>>>',ctx.body)
-    const data = gMqServerSys.insert(ctx.body);
+    const data = gDbServerSys.insert(ctx.body);
     
 
     return faSend(ctx, {});
@@ -81,8 +81,8 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  */
  router.ws(MsgT.update, async (ctx: AAContext) => {
 
-    // const data = gMqServerSys.get(ctx.body);
-    // console.log('ask>>>',ctx.body, data)
+    const data = gDbServerSys.update(ctx.body);
+    console.log('ask>>>',ctx.body, data)
 
     return faSend(ctx, {});
 
