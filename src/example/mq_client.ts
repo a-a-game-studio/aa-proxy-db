@@ -1,8 +1,9 @@
 
-// import { db } from "../System/DBConnect";
-import { v4 as uuid4 } from 'uuid';
-import { mRandomInteger } from "../Helper/NumberH";
+import  knex from 'knex';
 
+const db = knex({ // Knex mysql
+    client: "mysql2"
+})
 
 
 import { mWait } from "../Helper/WaitH";
@@ -16,23 +17,54 @@ const mqClientSys = new DbClientSys({
 
 async function run(){
 
-    // mqClientSys.connect('test', null);
 
-    // for (let c = 0; c < 3; c++) {
+    // Вставка
+    const aMsg = []
+    for (let i = 0; i < 10; i++) {
+        const sMsg = '['+i+'] СообщениЕ ['+i+']';
 
-        const aMsg = []
-        for (let i = 0; i < 2; i++) {
-            const sMsg = '['+i+'] СообщениЕ ['+i+']';
-    
-            aMsg.push({text:sMsg});
-            if(i % 1000 == 0){
-                process.stdout.write('.');
-            }
+        aMsg.push({text:sMsg});
+        if(i % 1000 == 0){
+            process.stdout.write('.');
         }
-        
-        const row = await mqClientSys.insert('test', aMsg);
+    }
+    
+    const row = await mqClientSys.insert('test', aMsg);
+    console.log('[run]:',':',row);
 
-        console.log('[run]:',':',row);
+
+    const aidMsg = aMsg.map((el:any) => el.id);
+    // Обновление
+    
+    const sMsg = 'Обновленное СообщениЕ ['+']';
+
+    const updateSttatus = await mqClientSys.update({
+        text:sMsg
+    }, db('test')
+        .whereIn('id', aidMsg.slice(2,4))
+        .select({id:'id'})
+    );
+
+    console.log('[run:update]:',':',updateSttatus);
+
+    // ====================================
+    
+    const deleteSttatus = await mqClientSys.delete(db('test')
+        .whereIn('id', aidMsg.slice(4,6))
+        .select({id:'id'})
+    );
+
+    console.log('[run:delete]:',':',updateSttatus);
+
+    // ====================================
+
+    const selectData = await mqClientSys.select(db('test')
+        .whereIn('id', aidMsg)
+        .select()
+    );
+
+    console.log('[run:select]:',':',selectData);
+    
     // }
 
     await mWait(5000);

@@ -165,8 +165,24 @@ export class DbClientSys {
     }
 
     /** SELECT */
-    public select(query:Knex){
+    public select(query:Knex.QueryBuilder){
         return new Promise((resolve, reject) => {
+
+            // Парсинг запроса
+            const sql = query.toQuery();
+
+            const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
+
+            console.log(sQueryStart);
+
+            const aMatch = sQueryStart.match(/^select/);
+
+            if(!aMatch){
+                reject(new Error(
+                    'Запрос не корректный, не подходит под правило - \n' + 
+                    '/^select/'
+                ))
+            }
 
             
             this.querySys.fInit();
@@ -192,7 +208,7 @@ export class DbClientSys {
                 console.error(err);
                 reject(err)
             });
-            this.querySys.fSend(MsgT.id, vMsg);
+            this.querySys.fSend(MsgT.select, vMsg);
             this.iSelect++;
         });
     }
@@ -231,7 +247,7 @@ export class DbClientSys {
     }
 
     /** UPDATE */
-    public update(query:Knex.QueryBuilder, dataIn:any|any[]){
+    public update(dataIn:any|any[], query:Knex.QueryBuilder){
         return new Promise((resolve, reject) => {
 
             // Парсинг запроса
@@ -239,11 +255,15 @@ export class DbClientSys {
 
             const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
 
-            const aMatch = sQueryStart.match(/^select\s+([a-z0-9]+\.id)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where/);
+            console.log(sQueryStart);
+
+            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where/);
 
             let sSqlNew = ''
             let sWhereKey = ''
             let sTable = ''
+
+            console.log(aMatch);
 
             // Проверка синтаксиса
             if(aMatch){
@@ -260,7 +280,7 @@ export class DbClientSys {
             } else {
                 reject(new Error(
                     'Запрос не корректный, не подходит под правило - \n' + 
-                    'select\s+([a-z0-9]+\.id)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where'
+                    '/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where/'
                 ))
             }
 
@@ -303,7 +323,7 @@ export class DbClientSys {
 
             const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
 
-            const aMatch = sQueryStart.match(/^select\s+([a-z0-9]+\.id)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where/);
+            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where/);
 
             let sSqlNew = ''
             let sWhereKey = ''
@@ -324,7 +344,7 @@ export class DbClientSys {
             } else {
                 reject(new Error(
                     'Запрос не корректный, не подходит под правило - \n' + 
-                    'select\s+([a-z0-9]+\.id)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where'
+                    '/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where/'
                 ))
             }
 
@@ -335,6 +355,7 @@ export class DbClientSys {
                 app:this.conf.nameApp,
                 ip:ip.address(),
                 table:sTable,
+                key_in:sWhereKey,
                 type:MsgT.delete,
                 query:query.toString(),
                 time:Date.now()

@@ -75,17 +75,13 @@ export class DbServerSys {
 
     /** Получить из очереди */
     public async select(msg:MsgContextI){
-        if(!this.ixTable[msg.table]){
-            this.ixTable[msg.table] = new DbTableC();
-            await this.ixTable[msg.table].faInit(msg.table);
-        }
 
-        const vTableC = this.ixTable[msg.table];
+        // const vTableC = this.ixTable[msg.table];
 
         // Случайно отдаем одну базу данных из пула
         const iRand = mRandomInteger(0, adb.length - 1)
         const db = adb[iRand];
-        const out = db.raw(msg.query);
+        const out = (await db.raw(msg.query))[0];
 
         return out
         
@@ -127,14 +123,26 @@ export class DbServerSys {
         const dbSelect = adb[iRand];
 
         const a = (await dbSelect.raw(msg.query))[0];
-        const aid = a.map((el:any) => el[msg.key_in])[0];
+
+        console.log(msg.query);
+        console.log('---1>',a)
+        const aid = a.map((el:any) => el[msg.key_in]);
+        console.log('---2>',aid)
+
         
-        const aPromiseQuery:Promise<Knex>[] = [];
-        for (let i = 0; i < adb.length; i++) {
-            const db = adb[i];
-            aPromiseQuery.push(db(msg.table).whereIn(msg.key_in, aid).update(msg.data));
+        
+        
+
+        if(aid.length){
+            const aPromiseQuery:Promise<Knex>[] = [];
+            for (let i = 0; i < adb.length; i++) {
+                const db = adb[i];
+                console.log(db(msg.table).whereIn(msg.key_in, aid).update(msg.data).toString())
+                aPromiseQuery.push(db(msg.table).whereIn(msg.key_in, aid).update(msg.data));
+                
+            }
+            await Promise.all(aPromiseQuery);
         }
-        await Promise.all(aPromiseQuery);
     }
 
     /** Получить информацию по очереди */
@@ -152,14 +160,20 @@ export class DbServerSys {
         const dbSelect = adb[iRand];
 
         const a = (await dbSelect.raw(msg.query))[0];
-        const aid = a.map((el:any) => el[msg.key_in])[0];
 
-        const aPromiseQuery:Promise<Knex>[] = [];
-        for (let i = 0; i < adb.length; i++) {
-            const db = adb[i];
-            aPromiseQuery.push(db(msg.table).whereIn(msg.key_in, aid).delete(msg.data));
+        console.log(msg.query);
+        console.log('---1>',a)
+        const aid = a.map((el:any) => el[msg.key_in]);
+        console.log('---2>',aid)
+
+        if(aid.length){
+            const aPromiseQuery:Promise<Knex>[] = [];
+            for (let i = 0; i < adb.length; i++) {
+                const db = adb[i];
+                aPromiseQuery.push(db(msg.table).whereIn(msg.key_in, aid).delete(msg.data));
+            }
+            await Promise.all(aPromiseQuery);
         }
-        await Promise.all(aPromiseQuery);
 
         // return vTableC.info();
     }

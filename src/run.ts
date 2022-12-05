@@ -56,10 +56,10 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  */
  router.ws(MsgT.select, async (ctx: AAContext) => {
 
-    // const data = gMqServerSys.get(ctx.body);
-    // console.log('ask>>>',ctx.body, data)
+    console.log('select>>>',ctx.body)
+    const data = await gDbServerSys.select(ctx.body);
 
-    return faSend(ctx, {});
+    return faSend(ctx, data);
 });
 
 /**
@@ -68,10 +68,10 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  router.ws(MsgT.insert, async (ctx: AAContext) => {
 
     console.log('insert>>>',ctx.body)
-    const data = gDbServerSys.insert(ctx.body);
+    const data = await gDbServerSys.insert(ctx.body);
     
 
-    return faSend(ctx, {});
+    return faSend(ctx, data);
 
 
 });
@@ -81,10 +81,12 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  */
  router.ws(MsgT.update, async (ctx: AAContext) => {
 
-    const data = gDbServerSys.update(ctx.body);
-    console.log('ask>>>',ctx.body, data)
+    console.log('update>>>',ctx.body)
 
-    return faSend(ctx, {});
+    const data = await gDbServerSys.update(ctx.body);
+    
+
+    return faSend(ctx, data);
 
 
 });
@@ -94,10 +96,11 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  */
  router.ws(MsgT.delete, async (ctx: AAContext) => {
 
-    // const data = gMqServerSys.get(ctx.body);
-    // console.log('ask>>>',ctx.body, data)
+    console.log('delete>>>',ctx.body)
 
-    return faSend(ctx, {});
+    const data = await gDbServerSys.delete(ctx.body);
+
+    return faSend(ctx, data);
 });
 
 
