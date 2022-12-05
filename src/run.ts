@@ -14,6 +14,10 @@ const gDbServerSys = new DbServerSys();
 
 gDbServerSys.dbInit();
 
+/** Интервал записи данных в бд */
+const intervalDb = setInterval(() => {
+    gDbServerSys.dbSave()
+},1000)
 
 
 // =============================================================
@@ -69,7 +73,6 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
 
     console.log('insert>>>',ctx.body)
     const data = await gDbServerSys.insert(ctx.body);
-    
 
     return faSend(ctx, data);
 
@@ -82,7 +85,6 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  router.ws(MsgT.update, async (ctx: AAContext) => {
 
     console.log('update>>>',ctx.body)
-
     const data = await gDbServerSys.update(ctx.body);
     
 
@@ -97,7 +99,6 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  router.ws(MsgT.delete, async (ctx: AAContext) => {
 
     console.log('delete>>>',ctx.body)
-
     const data = await gDbServerSys.delete(ctx.body);
 
     return faSend(ctx, data);

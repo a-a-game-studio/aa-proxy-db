@@ -38,14 +38,14 @@ async function run(){
     
     const sMsg = 'Обновленное СообщениЕ ['+']';
 
-    const updateSttatus = await mqClientSys.update({
+    const updateStatus = await mqClientSys.update({
         text:sMsg
     }, db('test')
         .whereIn('id', aidMsg.slice(2,4))
         .select({id:'id'})
     );
 
-    console.log('[run:update]:',':',updateSttatus);
+    console.log('[run:update]:',':',updateStatus);
 
     // ====================================
     
@@ -54,7 +54,7 @@ async function run(){
         .select({id:'id'})
     );
 
-    console.log('[run:delete]:',':',updateSttatus);
+    console.log('[run:delete]:',':',deleteSttatus);
 
     // ====================================
 

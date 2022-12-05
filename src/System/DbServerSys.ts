@@ -10,11 +10,20 @@ import  knex, { Knex } from 'knex';
 import { setInterval } from 'timers';
 import { mRandomInteger } from '../Helper/NumberH';
 
+const gQuery = knex({ // Knex mysql
+    client: "mysql2"
+})
+
+
 /** Компонент Очередь */
 export class DbTableC {
     private table:string = '';
     private id:number = 0;
     private status:any = null;
+
+    public aQueryInsertLog:string[] = [];
+    public aQueryUpdateLog:string[] = [];
+    public aQueryDeleteLog:string[] = [];
 
     /** инициализация таблицы */
     async faInit(sTable:string){
@@ -58,6 +67,7 @@ export class DbTableC {
 /** Система очередей */
 export class DbServerSys {
     
+    private bInit = false;
     private ixTable:Record<string, DbTableC> = {};
 
     /** Получить из очереди */
@@ -98,10 +108,13 @@ export class DbServerSys {
 
         console.log('t>>>',msg.table,msg.data);
 
+        const sQuery = gQuery(msg.table).insert(msg.data).toString()
+        vTableC.aQueryInsertLog.push(sQuery)
+
         const aPromiseQuery:Promise<Knex>[] = [];
         for (let i = 0; i < adb.length; i++) {
             const db = adb[i];
-            aPromiseQuery.push(db(msg.table).insert(msg.data))
+            aPromiseQuery.push(db.raw(sQuery))
         }
         await Promise.all(aPromiseQuery);
 
@@ -130,19 +143,21 @@ export class DbServerSys {
         console.log('---2>',aid)
 
         
-        
-        
-
         if(aid.length){
+            const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).toString();
+            vTableC.aQueryUpdateLog.push(sQuery)
+
             const aPromiseQuery:Promise<Knex>[] = [];
             for (let i = 0; i < adb.length; i++) {
                 const db = adb[i];
                 console.log(db(msg.table).whereIn(msg.key_in, aid).update(msg.data).toString())
-                aPromiseQuery.push(db(msg.table).whereIn(msg.key_in, aid).update(msg.data));
+                aPromiseQuery.push(db.raw(sQuery));
                 
             }
             await Promise.all(aPromiseQuery);
         }
+
+        return aid;
     }
 
     /** Получить информацию по очереди */
@@ -167,15 +182,19 @@ export class DbServerSys {
         console.log('---2>',aid)
 
         if(aid.length){
+
+            const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).delete(msg.data).toString();
+            vTableC.aQueryDeleteLog.push(sQuery)
+
             const aPromiseQuery:Promise<Knex>[] = [];
             for (let i = 0; i < adb.length; i++) {
                 const db = adb[i];
-                aPromiseQuery.push(db(msg.table).whereIn(msg.key_in, aid).delete(msg.data));
+                aPromiseQuery.push(db.raw(sQuery));
             }
             await Promise.all(aPromiseQuery);
         }
 
-        // return vTableC.info();
+        return aid;
     }
 
     /** Получить информацию по очереди */
@@ -190,11 +209,7 @@ export class DbServerSys {
 
                 table.string('ip', 20)
                     .index('ip')
-                    .comment('IP адрес базы данных');
-
-                table.string('db', 100)
-                    .index('db')
-                    .comment('База данных');
+                    .comment('IP адрес proxy');
 
                 table.string('table', 100)
                     .index('table')
@@ -217,6 +232,71 @@ export class DbServerSys {
                     
             });
         }
+
+        const bExistReplication = await dbProxy.schema.hasTable('replication');
+        if(!bExistReplication){
+            await dbProxy.schema.createTable('replication', (table:any) => {
+
+                table.increments('id')
+                    .comment('ID');
+
+                table.string('ip', 20)
+                    .index('ip')
+                    .comment('IP адрес БД');
+
+                table.string('table', 100)
+                    .index('table')
+                    .comment('Таблица');
+
+                table.bigInteger('query_id')
+                    .index('query_id')
+                    .comment('query_id');
+
+                table.dateTime('created_at', null)
+                    .index('created_at')
+                    .notNullable()
+                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
+                    .comment('Время создания записи');
+
+                table.dateTime('updated_at')
+                    .index('updated_at')
+                    .notNullable()
+                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+                    .comment('Время обновления записи');
+
+                table.unique(['ip','table'])
+                    
+            });
+        }
+
+        const bExistQuery = await dbProxy.schema.hasTable('query');
+        if(!bExistQuery){
+            await dbProxy.schema.createTable('query', (table:any) => {
+
+                table.bigIncrements('id')
+                    .comment('ID');
+
+                table.string('table', 100)
+                    .index('table')
+                    .comment('Таблица');
+
+                table.enum('cmd',['insert', 'update', 'delete'])
+                    .index('table')
+                    .comment('Таблица');
+
+                table.text('data')
+                    .comment('Таблица');
+
+                table.dateTime('created_at', null)
+                    .index('created_at')
+                    .notNullable()
+                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
+                    .comment('Время создания записи');
+
+            });
+        }
+
+        this.bInit = true;
         
     }
 
@@ -224,12 +304,62 @@ export class DbServerSys {
     /** Сохранить информацию по очереди */
     public async dbSave(){
 
-        const aMqLog:any[] = []; // Данные для сохранения
+        const aDbLog:any[] = []; // Данные для сохранения
 
-        const akQueue = Object.keys(this.ixTable);
-        for (let i = 0; i < akQueue.length; i++) {
-            const kQueue = akQueue[i];
-            const vMqQueueC = this.ixTable[kQueue];   
+        const akTable = Object.keys(this.ixTable);
+        for (let i = 0; i < akTable.length; i++) {
+            const kTable = akTable[i];
+            const vDbTableC = this.ixTable[kTable];
+
+            const aInsertLog = vDbTableC.aQueryInsertLog;
+            vDbTableC.aQueryInsertLog = [];
+            for (let j = 0; j < aInsertLog.length; j++) {
+                const sInsertLog = aInsertLog[j];
+                aDbLog.push({
+                    table:kTable,
+                    cmd:'insert',
+                    data:sInsertLog
+                })
+            }
+            
+
+            const aUpdateLog = vDbTableC.aQueryUpdateLog;
+            vDbTableC.aQueryUpdateLog = [];
+            for (let j = 0; j < aUpdateLog.length; j++) {
+                const sUpdateLog = aUpdateLog[j];
+                aDbLog.push({
+                    table:kTable,
+                    cmd:'update',
+                    data:sUpdateLog
+                })
+            }
+
+            const aDeleteLog = vDbTableC.aQueryDeleteLog;
+            vDbTableC.aQueryDeleteLog = [];
+            for (let j = 0; j < aDeleteLog.length; j++) {
+                const sDeleteLog = aDeleteLog[j];
+                aDbLog.push({
+                    table:kTable,
+                    cmd:'delete',
+                    data:sDeleteLog
+                })
+            }
+        }
+
+
+        if(aDbLog.length){
+            const aaQueryChunk = _.chunk(aDbLog, 1000);
+            let aPromise:Promise<any>[] = [];
+            for (let i = 0; i < aaQueryChunk.length; i++) {
+                const aQueryChunk = aaQueryChunk[i];
+                
+                aPromise.push(dbProxy('query').insert(aQueryChunk));
+                if(aPromise.length > 100){
+                    await Promise.all(aPromise);
+                    aPromise = [];
+                }
+            }
+            await Promise.all(aPromise);
         }
         
     }
