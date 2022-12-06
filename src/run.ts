@@ -58,6 +58,17 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
 /**
  * Уход сообщений
  */
+ router.ws(MsgT.schema, async (ctx: AAContext) => {
+
+    console.log('schema>>>',ctx.body)
+    const data = await gDbServerSys.schema(ctx.body);
+
+    return faSend(ctx, data);
+});
+
+/**
+ * Уход сообщений
+ */
  router.ws(MsgT.select, async (ctx: AAContext) => {
 
     console.log('select>>>',ctx.body)

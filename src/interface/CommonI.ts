@@ -7,8 +7,7 @@ export enum MsgT {
     insert = '/insert', // Отправить сообщение
     update = '/update', // Получить сообщение
     delete = '/delete', // Получить сообщение
-    count = '/count', // Количество сообщений
-    info = '/info' // Информация по очереди 
+    schema = '/schema', // Получить сообщение
 }
 
 export interface MsgContextI {

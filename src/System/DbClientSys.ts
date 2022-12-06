@@ -164,6 +164,55 @@ export class DbClientSys {
         }
     }
 
+    /** Схема */
+    public schema(table:string, query:Knex.SchemaBuilder){
+        return new Promise((resolve, reject) => {
+
+            // Парсинг запроса
+            const sql = query.toQuery();
+
+            const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
+
+            console.log(sQueryStart);
+
+            const aMatch = sQueryStart.match(/^(alter)|(create)|(drop)|(truncate)/);
+
+            if(!aMatch){
+                reject(new Error(
+                    'Запрос не корректный, не подходит под правило - \n' + 
+                    '/^(alter)|(create)|(drop)|(truncate)/'
+                ))
+            }
+
+            
+            this.querySys.fInit();
+
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                ip:ip.address(),
+                table:table,
+                type:MsgT.schema,
+                query:query.toString(),
+                time:Date.now()
+            }
+
+            this.querySys.fActionOk((data: any) => {
+
+                console.log('[id_in]:',data);
+                // this.iSendComplete++;
+                resolve(data)
+            });
+            this.querySys.fActionErr((err:any) => {
+                this.iSendErr++;
+                console.error(err);
+                reject(err)
+            });
+            this.querySys.fSend(MsgT.schema, vMsg);
+            this.iSelect++;
+        });
+    }
+
     /** SELECT */
     public select(query:Knex.QueryBuilder){
         return new Promise((resolve, reject) => {
@@ -192,7 +241,7 @@ export class DbClientSys {
                 app:this.conf.nameApp,
                 ip:ip.address(),
                 table:'',
-                type:MsgT.id,
+                type:MsgT.select,
                 query:query.toString(),
                 time:Date.now()
             }
