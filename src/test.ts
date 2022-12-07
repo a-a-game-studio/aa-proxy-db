@@ -24,7 +24,11 @@ import { dbMaster, dbProxy, adb } from './System/DBConnect';
 // console.log(vKnext({i:'item'}).select('i.id').toQuery())
 
 async function run(){
-    const a = (await dbMaster.raw('SHOW TABLES'));
+    const a = (await dbMaster.raw('SHOW TABLES'))[0];
+
+    console.log(a);
 }
 
 run();
+
+

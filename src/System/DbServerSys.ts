@@ -33,13 +33,13 @@ export class DbTableC {
         this.statusMaster = (await dbMaster.raw(`SHOW TABLE STATUS LIKE :table;`,{
             // db:conf.cfDbMaster.connection.database,
             table:sTable
-        }))[0]
+        }))[0][0]
 
         // const lastid = (await dbMaster.raw(`SELECT LAST_INSERT_ID() as id`))[0][0]?.id;
 
-        const idAutoMaster = this.statusMaster['Auto_Increment'] || 0;
-        const idLastInsertMaster = (await dbMaster.raw(`SELECT LAST_INSERT_ID() as id`))[0][0]?.id || 0;
-        const idMaxMaster = (await dbMaster.raw(`SELECT MAX(id) AS id FROM ${sTable}`))[0][0]?.id || 0;
+        const idAutoMaster = this.statusMaster ? this.statusMaster['Auto_Increment'] || 0 : 0;
+        const idLastInsertMaster = this.statusMaster ? (await dbMaster.raw(`SELECT LAST_INSERT_ID() as id`))[0][0]?.id || 0 : 0;
+        const idMaxMaster = this.statusMaster ? (await dbMaster.raw(`SELECT MAX(id) AS id FROM ${sTable}`))[0][0]?.id || 0 : 0;
 
         this.statusProxy = (await dbProxy('table').where('table',sTable).select())[0];
 
