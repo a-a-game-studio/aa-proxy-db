@@ -5,8 +5,8 @@ import { AAContext, AARoute, AAServer } from '@a-a-game-studio/aa-server';
 import { faSendRouter as faSend } from './System/ResponseSys';
 
 import { MsgContextI, MsgT } from './interface/CommonI';
-import { common } from './Config/MainConfig';
 import { DbServerSys } from './System/DbServerSys';
+import * as conf from './Config/MainConfig';
 
 let cntConnect = 0;
 
@@ -136,8 +136,8 @@ console.log(`
 
 `);
 
-app.listenWs(common.port, common.host, () => {
-    console.log(`server start at ${common.host}:${common.port}`);
+app.listenWs(conf.common.port, conf.common.host, () => {
+    console.log(`server start at ${conf.common.host}:${conf.common.port}`);
 
     return true;
 });

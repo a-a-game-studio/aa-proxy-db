@@ -1,6 +1,8 @@
 
 import  knex from 'knex';
 
+import * as conf from '../Config/MainConfig';
+
 const db = knex({ // Knex mysql
     client: "mysql2"
 })
@@ -11,7 +13,7 @@ import { DbClientSys } from "../System/DbClientSys";
 
 // CORE API
 const mqClientSys = new DbClientSys({
-    baseURL: 'ws://127.0.0.1:8080',
+    baseURL: `ws://${conf.common.host}:${conf.common.port}`,
     nameApp: 'test_client'
 })
 

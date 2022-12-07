@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { mFormatDateTime } from '../Helper/DateTimeH';
 import _, { now, NumericDictionaryIterateeCustom } from 'lodash';
 import { MsgContextI } from '../interface/CommonI';
-import * as conf from '../Config/MainConfig'
 import  knex, { Knex } from 'knex';
 import { setInterval } from 'timers';
 import { mRandomInteger } from '../Helper/NumberH';
@@ -306,29 +305,59 @@ export class DbServerSys {
 
                 table.string('ip', 20)
                     .index('ip')
-                    .comment('IP адрес БД');
+                    .comment('IP адрес БД = 127.0.0.1:3306');
 
-                table.string('table', 100)
-                    .index('table')
-                    .comment('Таблица');
+                table.boolean('query_sync_ok')
+                    .comment('Статус синхронизации OK');
 
-                table.bigInteger('query_id')
-                    .index('query_id')
-                    .comment('query_id');
+                // ===========================================
+
+                table.bigInteger('query_start_id')
+                    .comment('Запрос с которого стартуем синхронизацию');
+
+                table.bigInteger('query_min_id')
+                    .comment('Минимальный ID обработанного запроса');
+                    
+                table.bigInteger('query_max_id')
+                    .comment('Минимальный ID обработанного запроса');
+
+                
+
+                // ===========================================
+
+                table.bigInteger('query_insert_id')
+                    .comment('Последний обработанный insert запрос');
+
+                table.boolean('query_insert_ok')
+                    .comment('query_insert_ok');
+
+                // ===========================================
+
+                table.bigInteger('query_delete_id')
+                    .comment('Последний обработанный delete запрос');
+
+                table.boolean('query_delete_ok')
+                    .comment('query_delete_ok');
+
+                // ===========================================
+
+                table.bigInteger('query_update_id')
+                    .comment('query_update_id');
+
+                table.boolean('query_update_ok')
+                    .comment('Последний обработанный update запрос');
+
+                // ===========================================
 
                 table.dateTime('created_at', null)
-                    .index('created_at')
                     .notNullable()
                     .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
                     .comment('Время создания записи');
 
                 table.dateTime('updated_at')
-                    .index('updated_at')
                     .notNullable()
                     .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
                     .comment('Время обновления записи');
-
-                table.unique(['ip','table'])
                     
             });
         }
