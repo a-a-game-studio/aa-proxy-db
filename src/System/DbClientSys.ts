@@ -175,7 +175,7 @@ export class DbClientSys {
 
             console.log(sQueryStart);
 
-            const aMatch = sQueryStart.match(/^(alter)|(create)|(drop)|(truncate)/);
+            const aMatch = sQueryStart.match(/^(alter)|(create)|(drop)/);
 
             if(!aMatch){
                 reject(new Error(
@@ -213,8 +213,53 @@ export class DbClientSys {
         });
     }
 
+    /** Общие запросы другой категории */
+    public common(query:Knex.QueryBuilder){
+        return new Promise((resolve, reject) => {
+
+            // Парсинг запроса
+            const sql = query.toQuery();
+
+            const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
+
+            console.log(sQueryStart);
+
+            const aMatch = sQueryStart.match(/^(select)|(insert)|(update)|(delete)|(alter)|(create)|(drop)/);
+
+            if(aMatch){
+                reject(new Error(
+                    'Запрос не корректный, подходит под правило - только общие запросы - \n' + 
+                    '/^(select)|(insert)|(update)|(delete)|(alter)|(create)|(drop)/'
+                ))
+            }
+            
+            this.querySys.fInit();
+
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                ip:ip.address(),
+                table:'',
+                type:MsgT.common,
+                query:query.toString(),
+                time:Date.now()
+            }
+
+            this.querySys.fActionOk((data: any) => {
+                resolve(data)
+            });
+            this.querySys.fActionErr((err:any) => {
+                this.iSendErr++;
+                console.error(err);
+                reject(err)
+            });
+            this.querySys.fSend(MsgT.common, vMsg);
+            this.iSelect++;
+        });
+    }
+
     /** SELECT */
-    public select(query:Knex.QueryBuilder){
+    public select(query:Knex.QueryBuilder|Knex.Raw){
         return new Promise((resolve, reject) => {
 
             // Парсинг запроса
@@ -296,7 +341,7 @@ export class DbClientSys {
     }
 
     /** UPDATE */
-    public update(dataIn:any|any[], query:Knex.QueryBuilder){
+    public update(dataIn:any|any[], query:Knex.QueryBuilder|Knex.Raw){
         return new Promise((resolve, reject) => {
 
             // Парсинг запроса
@@ -306,7 +351,7 @@ export class DbClientSys {
 
             console.log(sQueryStart);
 
-            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where/);
+            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/);
 
             let sSqlNew = ''
             let sWhereKey = ''
@@ -329,7 +374,82 @@ export class DbClientSys {
             } else {
                 reject(new Error(
                     'Запрос не корректный, не подходит под правило - \n' + 
-                    '/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where/'
+                    '/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/'
+                ))
+            }
+
+            this.querySys.fInit();
+
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                ip:ip.address(),
+                table:sTable,
+                type:MsgT.update,
+                key_in:sWhereKey,
+                query:sSqlNew,
+                data:dataIn,
+                time:Date.now()
+            }
+
+            this.querySys.fActionOk((dataOut: any) => {
+
+                console.log('[update]:',dataOut);
+                // this.iSendComplete++;
+                resolve(dataOut)
+            });
+            this.querySys.fActionErr((err:any) => {
+                this.iSendErr++;
+                console.error(err);
+                reject(err)
+            });
+            this.querySys.fSend(MsgT.update, vMsg);
+            this.iUpdate++;
+        });
+    }
+
+    /** UPDATE */
+    public updateJoin(dataIn:any|any[], query:Knex.QueryBuilder|Knex.Raw){
+        return new Promise((resolve, reject) => {
+
+            // Парсинг запроса
+            const sql = query.toQuery();
+
+            const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
+
+            console.log(sQueryStart);
+
+            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+(join)|(left)|(right)/);
+
+            let sSqlNew = ''
+            let sWhereKey = ''
+            let sTable = ''
+
+            console.log(aMatch);
+
+            // Проверка синтаксиса
+            if(aMatch){
+                const aQueryStartNew = [];
+                aQueryStartNew.push(...['select', aMatch[1], 'as', aMatch[2], 'from', aMatch[3], ' '])
+
+                const sQueryStartRaw = sql.slice(0,100).toLowerCase()
+                const iJoin = sQueryStartRaw.indexOf('join');
+                const iLeft = sQueryStartRaw.indexOf('left');
+                const iRight = sQueryStartRaw.indexOf('left');
+                let iJoinPos = 0;
+                iJoinPos = iJoin > iJoinPos ? iJoin : iJoinPos;
+                iJoinPos = iLeft > iJoinPos ? iLeft : iJoinPos;
+                iJoinPos = iRight > iJoinPos ? iRight : iJoinPos;
+
+                // результат парсинга
+                sSqlNew = aQueryStartNew.join(' ') + sql.substr(iJoinPos)
+                sWhereKey = aMatch[2];
+                sTable = aMatch[3];
+                
+            } else {
+                reject(new Error(
+                    'Запрос не корректный, не подходит под правило - \n' + 
+                    '/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+where/'
                 ))
             }
 
@@ -364,7 +484,7 @@ export class DbClientSys {
     }
 
     /** DELETE */
-    public delete(query:Knex.QueryBuilder) {
+    public delete(query:Knex.QueryBuilder|Knex.Raw) {
         return new Promise((resolve, reject) => {
 
             // Парсинг запроса
@@ -372,7 +492,7 @@ export class DbClientSys {
 
             const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
 
-            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where/);
+            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/);
 
             let sSqlNew = ''
             let sWhereKey = ''
@@ -393,7 +513,77 @@ export class DbClientSys {
             } else {
                 reject(new Error(
                     'Запрос не корректный, не подходит под правило - \n' + 
-                    '/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+where/'
+                    '/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/'
+                ))
+            }
+
+            this.querySys.fInit();
+
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                ip:ip.address(),
+                table:sTable,
+                key_in:sWhereKey,
+                type:MsgT.delete,
+                query:query.toString(),
+                time:Date.now()
+            }
+
+            this.querySys.fActionOk((dataOut: any) => {
+
+                console.log('[dataOut]:',dataOut);
+                // this.iSendComplete++;
+                resolve(dataOut)
+            });
+            this.querySys.fActionErr((err:any) => {
+                this.iSendErr++;
+                console.error(err);
+                reject(err)
+            });
+            this.querySys.fSend(MsgT.delete, vMsg);
+            this.iUpdate++;
+        });
+    }
+
+    /** DELETE */
+    public deleteJoin(query:Knex.QueryBuilder|Knex.Raw) {
+        return new Promise((resolve, reject) => {
+
+            // Парсинг запроса
+            const sql = query.toQuery();
+
+            const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
+
+            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+(join)|(left)|(right)/);
+
+            let sSqlNew = ''
+            let sWhereKey = ''
+            let sTable = ''
+
+            // Проверка синтаксиса
+            if(aMatch){
+                const aQueryStartNew = [];
+                aQueryStartNew.push(...['select', aMatch[1], 'as', aMatch[2], 'from', aMatch[3], 'as', aMatch[4] ,' '])
+
+                const sQueryStartRaw = sql.slice(0,100).toLowerCase()
+                const iJoin = sQueryStartRaw.indexOf('join');
+                const iLeft = sQueryStartRaw.indexOf('left');
+                const iRight = sQueryStartRaw.indexOf('left');
+                let iJoinPos = 0;
+                iJoinPos = iJoin > iJoinPos ? iJoin : iJoinPos;
+                iJoinPos = iLeft > iJoinPos ? iLeft : iJoinPos;
+                iJoinPos = iRight > iJoinPos ? iRight : iJoinPos;
+
+                // результат парсинга
+                sSqlNew = aQueryStartNew.join(' ') + sql.substr(iJoinPos)
+                sWhereKey = aMatch[2];
+                sTable = aMatch[3];
+                
+            } else {
+                reject(new Error(
+                    'Запрос не корректный, не подходит под правило - \n' + 
+                    '/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+where/'
                 ))
             }
 

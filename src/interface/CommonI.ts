@@ -8,6 +8,7 @@ export enum MsgT {
     update = '/update', // Получить сообщение
     delete = '/delete', // Получить сообщение
     schema = '/schema', // Получить сообщение
+    common = '/common', // Получить сообщение
 }
 
 export interface MsgContextI {
