@@ -242,6 +242,8 @@ export class DbServerSys {
     /** Получить информацию по очереди */
     public async dbInit(){
 
+        
+
         const bExistTable = await dbProxy.schema.hasTable('table');
         if(!bExistTable){
             await dbProxy.schema.createTable('table', (table:any) => {

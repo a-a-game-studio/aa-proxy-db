@@ -15,10 +15,16 @@ import { dbMaster, dbProxy, adb } from './System/DBConnect';
 // console.log('aMatch1>>>',aMatchSimple);
 // console.log('aMatch2>>>',aMatch2);
 
-import  knex, { Knex } from 'knex';
+// import  knex, { Knex } from 'knex';
 
-const vKnext = knex({ // Knex mysql
-    client: "mysql2"
-})
+// const vKnext = knex({ // Knex mysql
+//     client: "mysql2"
+// })
 
-console.log(vKnext({i:'item'}).select('i.id').toQuery())
+// console.log(vKnext({i:'item'}).select('i.id').toQuery())
+
+async function run(){
+    const a = (await dbMaster.raw('SHOW TABLES'));
+}
+
+run();
