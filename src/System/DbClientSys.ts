@@ -308,7 +308,7 @@ export class DbClientSys {
     }
 
     /** INSERT */
-    public async insert(table:string, dataIn:any|any[]){
+    public async insert(table:string, dataIn:any|any[],onConflict?:'ignore'|'merge'){
         await this.fillID(table, dataIn)
 
         return new Promise((resolve, reject) => {

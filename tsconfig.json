@@ -3,16 +3,18 @@
         "target": "es2017",
         "module": "commonjs",
         "noImplicitAny": true,
+        "esModuleInterop": true,
+        "removeComments": true,
         "preserveConstEnums": true,
         "sourceMap": true,
-        "outDir": "./build",
-        "declaration": true,
-        "resolveJsonModule":true,
-        "esModuleInterop": true,
+        "outDir": "build",
+        "rootDir": "src",
+        "resolveJsonModule": true,
         "skipLibCheck": true,
     },
     "include": [
-        "src/**/*.ts", "src/index.tsx.ts", "src/**/*.json"
+        "src/**/*.ts",
+        "src/**/*.js",
     ],
     "exclude": [
         "node_modules"
