@@ -1,13 +1,10 @@
+
 import { QuerySys } from "@a-a-game-studio/aa-front";
-import { resolve } from "dns";
-import e from "express";
 
 import { v4 as uuidv4 } from 'uuid';
 
 import ip from 'ip'
-import { reject } from "lodash";
-import { mWait } from "../Helper/WaitH";
-import { MsgContextI as QueryContextI, MsgT } from "../interface/CommonI";
+import { QueryContextI, MsgT } from "../interface/CommonI";
 
 import knex, { Knex } from "knex";
 import _ from "lodash";
@@ -419,7 +416,7 @@ export class DbClientSys {
 
             console.log(sQueryStart);
 
-            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+(join)|(left)|(right)/);
+            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+(\bleft\b|\bjoin\b|\bright\b)/);
 
             let sSqlNew = ''
             let sWhereKey = ''
@@ -555,7 +552,7 @@ export class DbClientSys {
 
             const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
 
-            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+(join)|(left)|(right)/);
+            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+(\bleft\b|\bjoin\b|\bright\b)/);
 
             let sSqlNew = ''
             let sWhereKey = ''

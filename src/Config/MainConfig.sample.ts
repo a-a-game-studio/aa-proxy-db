@@ -32,6 +32,29 @@ export const cfDbMaster = { // Knex mysql
     acquireConnectionTimeout: 60000
 };
 
+/** Предпочтение при чтении */
+export const cfPref = {
+    '10.100.0.1':['110.10.50.1:3036'], // от : куда
+    '10.100.0.2':['110.10.50.2:3039','110.10.50.2:3040']
+}
+
+/** логирование данных */
+export const cfLogChange = {
+    connect:'ws://127.0.0.1:3030',
+    packet_log:{log1:'packet_log1',log2:'packet_log2'},
+    table:[
+        // from=таблица -кто тригерит, to=таблица куда, id=идентификатор таблицы,fl флаг(что изменилось)
+        // левая таблица должна присутствовать колонкой в правой
+        {from:'item', to:'item'}, // товары
+        {from:'item', to:'order'}, // при изменении товара изменить заказ
+        {from:'order', to:'order'}, // заказ
+    ]
+}
+
+/** События для отправки */
+export const саHook = {
+    error:'https://'
+}
 
 export const cfDb = [
     { // Knex mysql

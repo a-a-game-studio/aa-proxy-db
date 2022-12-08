@@ -11,7 +11,7 @@ export enum MsgT {
     common = '/common', // Получить сообщение
 }
 
-export interface MsgContextI {
+export interface QueryContextI {
     // n?:string; // Номер сообщения (когда оно уже зарегистрированно)
     uid?:string; // Уникальный идентификатор сообщения
     app:string; // Наименование приложения

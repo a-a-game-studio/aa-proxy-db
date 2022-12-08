@@ -4,7 +4,7 @@ import { AAContext, AARoute, AAServer } from '@a-a-game-studio/aa-server';
 
 import { faSendRouter as faSend } from './System/ResponseSys';
 
-import { MsgContextI, MsgT } from './interface/CommonI';
+import { QueryContextI, MsgT } from './interface/CommonI';
 import { DbServerSys } from './System/DbServerSys';
 import * as conf from './Config/MainConfig';
 

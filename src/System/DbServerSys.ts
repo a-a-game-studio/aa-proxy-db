@@ -4,7 +4,7 @@ import { dbMaster, dbProxy, adb } from './DBConnect';
 import { v4 as uuidv4 } from 'uuid';
 import { mFormatDateTime } from '../Helper/DateTimeH';
 import _, { now, NumericDictionaryIterateeCustom } from 'lodash';
-import { MsgContextI } from '../interface/CommonI';
+import { QueryContextI } from '../interface/CommonI';
 import  knex, { Knex } from 'knex';
 import { setInterval } from 'timers';
 import { mRandomInteger } from '../Helper/NumberH';
@@ -84,7 +84,7 @@ export class DbServerSys {
     private ixTable:Record<string, DbTableC> = {};
 
     /** Получить из очереди */
-    public async id(msg:MsgContextI):Promise<number[]>{
+    public async id(msg:QueryContextI):Promise<number[]>{
         if(!this.ixTable[msg.table]){
             this.ixTable[msg.table] = new DbTableC();
             await this.ixTable[msg.table].faInit(msg.table);
@@ -97,7 +97,7 @@ export class DbServerSys {
     }
 
     /** Поместить значение в очередь */
-    public async schema(msg:MsgContextI){
+    public async schema(msg:QueryContextI){
         if(!this.ixTable[msg.table]){
             this.ixTable[msg.table] = new DbTableC();
             await this.ixTable[msg.table].faInit(msg.table);
@@ -125,7 +125,7 @@ export class DbServerSys {
     }
 
     /** Получить из очереди */
-    public async select(msg:MsgContextI){
+    public async select(msg:QueryContextI){
 
         // const vTableC = this.ixTable[msg.table];
 
@@ -139,7 +139,7 @@ export class DbServerSys {
     }
     
     /** Поместить значение в очередь */
-    public async insert(msg:MsgContextI){
+    public async insert(msg:QueryContextI){
         if(!this.ixTable[msg.table]){
             this.ixTable[msg.table] = new DbTableC();
             await this.ixTable[msg.table].faInit(msg.table);
@@ -164,7 +164,7 @@ export class DbServerSys {
     }
 
     /** Получить количество сообщений в очереди */
-    public async update(msg:MsgContextI){
+    public async update(msg:QueryContextI){
         if(!this.ixTable[msg.table]){
             this.ixTable[msg.table] = new DbTableC();
             await this.ixTable[msg.table].faInit(msg.table);
@@ -202,7 +202,7 @@ export class DbServerSys {
     }
 
     /** Получить информацию по очереди */
-    public async delete(msg:MsgContextI): Promise<any>{
+    public async delete(msg:QueryContextI): Promise<any>{
 
         if(!this.ixTable[msg.table]){
             this.ixTable[msg.table] = new DbTableC();
