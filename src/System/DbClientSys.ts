@@ -12,7 +12,7 @@ import { MsgContextI as QueryContextI, MsgT } from "../interface/CommonI";
 import knex, { Knex } from "knex";
 import _ from "lodash";
 
-
+/** DbClientSys */
 export class DbClientSys {
 
     conf:{
