@@ -201,6 +201,7 @@ export class DbServerSys {
                 
             }
             await Promise.all(aPromiseQuery);
+            await gDbLogSys.update(aid,msg);
         }
 
         return aid;

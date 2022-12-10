@@ -71,30 +71,34 @@ export class DbLogSys {
     }
 
     /** Поместить значение в очередь */
-    public async update(msg:QueryContextI){
+    public async update(aid:number[], msg:QueryContextI){
+
+        console.log('===LOG_UPDATE1====')
         
         if(!gixLogChangeByFrom[msg.table]){
             return; // Прерывание
         }
 
-        const iRand = mRandomInteger(0, adb.length - 1)
-        const db = adb[iRand];
-        const out = (await db.raw(msg.query))[0];
+        console.log('===LOG_UPDATE2====')
 
-        // const vTableC = this.ixTable[msg.table];
+        const aLog:{table:string, data:string}[] = [];
 
-        const sQuery = gQuery(msg.table).insert(msg.data).toString()
-        // vTableC.aQueryInsertLog.push(sQuery)
+        const aTrigger = gixLogChangeByFrom[msg.table];
+        for (let i = 0; i < aTrigger.length; i++) {
+            const vTrigger = aTrigger[i];
 
-        const aPromiseQuery:Promise<Knex>[] = [];
-        for (let i = 0; i < adb.length; i++) {
-            const db = adb[i];
-            aPromiseQuery.push(db.raw(sQuery))
+            console.log('===LOG_UPDATE3====')
+
+            for (let j = 0; j < aid.length; j++) {
+                const id = aid[j];
+                const vRow = {...msg.data};
+                vRow[msg.key_in] = id;
+            
+                aLog.push({table:vTrigger.to, data:JSON.stringify(vRow)});
+            }
         }
-        await Promise.all(aPromiseQuery);
 
-
-        process.stdout.write('.')
+        await dbProxy(cfLogChange.logBuffer.log1).insert(aLog);
 
     }
 

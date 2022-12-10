@@ -70,12 +70,34 @@ async function run(){
     
     // const sMsg = 'Обновленное Сообщени WhereIN Е ['+']';
 
-    // const updateStatus = await mqClientSys.update({
-    //     text:sMsg
-    // }, db('test')
-    //     .whereIn('id', aidItem.slice(2,4))
-    //     .select({id:'id'})
-    // );
+    for (let i = 20; i < 40; i++) {
+        const idItem = aidItem[i];
+
+        const sRandCat = aItemCat[mRandomInteger(0, aItemCat.length - 1)];
+        const sRandColor = aItemColor[mRandomInteger(0, aItemColor.length - 1)]
+        const sRandSetting = aItemSetting[mRandomInteger(0, aItemSetting.length - 1)]
+
+        const sName = ['['+i+']', 'Обновленный товар', '['+i+']', sRandCat,sRandColor,sRandSetting,'['+i+']'].join(' ');
+
+        aItem.push({name:sName, price:1000});
+    }
+
+    {
+        const sRandCat = aItemCat[mRandomInteger(0, aItemCat.length - 1)];
+        const sRandColor = aItemColor[mRandomInteger(0, aItemColor.length - 1)]
+        const sRandSetting = aItemSetting[mRandomInteger(0, aItemSetting.length - 1)]
+
+        const sName = ['[',']', 'Обновленный товар', '[',']', sRandCat,sRandColor,sRandSetting,'[',']'].join(' ');
+
+        const updateStatus = await mqClientSys.update({
+            name:sName, 
+            price:1000
+        }, db('item')
+            .whereIn('id', aidItem.slice(20,40))
+            .select({id:'id'})
+        );
+    }
+    
 
     // console.log('[run:update]:',':',updateStatus);
 
