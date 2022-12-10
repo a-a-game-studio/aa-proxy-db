@@ -51,6 +51,7 @@ async function run(){
             .comment('ID');
 
         table.integer('item_id')
+            .index('item_id')
             .comment('Наименование товара');
 
         table.integer('delivery')
@@ -64,6 +65,7 @@ async function run(){
             .comment('ID');
 
         table.integer('order_id')
+            .index('order_id')
             .comment('Наименование товара');
 
         table.integer('key')

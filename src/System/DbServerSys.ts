@@ -8,11 +8,13 @@ import { QueryContextI } from '../interface/CommonI';
 import  knex, { Knex } from 'knex';
 import { setInterval } from 'timers';
 import { mRandomInteger } from '../Helper/NumberH';
+import { DbLogSys } from './DbLogSys';
 
 const gQuery = knex({ // Knex mysql
     client: "mysql2"
 })
 
+const gDbLogSys = new DbLogSys();
 
 /** Компонент Очередь */
 export class DbTableC {
@@ -82,6 +84,8 @@ export class DbServerSys {
     private idSchema = 0;
     private bInit = false;
     private ixTable:Record<string, DbTableC> = {};
+
+    
 
     /** Получить из очереди */
     public async id(msg:QueryContextI):Promise<number[]>{
@@ -158,6 +162,7 @@ export class DbServerSys {
             aPromiseQuery.push(db.raw(sQuery))
         }
         await Promise.all(aPromiseQuery);
+        await gDbLogSys.insert(msg);
 
         process.stdout.write('.')
 
@@ -240,8 +245,6 @@ export class DbServerSys {
 
     /** Получить информацию по очереди */
     public async dbInit(){
-
-        
 
         const bExistTable = await dbProxy.schema.hasTable('table');
         if(!bExistTable){
@@ -390,6 +393,58 @@ export class DbServerSys {
                     .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
                     .comment('Время создания записи');
 
+            });
+        }
+
+        const bExistLogPacket1 = await dbProxy.schema.hasTable('log_packet1');
+        if(!bExistLogPacket1){
+            await dbProxy.schema.createTable('log_packet1', (table:any) => {
+
+                table.increments('id')
+                    .comment('ID');
+
+                table.boolean('status')
+                    .index('status')
+                    .defaultTo(0)
+                    .comment('Статус');
+
+                table.string('table', 255)
+                    .comment('Имя таблицы');
+
+                table.text('data')
+                    .comment('Данные');
+
+                table.dateTime('created_at', null)
+                    .notNullable()
+                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
+                    .comment('Время создания записи');
+                    
+            });
+        }
+
+        const bExistLogPacket2 = await dbProxy.schema.hasTable('log_packet2');
+        if(!bExistLogPacket2){
+            await dbProxy.schema.createTable('log_packet2', (table:any) => {
+
+                table.increments('id')
+                    .comment('ID');
+
+                table.boolean('status')
+                    .index('status')
+                    .defaultTo(0)
+                    .comment('Статус');
+
+                table.string('table', 255)
+                    .comment('Имя таблицы');
+
+                table.text('data')
+                    .comment('Данные');
+
+                table.dateTime('created_at', null)
+                    .notNullable()
+                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
+                    .comment('Время создания записи');
+                    
             });
         }
 

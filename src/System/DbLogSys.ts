@@ -8,12 +8,13 @@ import { QueryContextI } from '../interface/CommonI';
 import  knex, { Knex } from 'knex';
 import { setInterval } from 'timers';
 import { mRandomInteger } from '../Helper/NumberH';
+import { cfDbLog, cfLogChange } from '../Config/MainConfig';
 
 const gQuery = knex({ // Knex mysql
     client: "mysql2"
 })
 
-
+const gixLogChangeByFrom = _.groupBy(cfLogChange.table, 'from')
 
 /** Система очередей */
 export class DbLogSys {
@@ -37,10 +38,48 @@ export class DbLogSys {
     
     /** Поместить значение в очередь */
     public async insert(msg:QueryContextI){
-        // if(!this.ixTable[msg.table]){
-        //     this.ixTable[msg.table] = new DbTableC();
-        //     await this.ixTable[msg.table].faInit(msg.table);
-        // }
+
+
+        console.log('===LOG====')
+        if(!gixLogChangeByFrom[msg.table]){
+            return; // Прерывание
+        }
+
+        console.log('===LOG1====')
+
+        const aLog:{table:string, data:string}[] = [];
+
+        const aTrigger = gixLogChangeByFrom[msg.table];
+        for (let i = 0; i < aTrigger.length; i++) {
+            const vTrigger = aTrigger[i];
+
+            console.log('===LOG2====')
+
+            if(msg.data.length){
+                for (let j = 0; j < msg.data.length; j++) {
+                    const vRow = msg.data[j];
+                
+                    aLog.push({table:vTrigger.to, data:JSON.stringify(vRow)});
+                }
+            } else {
+                aLog.push({table:vTrigger.to, data:JSON.stringify(msg.data)});
+                
+            }
+        }
+
+        await dbProxy(cfLogChange.logBuffer.log1).insert(aLog);
+    }
+
+    /** Поместить значение в очередь */
+    public async update(msg:QueryContextI){
+        
+        if(!gixLogChangeByFrom[msg.table]){
+            return; // Прерывание
+        }
+
+        const iRand = mRandomInteger(0, adb.length - 1)
+        const db = adb[iRand];
+        const out = (await db.raw(msg.query))[0];
 
         // const vTableC = this.ixTable[msg.table];
 
@@ -54,66 +93,9 @@ export class DbLogSys {
         }
         await Promise.all(aPromiseQuery);
 
+
         process.stdout.write('.')
 
     }
 
-
-
-    /** Получить информацию по очереди */
-    public async dbInit(){
-
-        const bExistTable = await dbProxy.schema.hasTable('log_packet1');
-        if(!bExistTable){
-            await dbProxy.schema.createTable('log_packet1', (table:any) => {
-
-                table.increments('id')
-                    .comment('ID');
-
-                table.boolean('status')
-                    .index('status')
-                    .comment('Статус');
-
-                table.string('table_name', 255)
-                    .comment('Имя таблицы');
-
-                table.integer('json_data')
-                    .comment('Данные');
-
-                table.dateTime('created_at', null)
-                    .notNullable()
-                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
-                    .comment('Время создания записи');
-                    
-            });
-        }
-
-        const bExistSchema = await dbProxy.schema.hasTable('log_packet2');
-        if(!bExistSchema){
-            await dbProxy.schema.createTable('log_packet2', (table:any) => {
-
-                table.increments('id')
-                    .comment('ID');
-
-                table.boolean('status')
-                    .index('status')
-                    .comment('Статус');
-
-                table.string('table_name', 255)
-                    .comment('Имя таблицы');
-
-                table.integer('json_data')
-                    .comment('Данные');
-
-                table.dateTime('created_at', null)
-                    .notNullable()
-                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
-                    .comment('Время создания записи');
-                    
-            });
-        }
-
-        this.bInit = true;
-        
-    }
 }
