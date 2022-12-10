@@ -15,7 +15,7 @@ import { dbMaster, dbProxy, adb } from './System/DBConnect';
 // console.log('sqlBuilder>>>', sqlBuilder)
 
 
-const sql = `select it.id as id from item as i right item_ex ie ON ie.item_id = i.id where  id > 0`
+const sql = `select it.id as id from item as i left join item_ex ie ON ie.item_id = i.id where  id > 0`
 const aMatchSimple = sql.match(/^select\s+([a-z0-9]+\.[a-z0-9]+)\s+as\s+([a-z0-9]+)\s+from\s+([a-z0-9]+)\s+as\s+([a-z0-9]+)\s+(\bleft\b|\bjoin\b|\bright\b)/);
 console.log('aMatch1>>>',aMatchSimple);
 

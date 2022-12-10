@@ -405,7 +405,10 @@ export class DbClientSys {
         });
     }
 
-    /** UPDATE */
+    /** 
+     * UPDATE
+     * Пример select it.id as id from item as i left join item_ex ie ON ie.item_id = i.id where  id > 0
+     */
     public updateJoin(dataIn:any|any[], query:Knex.QueryBuilder|Knex.Raw){
         return new Promise((resolve, reject) => {
 
@@ -445,8 +448,7 @@ export class DbClientSys {
                 
             } else {
                 reject(new Error(
-                    'Запрос не корректный, не подходит под правило - \n' + 
-                    '/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+where/'
+                    'Запрос не корректный, не подходит под правило'
                 ))
             }
 

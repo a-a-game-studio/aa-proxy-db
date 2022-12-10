@@ -32,27 +32,42 @@ export const cfDbMaster = { // Knex mysql
     acquireConnectionTimeout: 60000
 };
 
+export const cfDbLog = { // Knex mysql
+    client: "mysql2",
+    connection: {
+        host: "localhost",
+        user: "root",
+        password: "*",
+        database: "*1"
+    },
+    pool: { "min": 0, "max": 7 },
+    acquireConnectionTimeout: 60000
+};
+
 /** Предпочтение при чтении */
 export const cfPref = {
     '10.100.0.1':['110.10.50.1:3036'], // от : куда
-    '10.100.0.2':['110.10.50.2:3039','110.10.50.2:3040']
+    '10.100.0.2':['110.10.50.2:3039', '110.10.50.2:3040']
 }
 
 /** логирование данных */
 export const cfLogChange = {
     connect:'ws://127.0.0.1:3030',
-    packet_log:{log1:'packet_log1',log2:'packet_log2'},
+    logBuffer:{log1:'packet_log1',log2:'packet_log2'}, // Предполагается запись в dbProxy - не обязательный параметр
+    logConnect:cfDbLog,
     table:[
-        // from=таблица -кто тригерит, to=таблица куда, id=идентификатор таблицы,fl флаг(что изменилось)
+        // from=таблица -кто тригерит, to=таблица куда, id=идентификатор таблицы,col какие поля, type = список/один
         // левая таблица должна присутствовать колонкой в правой
-        {from:'item', to:'item'}, // товары
-        {from:'item', to:'order'}, // при изменении товара изменить заказ
-        {from:'order', to:'order'}, // заказ
+        {from:'item', to:'item', where:['item_id'], col:['item_id']}, // товары
+        {from:'item', to:'order', where:['item_id'], alias:'price', col:['price'], 'type':'val'}, // при изменении товара изменить заказ
+        {from:'order', to:'order', where:['order_id'], col:['item_id','delivery']}, // заказ
+        {from:'order_char', to:'order', where:['order_id'], col:['key_id', 'val_id'], type:'list'}, // товары
+        {from:'order_char', to:'order_char', where:['order_id'], col:['key_id', 'val_id'], type:'list'}, // товары
     ]
 }
 
 /** События для отправки */
-export const саHook = {
+export const сfHook = {
     error:'https://'
 }
 
