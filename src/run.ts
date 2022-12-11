@@ -15,8 +15,9 @@ const gDbServerSys = new DbServerSys();
 gDbServerSys.dbInit();
 
 /** Интервал записи данных в бд */
-const intervalDb = setInterval(() => {
-    gDbServerSys.dbSave()
+const intervalDb = setInterval(async () => {
+    await gDbServerSys.dbSave();
+    // await gDbServerSys.dbReplication();
 },1000)
 
 

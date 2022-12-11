@@ -7,7 +7,20 @@ export const dbMaster = knex(cfDbMaster);
 
 export const adb:Knex[] = [];
 
+export const gixDb:Record<string, Knex> = {};
+export const gixaDbByIp:Record<string, Knex[]> = {};
+
 for (let i = 0; i < cfDb.length; i++) {
-    adb.push(knex(cfDb[i]));
+    const vCfDb = cfDb[i];
+    const vDb = knex(vCfDb);
+    adb.push(vDb);
+
+    const sKeyDb = [vCfDb.connection.host, vCfDb.connection.port, vCfDb.connection.database].join(':')
+    gixDb[sKeyDb] = vDb;
+
+    if(!gixaDbByIp[vCfDb.connection.host]){
+        gixaDbByIp[vCfDb.connection.host] = [];
+    }
+    gixaDbByIp[vCfDb.connection.host].push(vDb)
     
 }

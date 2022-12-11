@@ -1,6 +1,6 @@
 
 import ip from 'ip'
-import { dbMaster, dbProxy, adb } from './DBConnect';
+import { dbMaster, dbProxy, adb, gixDb } from './DBConnect';
 import { v4 as uuidv4 } from 'uuid';
 import { mFormatDateTime } from '../Helper/DateTimeH';
 import _, { now, NumericDictionaryIterateeCustom } from 'lodash';
@@ -9,6 +9,7 @@ import  knex, { Knex } from 'knex';
 import { setInterval } from 'timers';
 import { mRandomInteger } from '../Helper/NumberH';
 import { DbLogSys } from './DbLogSys';
+import { cfDb } from '../Config/MainConfig';
 
 const gQuery = knex({ // Knex mysql
     client: "mysql2"
@@ -300,71 +301,94 @@ export class DbServerSys {
             });
         }
 
-        const bExistReplication = await dbProxy.schema.hasTable('replication');
-        if(!bExistReplication){
-            await dbProxy.schema.createTable('replication', (table:any) => {
+        // Базы данных в репликации
+        const aDbReplication = [
+            ...adb,
+            dbProxy
+        ];
+        for (let i = 0; i < aDbReplication.length; i++) {
+            const vDbReplication = aDbReplication[i];
+            
+            const bExistReplication = await vDbReplication.schema.hasTable('replication');
+            if(!bExistReplication){
+                await vDbReplication.schema.createTable('replication', (table:any) => {
 
-                table.increments('id')
-                    .comment('ID');
+                    table.increments('id')
+                        .comment('ID');
 
-                table.string('ip', 20)
-                    .index('ip')
-                    .comment('IP адрес БД = 127.0.0.1:3306');
+                    table.string('ip', 50)
+                        .index('ip')
+                        .comment('IP адрес БД = 127.0.0.1:3306');
 
-                table.boolean('query_sync_ok')
-                    .comment('Статус синхронизации OK');
+                    table.integer('schema')
+                        .defaultTo(0)
+                        .comment('Уроверь репликации схемы');
 
-                // ===========================================
+                    table.boolean('query_sync_ok')
+                        .defaultTo(false)
+                        .comment('Статус синхронизации OK');
 
-                table.bigInteger('query_start_id')
-                    .comment('Запрос с которого стартуем синхронизацию');
+                    // ===========================================
 
-                table.bigInteger('query_min_id')
-                    .comment('Минимальный ID обработанного запроса');
+                    table.bigInteger('query_start_id')
+                        .defaultTo(0)
+                        .comment('Запрос с которого стартуем синхронизацию');
+
+                    table.bigInteger('query_min_id')
+                        .defaultTo(0)
+                        .comment('Минимальный ID обработанного запроса');
+                        
+                    table.bigInteger('query_max_id')
+                        .defaultTo(0)
+                        .comment('Минимальный ID обработанного запроса');
+
                     
-                table.bigInteger('query_max_id')
-                    .comment('Минимальный ID обработанного запроса');
+                    // ===========================================
 
-                
+                    table.bigInteger('query_insert_id')
+                        .defaultTo(0)
+                        .comment('Последний обработанный insert запрос');
 
-                // ===========================================
+                    table.boolean('query_insert_ok')
+                        .defaultTo(false)
+                        .comment('query_insert_ok');
 
-                table.bigInteger('query_insert_id')
-                    .comment('Последний обработанный insert запрос');
+                    // ===========================================
 
-                table.boolean('query_insert_ok')
-                    .comment('query_insert_ok');
+                    table.bigInteger('query_delete_id')
+                        .defaultTo(0)
+                        .comment('Последний обработанный delete запрос');
 
-                // ===========================================
+                    table.boolean('query_delete_ok')
+                        .defaultTo(false)
+                        .comment('query_delete_ok');
 
-                table.bigInteger('query_delete_id')
-                    .comment('Последний обработанный delete запрос');
+                    // ===========================================
 
-                table.boolean('query_delete_ok')
-                    .comment('query_delete_ok');
+                    table.bigInteger('query_update_id')
+                        .defaultTo(0)
+                        .comment('query_update_id');
 
-                // ===========================================
+                    table.boolean('query_update_ok')
+                        .defaultTo(false)
+                        .comment('Последний обработанный update запрос');
 
-                table.bigInteger('query_update_id')
-                    .comment('query_update_id');
+                    // ===========================================
 
-                table.boolean('query_update_ok')
-                    .comment('Последний обработанный update запрос');
+                    table.dateTime('created_at', null)
+                        .notNullable()
+                        .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
+                        .comment('Время создания записи');
 
-                // ===========================================
-
-                table.dateTime('created_at', null)
-                    .notNullable()
-                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
-                    .comment('Время создания записи');
-
-                table.dateTime('updated_at')
-                    .notNullable()
-                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
-                    .comment('Время обновления записи');
-                    
-            });
+                    table.dateTime('updated_at')
+                        .notNullable()
+                        .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+                        .comment('Время обновления записи');
+                        
+                });
+            }
         }
+        
 
         const bExistQuery = await dbProxy.schema.hasTable('query');
         if(!bExistQuery){
@@ -522,8 +546,6 @@ export class DbServerSys {
             }
             await Promise.all(aPromise);
 
-            
-            
         }
 
         { // Обновление данных по таблицам
@@ -540,5 +562,107 @@ export class DbServerSys {
             await Promise.all(aPromise);
         }
         
+    }
+
+    /** Сохранить информацию по очереди */
+    public async dbReplication(){
+        for (let i = 0; i < cfDb.length; i++) {
+            const vCfDb = cfDb[i];
+
+            if( vCfDb.connection.database != 'test_proxy_master1'){
+                console.log('Пропуск репликации тестирование - ', vCfDb.connection.database)
+                continue;
+            }
+
+            console.log('>>>dbReplication1>>>')
+        
+            const kDb = [vCfDb.connection.host, vCfDb.connection.port, vCfDb.connection.database].join(':');
+            const vDbMaster = gixDb[kDb]
+
+            console.log('>>>dbReplication2>>>', kDb)
+
+            const vReplicationProxy = await dbProxy('replication')
+                .where('ip',kDb)
+                .orderBy('id', 'desc')
+                .first()
+
+
+            console.log('>>>dbReplication3>>>', 'proxy', vReplicationProxy)
+
+                
+
+            if(!vReplicationProxy){
+                await dbProxy('replication')
+                    .insert({ip:kDb})
+
+                continue;
+            }
+
+            const vReplicationMaster = await vDbMaster('replication')
+                .where('ip',kDb)
+                .orderBy('id', 'desc')
+                .first()
+
+            console.log('>>>dbReplication4>>>', 'master', vReplicationProxy)
+
+            if(!vReplicationMaster){
+                await vDbMaster('replication')
+                    .insert({ip:kDb})
+
+                continue;
+            }
+
+            let bSync = false;
+            if(!vReplicationProxy.query_sync_ok || !vReplicationMaster.query_sync_ok){
+                bSync = true;
+            }
+
+            console.log('>>>dbReplication5>>>', 'sync', bSync)
+
+            const idMaxQuery = (await dbProxy('query')
+                .max({id:'id'}))[0]?.id || 0;
+
+            console.log('>>>dbReplication6>>>', 'idMaxQuery', idMaxQuery)
+
+            if(bSync){
+
+                let iQuery = 0;
+
+                console.log('>>>dbReplication7>>>',vReplicationMaster.query_insert_id,'<',idMaxQuery)
+                if(vReplicationMaster.query_insert_id < idMaxQuery){
+                    const aQueryInsert = (await dbProxy('query')
+                        .where({
+                            schema_id:vReplicationMaster.schema,
+                            cmd:'insert'
+                        })
+                        .select('data')
+                        .limit(1000)
+                    ).map(el => el.data)
+
+                    console.log('>>>dbReplication8>>>', 'aQueryInsert', aQueryInsert.length)
+
+                    iQuery+=aQueryInsert.length;
+                    
+                    for (let i = 0; i < aQueryInsert.length; i++) {
+                        console.log(aQueryInsert[i]);
+                        await vDbMaster.raw(aQueryInsert[i]);
+                        
+                    }
+
+                    
+                }
+
+                if(!iQuery){
+                    (await vDbMaster('replication')
+                        .where('id',vReplicationMaster.id)
+                        .update({schema:vReplicationMaster.schema+1})
+                    );
+                }
+            }
+            
+            
+            
+
+        }
     }
 }
