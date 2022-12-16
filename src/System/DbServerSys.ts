@@ -118,12 +118,23 @@ export class DbServerSys {
         this.idSchema = idSchema;
         vTableC.idSchema = idSchema;
 
-        const aPromiseQuery:Promise<Knex>[] = [];
-        for (let i = 0; i < adb.length; i++) {
-            const db = adb[i];
-            aPromiseQuery.push(db.raw(msg.query))
+        const aQuery = msg.query.split(';');
+
+        for (let c = 0; c < aQuery.length; c++) {
+            const sQuery = aQuery[c];
+
+            let aPromiseQuery:Promise<Knex>[] = [];
+            for (let i = 0; i < adb.length; i++) {
+                const db = adb[i];
+
+                aPromiseQuery.push(db.raw(sQuery))
+                
+            }
+
+            await Promise.all(aPromiseQuery);
+            aPromiseQuery = [];
         }
-        await Promise.all(aPromiseQuery);
+        
 
         return idSchema;
 
@@ -154,7 +165,7 @@ export class DbServerSys {
 
         console.log('t>>>',msg.table,msg.data);
 
-        const sQuery = gQuery(msg.table).insert(msg.data).toString()
+        const sQuery = gQuery(msg.table).insert(msg.data).onConflict().merge().toString()
         vTableC.aQueryInsertLog.push(sQuery)
 
         const aPromiseQuery:Promise<Knex>[] = [];

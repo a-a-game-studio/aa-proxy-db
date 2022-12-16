@@ -29,11 +29,11 @@ console.log('aMatch1>>>',aMatchSimple);
 
 // console.log(vKnext({i:'item'}).select('i.id').toQuery())
 
-const q:Knex.Raw = dbMaster.raw('SHOW TABLES')
+// const q:Knex.Raw = dbMaster.raw('SHOW TABLES')
 
 async function run(){
-    const a = (await dbMaster.raw('SHOW TABLES'))[0];
-    console.log(a);
+    // console.log(dbMaster('test').fromRaw().insert([{id:1, text:'-------'},{id:2, text:'---1----'}],).onConflict().merge().toString());
+    // console.log(a);
 }
 
 run();
