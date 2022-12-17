@@ -32,7 +32,7 @@ console.log('aMatch1>>>',aMatchSimple);
 // const q:Knex.Raw = dbMaster.raw('SHOW TABLES')
 
 async function run(){
-    // console.log(dbMaster('test').fromRaw().insert([{id:1, text:'-------'},{id:2, text:'---1----'}],).onConflict().merge().toString());
+    console.log(dbMaster('test').insert([{id:1, text:'-------'},{id:2, text:'---1----'}],).onConflict().ignore().toString());
     // console.log(a);
 }
 

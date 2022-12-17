@@ -77,8 +77,7 @@ async function run(){
     console.log('[run:idSchemaOrderChar]:',':',idSchemaOrderChar);
 
     
-    
-    // }
+    await mqClientSys.schema('__replication__',db.schema.raw('TRUNCATE TABLE __replication__'));
 
     await mWait(5000);
 

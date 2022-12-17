@@ -83,8 +83,12 @@ export class DbTableC {
 export class DbServerSys {
     
     private idSchema = 0;
+    private idLog = 0; // id лога для вставки TODO переделать на отдельный инкрементор для балансировки
+    private idQuery = 0; // Текущий максимальный id запроса TODO переделать на отдельный инкрементор для балансировки
     private bInit = false;
     private ixTable:Record<string, DbTableC> = {};
+
+    private runDb:boolean[] = [];
 
     
 
@@ -165,8 +169,8 @@ export class DbServerSys {
 
         console.log('t>>>',msg.table,msg.data);
 
-        const sQuery = gQuery(msg.table).insert(msg.data).onConflict().merge().toString()
-        vTableC.aQueryInsertLog.push(sQuery)
+        const sQuery = gQuery(msg.table).insert(msg.data).toString()
+        vTableC.aQueryInsertLog.push(gQuery(msg.table).insert(msg.data).onConflict().merge().toString())
 
         const aPromiseQuery:Promise<Knex>[] = [];
         for (let i = 0; i < adb.length; i++) {
@@ -203,7 +207,7 @@ export class DbServerSys {
         
         if(aid.length){
             const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).toString();
-            vTableC.aQueryUpdateLog.push(sQuery)
+            vTableC.aQueryUpdateLog.push(gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).onConflict().merge().toString())
 
             const aPromiseQuery:Promise<Knex>[] = [];
             for (let i = 0; i < adb.length; i++) {
@@ -313,90 +317,32 @@ export class DbServerSys {
         }
 
         // Базы данных в репликации
-        const aDbReplication = [
-            ...adb,
-            dbProxy
-        ];
-        for (let i = 0; i < aDbReplication.length; i++) {
-            const vDbReplication = aDbReplication[i];
+        for (let i = 0; i < adb.length; i++) {
+            const vDbReplication = adb[i];
             
-            const bExistReplication = await vDbReplication.schema.hasTable('replication');
+            const bExistReplication = await vDbReplication.schema.hasTable('__replication__');
             if(!bExistReplication){
-                await vDbReplication.schema.createTable('replication', (table:any) => {
+                await vDbReplication.schema.createTable('__replication__', (table:any) => {
 
-                    table.increments('id')
+                    table.bigIncrements('id')
                         .comment('ID');
 
-                    table.string('ip', 50)
-                        .index('ip')
-                        .comment('IP адрес БД = 127.0.0.1:3306');
 
-                    table.integer('schema')
-                        .defaultTo(0)
-                        .comment('Уроверь репликации схемы');
+                    table.integer('schema_id')
+                        .index('schema_id')
+                        .comment('Таблица');
 
-                    table.boolean('query_sync_ok')
-                        .defaultTo(false)
-                        .comment('Статус синхронизации OK');
+                    table.enum('cmd',['insert', 'update', 'delete', 'schema'])
+                        .index('cmd')
+                        .comment('Таблица');
 
-                    // ===========================================
-
-                    table.bigInteger('query_start_id')
-                        .defaultTo(0)
-                        .comment('Запрос с которого стартуем синхронизацию');
-
-                    table.bigInteger('query_min_id')
-                        .defaultTo(0)
-                        .comment('Минимальный ID обработанного запроса');
-                        
-                    table.bigInteger('query_max_id')
-                        .defaultTo(0)
-                        .comment('Минимальный ID обработанного запроса');
-
-                    
-                    // ===========================================
-
-                    table.bigInteger('query_insert_id')
-                        .defaultTo(0)
-                        .comment('Последний обработанный insert запрос');
-
-                    table.boolean('query_insert_ok')
-                        .defaultTo(false)
-                        .comment('query_insert_ok');
-
-                    // ===========================================
-
-                    table.bigInteger('query_delete_id')
-                        .defaultTo(0)
-                        .comment('Последний обработанный delete запрос');
-
-                    table.boolean('query_delete_ok')
-                        .defaultTo(false)
-                        .comment('query_delete_ok');
-
-                    // ===========================================
-
-                    table.bigInteger('query_update_id')
-                        .defaultTo(0)
-                        .comment('query_update_id');
-
-                    table.boolean('query_update_ok')
-                        .defaultTo(false)
-                        .comment('Последний обработанный update запрос');
-
-                    // ===========================================
 
                     table.dateTime('created_at', null)
                         .notNullable()
                         .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
                         .comment('Время создания записи');
-
-                    table.dateTime('updated_at')
-                        .notNullable()
-                        .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
-                        .comment('Время обновления записи');
-                        
-                });
+                            
+                    });
             }
         }
         
@@ -420,8 +366,8 @@ export class DbServerSys {
                     .index('cmd')
                     .comment('Таблица');
 
-                table.text('data')
-                    .comment('Таблица');
+                table.text('data','mediumtext')
+                    .comment('данные');
 
                 table.dateTime('created_at', null)
                     .index('created_at')
@@ -486,6 +432,14 @@ export class DbServerSys {
 
 
         this.idSchema = (await dbProxy('schema').max({id:'id'}))[0]?.id || 0;
+        this.idQuery = (await dbProxy('query').max({id:'id'}))[0]?.id || 0;
+
+        for (let i = 0; i < adb.length; i++) {
+            const db = adb[i];
+            const idQueryRep = (await db('__replication__').max({id:'id'}))[0]?.id || 0;
+
+            this.runDb[i] = this.idQuery == idQueryRep;
+        }
 
         console.log('this.idSchema',this.idSchema);
 
@@ -509,6 +463,7 @@ export class DbServerSys {
             for (let j = 0; j < aInsertLog.length; j++) {
                 const sInsertLog = aInsertLog[j];
                 aDbLog.push({
+                    id:++this.idQuery,
                     table:kTable,
                     schema_id:this.idSchema,
                     cmd:'insert',
@@ -522,6 +477,7 @@ export class DbServerSys {
             for (let j = 0; j < aUpdateLog.length; j++) {
                 const sUpdateLog = aUpdateLog[j];
                 aDbLog.push({
+                    id:++this.idQuery,
                     table:kTable,
                     schema_id:this.idSchema,
                     cmd:'update',
@@ -534,6 +490,7 @@ export class DbServerSys {
             for (let j = 0; j < aDeleteLog.length; j++) {
                 const sDeleteLog = aDeleteLog[j];
                 aDbLog.push({
+                    id:++this.idQuery,
                     table:kTable,
                     schema_id:this.idSchema,
                     cmd:'delete',
@@ -559,6 +516,30 @@ export class DbServerSys {
 
         }
 
+        if(aDbLog.length){
+
+            let aPacket:any[] = [];
+            for (let i = 0; i < aDbLog.length; i++) {
+                const vDbLog = aDbLog[i];
+                
+                aPacket.push({
+                    id:vDbLog.id,
+                    schema_id:vDbLog.schema_id,
+                    cmd:vDbLog.cmd,
+                })
+            }
+
+            const aPromiseQuery:Promise<any>[] = [];
+            for (let i = 0; i < adb.length; i++) {
+                const db = adb[i];
+
+                if(this.runDb[i]){
+                    aPromiseQuery.push(db('__replication__').insert(aPacket).onConflict().merge());
+                }
+            }
+            await Promise.all(aPromiseQuery);
+        }
+
         { // Обновление данных по таблицам
             let aPromise:Promise<any>[] = [];
             for (let i = 0; i < akTable.length; i++) {
@@ -575,105 +556,5 @@ export class DbServerSys {
         
     }
 
-    /** Сохранить информацию по очереди */
-    public async dbReplication(){
-        for (let i = 0; i < cfDb.length; i++) {
-            const vCfDb = cfDb[i];
-
-            if( vCfDb.connection.database != 'test_proxy_master1'){
-                console.log('Пропуск репликации тестирование - ', vCfDb.connection.database)
-                continue;
-            }
-
-            console.log('>>>dbReplication1>>>')
-        
-            const kDb = [vCfDb.connection.host, vCfDb.connection.port, vCfDb.connection.database].join(':');
-            const vDbMaster = gixDb[kDb]
-
-            console.log('>>>dbReplication2>>>', kDb)
-
-            const vReplicationProxy = await dbProxy('replication')
-                .where('ip',kDb)
-                .orderBy('id', 'desc')
-                .first()
-
-
-            console.log('>>>dbReplication3>>>', 'proxy', vReplicationProxy)
-
-                
-
-            if(!vReplicationProxy){
-                await dbProxy('replication')
-                    .insert({ip:kDb})
-
-                continue;
-            }
-
-            const vReplicationMaster = await vDbMaster('replication')
-                .where('ip',kDb)
-                .orderBy('id', 'desc')
-                .first()
-
-            console.log('>>>dbReplication4>>>', 'master', vReplicationProxy)
-
-            if(!vReplicationMaster){
-                await vDbMaster('replication')
-                    .insert({ip:kDb})
-
-                continue;
-            }
-
-            let bSync = false;
-            if(!vReplicationProxy.query_sync_ok || !vReplicationMaster.query_sync_ok){
-                bSync = true;
-            }
-
-            console.log('>>>dbReplication5>>>', 'sync', bSync)
-
-            const idMaxQuery = (await dbProxy('query')
-                .max({id:'id'}))[0]?.id || 0;
-
-            console.log('>>>dbReplication6>>>', 'idMaxQuery', idMaxQuery)
-
-            if(bSync){
-
-                let iQuery = 0;
-
-                console.log('>>>dbReplication7>>>',vReplicationMaster.query_insert_id,'<',idMaxQuery)
-                if(vReplicationMaster.query_insert_id < idMaxQuery){
-                    const aQueryInsert = (await dbProxy('query')
-                        .where({
-                            schema_id:vReplicationMaster.schema,
-                            cmd:'insert'
-                        })
-                        .select('data')
-                        .limit(1000)
-                    ).map(el => el.data)
-
-                    console.log('>>>dbReplication8>>>', 'aQueryInsert', aQueryInsert.length)
-
-                    iQuery+=aQueryInsert.length;
-                    
-                    for (let i = 0; i < aQueryInsert.length; i++) {
-                        console.log(aQueryInsert[i]);
-                        await vDbMaster.raw(aQueryInsert[i]);
-                        
-                    }
-
-                    
-                }
-
-                if(!iQuery){
-                    (await vDbMaster('replication')
-                        .where('id',vReplicationMaster.id)
-                        .update({schema:vReplicationMaster.schema+1})
-                    );
-                }
-            }
-            
-            
-            
-
-        }
-    }
+    
 }

@@ -69,7 +69,7 @@ async function run(){
     
     // }
 
-    await mWait(5000);
+    await mWait(2000);
 
     console.log('=========================');
     console.log('END');

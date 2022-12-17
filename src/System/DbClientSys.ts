@@ -172,7 +172,7 @@ export class DbClientSys {
 
             console.log(sQueryStart);
 
-            const aMatch = sQueryStart.match(/^(alter)|(create)|(drop)/);
+            const aMatch = sQueryStart.match(/^(alter)|(create)|(drop)|(truncate)/);
 
             if(!aMatch){
                 reject(new Error(
