@@ -6,17 +6,17 @@ export class DbReplicationSys {
 
     /** Сохранить информацию по очереди */
     public async dbReplication(){
-        // for (let i = 0; i < cfDb.length; i++) {
-        //     const vCfDb = cfDb[i];
+        for (let i = 0; i < adb.length; i++) {
+            // const vCfDb = adb[i];
 
-        //     if( vCfDb.connection.database != 'test_proxy_master1'){
-        //         console.log('Пропуск репликации тестирование - ', vCfDb.connection.database)
-        //         continue;
-        //     }
+            // if( vCfDb.connection.database != 'test_proxy_master1'){
+            //     console.log('Пропуск репликации тестирование - ', vCfDb.connection.database)
+            //     continue;
+            // }
 
             console.log('>>>dbReplication1>>>')
 
-            const dbMaster = adb[1];
+            const dbMaster = adb[i];
 
             //================================================
             //================================================
@@ -275,6 +275,6 @@ export class DbReplicationSys {
             }
             
             
-        // }
+        }
     } //f
 }
