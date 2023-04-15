@@ -1,5 +1,5 @@
 import  knex, { Knex } from 'knex';
-import { cfDb, cfDbMaster, cfDbProxy } from "../Config/MainConfig";
+import { aCfDb, cfDbMaster, cfDbProxy } from "../Config/MainConfig";
 
 export const dbProxy = knex(cfDbProxy);
 
@@ -10,8 +10,10 @@ export const adb:Knex[] = [];
 export const gixDb:Record<string, Knex> = {};
 export const gixaDbByIp:Record<string, Knex[]> = {};
 
-for (let i = 0; i < cfDb.length; i++) {
-    const vCfDb = cfDb[i];
+
+for (const [kCfDb, vCfDb] of Object.entries(aCfDb)) {
+    
+    // const vCfDb = aCfDb[keyDb];
     const vDb = knex(vCfDb);
     adb.push(vDb);
 

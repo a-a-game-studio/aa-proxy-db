@@ -8,6 +8,10 @@ import { QueryContextI, MsgT } from "../interface/CommonI";
 
 import knex, { Knex } from "knex";
 import _ from "lodash";
+import { mRandomInteger } from "../Helper/NumberH";
+import { mWait } from "../Helper/WaitH";
+
+let adb:Knex[] = [];
 
 /** DbClientSys */
 export class DbClientSys {
@@ -17,12 +21,18 @@ export class DbClientSys {
         nameApp: string, // Наименование приложения
     } = null;
 
+
+    
+
    
 
     private querySys:QuerySys = null;
     iSend:number = 0;
     iSendComplete:number = 0;
     iSendErr:number = 0;
+
+    bInitDbProcess = false;
+    bInitDbConnect = false;
 
     private iSelect = 0;
     private iInsert = 0;
@@ -54,20 +64,52 @@ export class DbClientSys {
         this.querySys.fConfigWs(conf);
         this.conf = conf;
 
+        if(!adb.length){
+            // Соединение
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                table:'',
+                ip:ip.address(),
+                type:MsgT.connect,
+                time:Date.now()
+            }
 
-        // Соединение
-       
+            this.querySys.fInit();
+            this.querySys.fActionOk((data: any) => {
+
+                console.log('data.adb>>>',data.adb);
+                if(Object.keys(data.adb).length){
+                    for (let [k,db] of Object.entries(data.adb)) {
+                        // const db = data.adb[i];
+                        adb.push(knex(db))
+                    }
+                }
+
+                if(adb.length){
+                    this.bInitDbConnect = true;
+
+                    console.log('Соединение на чтение успешно установленно');
+                } else {
+                    console.log('Соединения на чтение отсутствуют');
+                }
+            });   
+
+            this.querySys.fActionErr((err:any) => {
+                this.iSendErr++;
+                console.error(err);
+                this.bInitDbConnect = false;
+            });
+            this.querySys.fSend(MsgT.connect, vMsg);
+        }
 
     }
 
     /** Заполнить инкрементный ID */
-    public connect(sTable:string, aRows:any[]){
-        this.querySys.fInit();
-        this.querySys.fActionOk((data: any) => {
-        });
-        this.querySys.fActionErr((err:any) => {
-        });
-        this.querySys.fSend(MsgT.connect, null);
+    public connect(){
+        return new Promise((resolve, reject) => {
+
+        })
     }
 
 
@@ -256,52 +298,50 @@ export class DbClientSys {
     }
 
     /** SELECT */
-    public select(query:Knex.QueryBuilder|Knex.Raw){
-        return new Promise((resolve, reject) => {
+    public async select<T = any>(query:Knex.QueryBuilder|Knex.Raw): Promise<T> {
 
-            // Парсинг запроса
-            const sql = query.toQuery();
+        const builder = <any>query;
+        
+        // Парсинг запроса
+        const sql = query.toQuery();
 
-            const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
+        const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
 
-            console.log(sQueryStart);
+        console.log(sQueryStart);
 
-            const aMatch = sQueryStart.match(/^select/);
+        const aMatch = sQueryStart.match(/^select/);
 
-            if(!aMatch){
-                reject(new Error(
-                    'Запрос не корректный, не подходит под правило - \n' + 
-                    '/^select/'
-                ))
+        if(!aMatch){
+            throw (new Error(
+                'Запрос не корректный, не подходит под правило - \n' + 
+                '/^select/'
+            ))
+        }
+
+        if(!this.bInitDbConnect){
+            while(!this.bInitDbConnect){
+                console.log('Пытаемся соединится с БД для чтения')
+                await mWait(1000);
             }
+        }
 
-            
-            this.querySys.fInit();
+        // Случайно отдаем одну базу данных из пула
+        const iRand = mRandomInteger(0, adb.length - 1)
+        const dbSelect = adb[iRand];
+        builder.client = dbSelect.client
+        
+        let out:T = null;
+        // Выполнить запрос
+        if (builder._method){ // _method только у билдера
+            out = await builder
+        } else {
+            out = (await builder)[0]
+        }
 
-            const vMsg:QueryContextI = {
-                uid:uuidv4(),
-                app:this.conf.nameApp,
-                ip:ip.address(),
-                table:'',
-                type:MsgT.select,
-                query:query.toString(),
-                time:Date.now()
-            }
+        this.iSelect++;
 
-            this.querySys.fActionOk((data: any) => {
-
-                console.log('[id_in]:',data);
-                // this.iSendComplete++;
-                resolve(data)
-            });
-            this.querySys.fActionErr((err:any) => {
-                this.iSendErr++;
-                console.error(err);
-                reject(err)
-            });
-            this.querySys.fSend(MsgT.select, vMsg);
-            this.iSelect++;
-        });
+        return out ;    
+        
     }
 
     /** INSERT */

@@ -41,7 +41,10 @@ const router = new AARoute();
  * Уход сообщений
  */
 router.ws(MsgT.connect, async (ctx: AAContext) => {
-    return faSend(ctx, null);
+
+    const connectData = await gDbServerSys.connect(ctx.body);
+
+    return faSend(ctx, connectData);
 });
 
 /**

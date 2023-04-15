@@ -9,7 +9,8 @@ import  knex, { Knex } from 'knex';
 import { setInterval } from 'timers';
 import { mRandomInteger } from '../Helper/NumberH';
 import { DbLogSys } from './DbLogSys';
-import { cfDb } from '../Config/MainConfig';
+import * as conf from '../Config/MainConfig';
+
 
 const gQuery = knex({ // Knex mysql
     client: "mysql2"
@@ -90,7 +91,14 @@ export class DbServerSys {
 
     private runDb:boolean[] = [];
 
-    
+    /** Получения данных по соединениям */
+    public async connect(msg:QueryContextI){
+        const akCfDbRead = conf.cfPrefRead[msg.ip as keyof typeof conf.cfPrefRead];
+        const out = { 
+            adb: akCfDbRead.map(el => (<any>conf.aCfDb)[el]).filter(el => el) // отправляем только доступные для IP БД
+        }
+        return out;
+    }
 
     /** Получить из очереди */
     public async id(msg:QueryContextI):Promise<number[]>{

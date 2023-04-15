@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { cfDb } from "../Config/MainConfig";
+import { aCfDb } from "../Config/MainConfig";
 import { adb, dbProxy, gixDb } from "./DBConnect";
 
 export class DbReplicationSys {
