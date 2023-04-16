@@ -15,7 +15,9 @@ export const cfDbProxy = { // Knex mysql
         host: "localhost",
         user: "root",
         password: "*",
-        database: "*"
+        database: "*",
+        decimalNumbers: true,
+        dateStrings: true,
     },
     pool: { "min": 0, "max": 7 },
     acquireConnectionTimeout: 60000
@@ -27,7 +29,9 @@ export const cfDbMaster = { // Knex mysql
         host: "localhost",
         user: "root",
         password: "*",
-        database: "*1"
+        database: "*1",
+        decimalNumbers: true,
+        dateStrings: true,
     },
     pool: { "min": 0, "max": 7 },
     acquireConnectionTimeout: 60000
@@ -39,7 +43,9 @@ export const cfDbLog = { // Knex mysql
         host: "localhost",
         user: "root",
         password: "*",
-        database: "*1"
+        database: "*1",
+        decimalNumbers: true,
+        dateStrings: true,
     },
     pool: { "min": 0, "max": 7 },
     acquireConnectionTimeout: 60000
@@ -74,7 +80,9 @@ export const aCfDb = {
             port: 3306,
             user: "root",
             password: "*",
-            database: "test_proxy_master0"
+            database: "test_proxy_master0",
+            decimalNumbers: true,
+            dateStrings: true,
         },
         pool: { "min": 0, "max": 7 },
         acquireConnectionTimeout: 60000
@@ -86,7 +94,9 @@ export const aCfDb = {
             port: 3306,
             user: "root",
             password: "*",
-            database: "test_proxy_master1"
+            database: "test_proxy_master1",
+            decimalNumbers: true,
+            dateStrings: true,
         },
         pool: { "min": 0, "max": 7 },
         acquireConnectionTimeout: 60000
@@ -98,7 +108,9 @@ export const aCfDb = {
             port: 3306,
             user: "root",
             password: "*",
-            database: "test_proxy_master2"
+            database: "test_proxy_master2",
+            decimalNumbers: true,
+            dateStrings: true,
         },
         pool: { "min": 0, "max": 7 },
         acquireConnectionTimeout: 60000
