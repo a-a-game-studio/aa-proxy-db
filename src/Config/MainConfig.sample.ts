@@ -6,6 +6,7 @@ export const common = {
     host: '127.0.0.1', // Внутренний host на котором стартует noda слушается обращение к API
     port: 9000, // порт на котором будет работать нода
     host_public: 'https://larastory.ru', // Публичный host балансер к которому идет обращение с фронта
+    pswd:'*'
 }
 
 export const cfDbProxy = { // Knex mysql
@@ -44,12 +45,6 @@ export const cfDbLog = { // Knex mysql
     acquireConnectionTimeout: 60000
 };
 
-/** Предпочтение при чтении */
-export const cfPref = {
-    '10.100.0.1':['110.10.50.1:3036'], // от : куда
-    '10.100.0.2':['110.10.50.2:3039', '110.10.50.2:3040']
-}
-
 /** логирование данных */
 export const cfLogChange = {
     connect:'ws://127.0.0.1:3030',
@@ -71,38 +66,55 @@ export const сfHook = {
     error:'https://'
 }
 
-export const cfDb = [
-    { // Knex mysql
+export const aCfDb = {
+    test_proxy_master0:{ // Knex mysql
         client: "mysql2",
         connection: {
             host: "localhost",
+            port: 3306,
             user: "root",
             password: "*",
-            database: "*1"
+            database: "test_proxy_master0"
         },
         pool: { "min": 0, "max": 7 },
         acquireConnectionTimeout: 60000
     },
-    { // Knex mysql
+   test_proxy_master1:{ // Knex mysql
         client: "mysql2",
         connection: {
             host: "localhost",
+            port: 3306,
             user: "root",
             password: "*",
-            database: "*2"
+            database: "test_proxy_master1"
         },
         pool: { "min": 0, "max": 7 },
         acquireConnectionTimeout: 60000
     },
-    { // Knex mysql
+    test_proxy_master2:{ // Knex mysql
         client: "mysql2",
         connection: {
             host: "localhost",
+            port: 3306,
             user: "root",
             password: "*",
-            database: "*3"
+            database: "test_proxy_master2"
         },
         pool: { "min": 0, "max": 7 },
         acquireConnectionTimeout: 60000
     },
-]
+}
+
+/** Предпочтение при чтении */
+export const aCfDbRead = {
+    // '10.100.0.1':['110.10.50.1:3036:test_proxy_master0'], // от : куда
+    '192.168.0.106':{ // от : куда
+        user: "root", // Для чтения
+        password: "*", // Для чтения
+        adb:[ // Массив конфигураций БД
+            aCfDb.test_proxy_master0,
+            aCfDb.test_proxy_master1,
+            aCfDb.test_proxy_master2
+        ]
+    }
+}

@@ -28,8 +28,20 @@ let bConnect = false;
 const app = new AAServer();
 // if (config.common.env === 'dev' || config.common.env === 'test') {
     app.use((ctx: AAContext) => {
-        console.log(`>:${ctx.req.url}`);
-        ctx.next();
+        // // Проверка доступа
+        let sAuthToken = '';
+        if(ctx?.headers?.authorization){
+            sAuthToken = Buffer.from(ctx.headers.authorization.slice(6), 'base64').toString('utf-8').slice(0, -1);
+        }
+
+        if(sAuthToken === conf.common.pswd){
+            if(conf.common.env === 'dev' || conf.common.env == 'test'){
+                console.log(`>:${ctx.req.url}`);
+            }
+            ctx.next();
+        } else {
+            ctx.ws.close();
+        }
     });
 // }
 

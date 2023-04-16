@@ -13,7 +13,7 @@ import { DbClientSys } from "../System/DbClientSys";
 
 // CORE API
 const mqClientSys = new DbClientSys({
-    baseURL: `ws://${conf.common.host}:${conf.common.port}`,
+    baseURL: `ws://pass12@${conf.common.host}:${conf.common.port}`,
     nameApp: 'test_client'
 })
 

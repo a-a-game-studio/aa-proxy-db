@@ -93,9 +93,15 @@ export class DbServerSys {
 
     /** Получения данных по соединениям */
     public async connect(msg:QueryContextI){
-        const akCfDbRead = conf.cfPrefRead[msg.ip as keyof typeof conf.cfPrefRead];
+        const cfDbRead = _.cloneDeep(conf.aCfDbRead[msg.ip as keyof typeof conf.aCfDbRead]);
+        for (let i = 0; i < cfDbRead.adb.length; i++) {
+            const db = cfDbRead.adb[i];
+            db.connection.user = cfDbRead.user;
+            db.connection.password = cfDbRead.password;
+        }
+
         const out = { 
-            adb: akCfDbRead.map(el => (<any>conf.aCfDb)[el]).filter(el => el) // отправляем только доступные для IP БД
+            adb: cfDbRead.adb
         }
         return out;
     }
