@@ -1,5 +1,5 @@
 {
-  "name": "@a-a-game-studio/aa-proxy-db.core",
+  "name": "@a-a-game-studio/aa-proxy-db",
   "version": "0.0.2",
   "description": "Прокси балансировщик баз данных",
   "main": "build/index.js",
