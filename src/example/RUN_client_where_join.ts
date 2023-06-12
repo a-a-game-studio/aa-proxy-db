@@ -14,7 +14,7 @@ import { DbClientSys } from "../System/DbClientSys";
 
 // CORE API
 const mqClientSys = new DbClientSys({
-    baseURL: `ws://${conf.common.host}:${conf.common.port}`,
+    baseURL: `ws://pass12@${conf.common.host}:${conf.common.port}`,
     nameApp: 'test_client'
 })
 
@@ -64,8 +64,8 @@ async function run(){
     const rowOrderChar = await mqClientSys.insert('order_char', aOrderChar);
 
     const aidItem = aItem.map((el:any) => el.id);
-    const aidOrder = aItem.map((el:any) => el.id);
-    const aidOrderChar = aItem.map((el:any) => el.id);
+    const aidOrder = aOrder.map((el:any) => el.id);
+    const aidOrderChar = aOrderChar.map((el:any) => el.id);
     // Обновление
     
     // const sMsg = 'Обновленное Сообщени WhereIN Е ['+']';
@@ -82,7 +82,7 @@ async function run(){
         aItem.push({name:sName, price:1000});
     }
 
-    {
+    { // UPDATE обычный
         const sRandCat = aItemCat[mRandomInteger(0, aItemCat.length - 1)];
         const sRandColor = aItemColor[mRandomInteger(0, aItemColor.length - 1)]
         const sRandSetting = aItemSetting[mRandomInteger(0, aItemSetting.length - 1)]
@@ -97,9 +97,44 @@ async function run(){
             .select({id:'id'})
         );
     }
+
+    { // UPDATE с JOIN
+        const sRandCat = aItemCat[mRandomInteger(0, aItemCat.length - 1)];
+        const sRandColor = aItemColor[mRandomInteger(0, aItemColor.length - 1)]
+        const sRandSetting = aItemSetting[mRandomInteger(0, aItemSetting.length - 1)]
+
+        const sName = ['[',']', 'Обновленный JOIN товар', '[',']', sRandCat,sRandColor,sRandSetting,'[',']'].join(' ');
+
+        const updateStatus = await mqClientSys.updateJoin({
+            name:sName, 
+            price:1000
+        }, db({i:'item'})
+            .rightJoin({o:'order'}, 'o.item_id', 'i.id')
+            .whereIn('o.id', aidOrder.slice(20,40))
+            .select({id:'i.id'})
+        );
+
+        console.log('[run:update_join]:',':',updateStatus);
+    }
+
+    { // DELETE с JOIN
+        const sRandCat = aItemCat[mRandomInteger(0, aItemCat.length - 1)];
+        const sRandColor = aItemColor[mRandomInteger(0, aItemColor.length - 1)]
+        const sRandSetting = aItemSetting[mRandomInteger(0, aItemSetting.length - 1)]
+
+        const sName = ['[',']', 'Обновленный JOIN товар', '[',']', sRandCat,sRandColor,sRandSetting,'[',']'].join(' ');
+
+        const deleteStatus = await mqClientSys.deleteJoin(db({i:'item'})
+            .rightJoin({o:'order'}, 'o.item_id', 'i.id')
+            .whereIn('o.id', aidOrder.slice(10,20))
+            .select({id:'i.id'})
+        );
+
+        console.log('[run:delete_join]:',':',deleteStatus);
+    }
     
 
-    // console.log('[run:update]:',':',updateStatus);
+    
 
     // // ====================================
     

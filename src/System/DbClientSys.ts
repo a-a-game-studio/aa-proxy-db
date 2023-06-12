@@ -346,7 +346,8 @@ export class DbClientSys {
 
     /** INSERT */
     public async insert(table:string, dataIn:any|any[],onConflict?:'ignore'|'merge'){
-        await this.fillID(table, dataIn)
+        const aDatePrepare = dataIn.length ? dataIn : [dataIn];
+        await this.fillID(table, aDatePrepare)
 
         return new Promise((resolve, reject) => {
 
@@ -358,7 +359,7 @@ export class DbClientSys {
                 ip:ip.address(),
                 table:table,
                 type:MsgT.insert,
-                data:dataIn,
+                data:aDatePrepare,
                 time:Date.now()
             }
 
@@ -377,8 +378,68 @@ export class DbClientSys {
         });
     }
 
+    /** UPDATE
+     * updateIn('item.id', [22,33], {name:'new_name'})
+     */
+    public updateIn(sTableKey:string, whereIn:number[], dataIn:any){
+        return new Promise((resolve, reject) => {
+
+            const asTableKey = sTableKey.split('.');
+            const sTable = asTableKey[0];
+            const sWhereKey =  asTableKey[1];
+
+            const aidWhereIn = [];
+            for (let i = 0; i < whereIn.length; i++) {
+                const idIn = Number(whereIn[i]);
+                if(idIn){
+                    aidWhereIn.push(whereIn[i]);
+                } else if(idIn === 0){
+                    aidWhereIn.push(0);
+                }
+                
+                
+            }
+
+            if(!(sTable && sWhereKey)){
+                reject(new Error(
+                    'Запрос не корректный, не подходит под правило - \n' + sTable +'.'+sWhereKey
+                ))
+            }
+
+            
+
+            this.querySys.fInit();
+
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                ip:ip.address(),
+                table:sTable,
+                type:MsgT.update,
+                key_in:sWhereKey,
+                query:whereIn.filter(el => Number(el) || el === 0).toString(),
+                data:dataIn,
+                time:Date.now()
+            }
+
+            this.querySys.fActionOk((dataOut: any) => {
+
+                console.log('[update]:',dataOut);
+                // this.iSendComplete++;
+                resolve(dataOut)
+            });
+            this.querySys.fActionErr((err:any) => {
+                this.iSendErr++;
+                console.error(err);
+                reject(err)
+            });
+            this.querySys.fSend(MsgT.update, vMsg);
+            this.iUpdate++;
+        });
+    }
+
     /** UPDATE */
-    public update(dataIn:any|any[], query:Knex.QueryBuilder|Knex.Raw){
+    public update(dataIn:any, query:Knex.QueryBuilder|Knex.Raw){
         return new Promise((resolve, reject) => {
 
             // Парсинг запроса
@@ -449,7 +510,7 @@ export class DbClientSys {
      * UPDATE
      * Пример select it.id as id from item as i left join item_ex ie ON ie.item_id = i.id where  id > 0
      */
-    public updateJoin(dataIn:any|any[], query:Knex.QueryBuilder|Knex.Raw){
+    public updateJoin(dataIn:any, query:Knex.QueryBuilder|Knex.Raw){
         return new Promise((resolve, reject) => {
 
             // Парсинг запроса
@@ -459,36 +520,40 @@ export class DbClientSys {
 
             console.log(sQueryStart);
 
-            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+(\bleft\b|\bjoin\b|\bright\b)/);
+            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+(\bleft join\b|\bjoin\b|\bright join\b)/);
 
             let sSqlNew = ''
             let sWhereKey = ''
             let sTable = ''
 
-            console.log(aMatch);
+            console.log('updateJoin:', aMatch);
 
             // Проверка синтаксиса
             if(aMatch){
                 const aQueryStartNew = [];
-                aQueryStartNew.push(...['select', aMatch[1], 'as', aMatch[2], 'from', aMatch[3], ' '])
+                aQueryStartNew.push(...['select', aMatch[1], 'as', aMatch[2], 'from', aMatch[3], aMatch[4]], ' ')
+                
 
                 const sQueryStartRaw = sql.slice(0,100).toLowerCase()
-                const iJoin = sQueryStartRaw.indexOf('join');
-                const iLeft = sQueryStartRaw.indexOf('left');
-                const iRight = sQueryStartRaw.indexOf('left');
+                const iJoin = sQueryStartRaw.indexOf(' join ');
+                const iLeft = sQueryStartRaw.indexOf(' left join ');
+                const iRight = sQueryStartRaw.indexOf(' right join ');
                 let iJoinPos = 0;
                 iJoinPos = iJoin > iJoinPos ? iJoin : iJoinPos;
-                iJoinPos = iLeft > iJoinPos ? iLeft : iJoinPos;
-                iJoinPos = iRight > iJoinPos ? iRight : iJoinPos;
+                iJoinPos = iLeft > 0 && iLeft < iJoinPos ? iLeft : iJoinPos;
+                iJoinPos = iRight > 0 && iRight < iJoinPos ? iRight : iJoinPos;
 
                 // результат парсинга
                 sSqlNew = aQueryStartNew.join(' ') + sql.substr(iJoinPos)
                 sWhereKey = aMatch[2];
                 sTable = aMatch[3];
+
+                console.log('>>>','key_id:',[sWhereKey], 'table_update:',[sTable] , '>>>',sSqlNew, );
                 
             } else {
                 reject(new Error(
-                    'Запрос не корректный, не подходит под правило'
+                    'Запрос не корректный, не подходит под правило' +
+                    '/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+(\bleft join\b|\bjoin\b|\bright join\b)/'
                 ))
             }
 
@@ -508,7 +573,7 @@ export class DbClientSys {
 
             this.querySys.fActionOk((dataOut: any) => {
 
-                console.log('[update]:',dataOut);
+                console.log('[update_join]:',dataOut);
                 // this.iSendComplete++;
                 resolve(dataOut)
             });
@@ -585,7 +650,7 @@ export class DbClientSys {
         });
     }
 
-    /** DELETE */
+    /** DELETE JOIN */
     public deleteJoin(query:Knex.QueryBuilder|Knex.Raw) {
         return new Promise((resolve, reject) => {
 
@@ -593,8 +658,7 @@ export class DbClientSys {
             const sql = query.toQuery();
 
             const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
-
-            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+(\bleft\b|\bjoin\b|\bright\b)/);
+            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+(\bleft join\b|\bjoin\b|\bright join\b)/);
 
             let sSqlNew = ''
             let sWhereKey = ''
@@ -606,23 +670,25 @@ export class DbClientSys {
                 aQueryStartNew.push(...['select', aMatch[1], 'as', aMatch[2], 'from', aMatch[3], 'as', aMatch[4] ,' '])
 
                 const sQueryStartRaw = sql.slice(0,100).toLowerCase()
-                const iJoin = sQueryStartRaw.indexOf('join');
-                const iLeft = sQueryStartRaw.indexOf('left');
-                const iRight = sQueryStartRaw.indexOf('left');
+                const iJoin = sQueryStartRaw.indexOf(' join ');
+                const iLeft = sQueryStartRaw.indexOf(' left join ');
+                const iRight = sQueryStartRaw.indexOf(' right join ');
                 let iJoinPos = 0;
                 iJoinPos = iJoin > iJoinPos ? iJoin : iJoinPos;
-                iJoinPos = iLeft > iJoinPos ? iLeft : iJoinPos;
-                iJoinPos = iRight > iJoinPos ? iRight : iJoinPos;
+                iJoinPos = iLeft > 0 && iLeft < iJoinPos ? iLeft : iJoinPos;
+                iJoinPos = iRight > 0 && iRight < iJoinPos ? iRight : iJoinPos;
 
                 // результат парсинга
                 sSqlNew = aQueryStartNew.join(' ') + sql.substr(iJoinPos)
                 sWhereKey = aMatch[2];
                 sTable = aMatch[3];
+
+                console.log('>>>','key_id:',[sWhereKey], 'table_update:',[sTable] , '>>>',sSqlNew, );
                 
             } else {
                 reject(new Error(
                     'Запрос не корректный, не подходит под правило - \n' + 
-                    '/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+where/'
+                    '/^select\s+([a-z0-9_-]\.[a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+as\s+([a-z0-9_-]+)\s+(\bleft join\b|\bjoin\b|\bright join\b)/'
                 ))
             }
 
@@ -641,7 +707,7 @@ export class DbClientSys {
 
             this.querySys.fActionOk((dataOut: any) => {
 
-                console.log('[dataOut]:',dataOut);
+                console.log('[delete_join]:',dataOut);
                 // this.iSendComplete++;
                 resolve(dataOut)
             });

@@ -34,6 +34,16 @@ async function run(){
     const row = await mqClientSys.insert('test', aMsg);
     console.log('[run]:',':',row);
 
+    
+    // Отдельно добавляем 11 элемент НЕ массивом
+    const vMsg11 = {text:'['+10+'] СообщениЕ ['+10+']'};
+    const row11 = await mqClientSys.insert('test', vMsg11)
+
+    // Добавляем 11 строку
+    aMsg.push(row11);
+
+    console.log('>>>INSERTDATA>>>', aMsg, '>>>INSERT отдельно>>>', vMsg11)
+
 
     const aidMsg = aMsg.map((el:any) => el.id);
     // Обновление
@@ -59,13 +69,39 @@ async function run(){
     console.log('[run:delete]:',':',deleteSttatus);
 
     // ====================================
-
+    // SELECT ALL INSERT
     const selectData = await mqClientSys.select(db('test')
         .whereIn('id', aidMsg)
         .select()
     );
 
     console.log('[run:select]:',':',selectData);
+
+    console.log('====================================')
+    // LIMIT 2
+    const selectDataLimit = await mqClientSys.select(db('test')
+        .whereIn('id', aidMsg)
+        .limit(2)
+    );
+
+    console.log('[run:select_limit]:',':',selectDataLimit);
+
+    console.log('====================================')
+    // FIRST
+    const selectDataFirst = await mqClientSys.select(db('test')
+        .whereIn('id', aidMsg)
+        .first()
+    );
+
+    console.log('[run:select_first]:',':',selectDataFirst);
+
+    console.log('====================================')
+    // FIRST CUSTOM FIELD
+    const selectDataFirstCustom = await mqClientSys.select(db('test')
+        .whereIn('id', aidMsg)
+        .first('id',{text_id:'id'},'text', {text_custom:'text'})
+    );
+    console.log('[run:select_first_custom]:',':',selectDataFirstCustom);
     
     // }
 
