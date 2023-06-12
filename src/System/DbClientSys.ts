@@ -378,7 +378,8 @@ export class DbClientSys {
         });
     }
 
-    /** UPDATE
+    /** UPDATE 
+     * TODO пока не работает
      * updateIn('item.id', [22,33], {name:'new_name'})
      */
     public updateIn(sTableKey:string, whereIn:number[], dataIn:any){
