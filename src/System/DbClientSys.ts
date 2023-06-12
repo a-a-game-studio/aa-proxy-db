@@ -388,7 +388,7 @@ export class DbClientSys {
             const sTable = asTableKey[0];
             const sWhereKey =  asTableKey[1];
 
-            const aidWhereIn = [];
+            let aidWhereIn = [];
             for (let i = 0; i < whereIn.length; i++) {
                 const idIn = Number(whereIn[i]);
                 if(idIn){
@@ -396,9 +396,9 @@ export class DbClientSys {
                 } else if(idIn === 0){
                     aidWhereIn.push(0);
                 }
-                
-                
             }
+
+            aidWhereIn = _.uniq(aidWhereIn);
 
             if(!(sTable && sWhereKey)){
                 reject(new Error(
