@@ -6,7 +6,9 @@ export enum MsgT {
     select = '/select', // Получить сообщение
     insert = '/insert', // Отправить сообщение
     update = '/update', // Получить сообщение
+    update_in = '/update-in', // Получить сообщение
     delete = '/delete', // Получить сообщение
+    delete_in = '/delete-in', // Получить сообщение
     schema = '/schema', // Получить сообщение
     common = '/common', // Получить сообщение
 }

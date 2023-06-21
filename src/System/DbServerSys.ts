@@ -237,6 +237,43 @@ export class DbServerSys {
         return aid;
     }
 
+    /** Получить количество сообщений в очереди */
+    public async updateIn(msg:QueryContextI){
+        if(!this.ixTable[msg.table]){
+            this.ixTable[msg.table] = new DbTableC();
+            await this.ixTable[msg.table].faInit(msg.table);
+        }
+
+        const vTableC = this.ixTable[msg.table];
+
+        console.log('---1>', msg.query);
+        let aid = [];
+        try { 
+            aid = JSON.parse(msg.query) 
+        } catch(e) {
+            console.log('---ERROR>', 'Не удалось распарсить данные')
+        };
+        console.log('---2>',aid)
+
+        
+        if(aid.length){
+            const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).onConflict().merge().toString();
+            vTableC.aQueryUpdateLog.push(gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).onConflict().merge().toString())
+
+            const aPromiseQuery:Promise<Knex>[] = [];
+            for (let i = 0; i < adb.length; i++) {
+                const db = adb[i];
+                console.log(sQuery)
+                aPromiseQuery.push(db.raw(sQuery));
+                
+            }
+            await Promise.all(aPromiseQuery);
+            await gDbLogSys.update(aid,msg);
+        }
+
+        return aid;
+    }
+
     /** Получить информацию по очереди */
     public async delete(msg:QueryContextI): Promise<any>{
 
@@ -260,7 +297,44 @@ export class DbServerSys {
 
         if(aid.length){
 
-            const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).delete(msg.data).toString();
+            const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).delete().toString();
+            console.log(sQuery)
+            vTableC.aQueryDeleteLog.push(sQuery)
+
+            const aPromiseQuery:Promise<Knex>[] = [];
+            for (let i = 0; i < adb.length; i++) {
+                const db = adb[i];
+                aPromiseQuery.push(db.raw(sQuery));
+            }
+            await Promise.all(aPromiseQuery);
+        }
+
+        return aid;
+    }
+
+    /** Получить информацию по очереди */
+    public async deleteIn(msg:QueryContextI): Promise<any>{
+
+        if(!this.ixTable[msg.table]){
+            this.ixTable[msg.table] = new DbTableC();
+            await this.ixTable[msg.table].faInit(msg.table);
+        }
+
+        const vTableC = this.ixTable[msg.table];
+  
+        console.log('---1>', msg.query);
+        let aid = [];
+        try { 
+            aid = JSON.parse(msg.query) 
+        } catch(e) {
+            console.log('---ERROR>', 'Не удалось распарсить данные')
+        };
+        console.log('---2>',aid)
+
+        if(aid.length){
+
+            const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).delete().toString();
+            console.log(sQuery)
             vTableC.aQueryDeleteLog.push(sQuery)
 
             const aPromiseQuery:Promise<Knex>[] = [];

@@ -378,36 +378,32 @@ export class DbClientSys {
         });
     }
 
-    /** UPDATE 
-     * TODO пока не работает
-     * updateIn('item.id', [22,33], {name:'new_name'})
+    /** UPDATE IN
+     * updateIn('item.item_id', [22,33], {name:'new_name'})
      */
-    public updateIn(sTableKey:string, whereIn:number[], dataIn:any){
+    public updateIn(sTableKey:string, whereIn:number[]|string[], dataIn:any){
         return new Promise((resolve, reject) => {
 
             const asTableKey = sTableKey.split('.');
             const sTable = asTableKey[0];
             const sWhereKey =  asTableKey[1];
 
-            let aidWhereIn = [];
-            for (let i = 0; i < whereIn.length; i++) {
-                const idIn = Number(whereIn[i]);
-                if(idIn){
-                    aidWhereIn.push(whereIn[i]);
-                } else if(idIn === 0){
-                    aidWhereIn.push(0);
-                }
-            }
+            console.log(whereIn);
 
-            aidWhereIn = _.uniq(aidWhereIn);
-
-            if(!(sTable && sWhereKey)){
+            if(!sTable && !sWhereKey && whereIn.length !== 0){
                 reject(new Error(
-                    'Запрос не корректный, не подходит под правило - \n' + sTable +'.'+sWhereKey
+                    'Запрос не корректный updateIn, не подходит под правило - \n' + sTable +'.'+sWhereKey
                 ))
             }
 
-            
+            let sQuery = '[]';
+            try {
+                sQuery = JSON.stringify(whereIn);
+            } catch (e){
+                reject(new Error(
+                    'Не удалось данные провести серелизацию'
+                ))
+            }
 
             this.querySys.fInit();
 
@@ -416,9 +412,9 @@ export class DbClientSys {
                 app:this.conf.nameApp,
                 ip:ip.address(),
                 table:sTable,
-                type:MsgT.update,
+                type:MsgT.update_in,
                 key_in:sWhereKey,
-                query:whereIn.filter(el => Number(el) || el === 0).toString(),
+                query: sQuery,
                 data:dataIn,
                 time:Date.now()
             }
@@ -434,7 +430,7 @@ export class DbClientSys {
                 console.error(err);
                 reject(err)
             });
-            this.querySys.fSend(MsgT.update, vMsg);
+            this.querySys.fSend(MsgT.update_in, vMsg);
             this.iUpdate++;
         });
     }
@@ -648,6 +644,61 @@ export class DbClientSys {
             });
             this.querySys.fSend(MsgT.delete, vMsg);
             this.iUpdate++;
+        });
+    }
+
+    /** UPDATE IN
+     * deleteIn('item.item_id', [22,33])
+     */
+     public deleteIn(sTableKey:string, whereIn:number[]|string[]){
+        return new Promise((resolve, reject) => {
+
+            const asTableKey = sTableKey.split('.');
+            const sTable = asTableKey[0];
+            const sWhereKey =  asTableKey[1];
+
+            if(!sTable && !sWhereKey && whereIn.length !== 0){
+                reject(new Error(
+                    'Запрос не корректный deleteIn, не подходит под правило - \n' + sTable +'.'+sWhereKey
+                ))
+            }
+
+            let sQuery = '[]';
+            try {
+                sQuery = JSON.stringify(whereIn);
+            } catch (e){
+                reject(new Error(
+                    'Не удалось данные провести серелизацию deleteIn'
+                ))
+            }
+
+            this.querySys.fInit();
+
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                ip:ip.address(),
+                table:sTable,
+                type:MsgT.delete_in,
+                key_in:sWhereKey,
+                query: sQuery,
+                data:null,
+                time:Date.now()
+            }
+
+            this.querySys.fActionOk((dataOut: any) => {
+
+                console.log('[delete_in]:',dataOut);
+                // this.iSendComplete++;
+                resolve(dataOut)
+            });
+            this.querySys.fActionErr((err:any) => {
+                this.iSendErr++;
+                console.error(err);
+                reject(err)
+            });
+            this.querySys.fSend(MsgT.delete_in, vMsg);
+            this.iDelete++;
         });
     }
 

@@ -121,12 +121,37 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
 });
 
 /**
+ * Обновление записи по ключам
+ */
+ router.ws(MsgT.update_in, async (ctx: AAContext) => {
+
+    console.log('update_in>>>',ctx.body)
+    const data = await gDbServerSys.updateIn(ctx.body);
+    
+
+    return faSend(ctx, data);
+
+
+});
+
+/**
  * Уход сообщений
  */
  router.ws(MsgT.delete, async (ctx: AAContext) => {
 
     console.log('delete>>>',ctx.body)
     const data = await gDbServerSys.delete(ctx.body);
+
+    return faSend(ctx, data);
+});
+
+/**
+ * Удаление по ключам
+ */
+ router.ws(MsgT.delete_in, async (ctx: AAContext) => {
+
+    console.log('delete_in>>>',ctx.body)
+    const data = await gDbServerSys.deleteIn(ctx.body);
 
     return faSend(ctx, data);
 });

@@ -48,7 +48,7 @@ async function run(){
     const aidMsg = aMsg.map((el:any) => el.id);
     // Обновление
     
-    const sMsg = 'Обновленное СообщениЕ ['+']';
+    const sMsg = 'Обновленное СообщениЕ ['+'] - ' + aidMsg.slice(2,4);
 
     const updateStatus = await mqClientSys.update({
         text:sMsg
@@ -60,13 +60,31 @@ async function run(){
     console.log('[run:update]:',':',updateStatus);
 
     // ====================================
+
+    // Обновление
     
-    const deleteSttatus = await mqClientSys.delete(db('test')
+    const sMsgIn = 'Обновленное СообщениЕ [UPDATE IN] - '+aidMsg.slice(7,9);
+
+    const updateInStatus = await mqClientSys.updateIn('test.id', aidMsg.slice(7,9), {
+        text:sMsgIn
+    });
+
+    console.log('[run:update_in]:',':',updateInStatus);
+
+    // ====================================
+    
+    const deleteStatus = await mqClientSys.delete(db('test')
         .whereIn('id', aidMsg.slice(4,6))
         .select({id:'id'})
     );
 
-    console.log('[run:delete]:',':',deleteSttatus);
+    console.log('[run:delete]:',':',deleteStatus);
+
+    // ====================================
+    
+    const deleteInStatus = await mqClientSys.deleteIn('test.id', aidMsg.slice(1,3));
+
+    console.log('[run:delete_in]:',':',deleteInStatus);
 
     // ====================================
     // SELECT ALL INSERT
@@ -104,6 +122,8 @@ async function run(){
     console.log('[run:select_first_custom]:',':',selectDataFirstCustom);
     
     // }
+
+    console.log('MSG массив', aidMsg)
 
     await mWait(2000);
 
