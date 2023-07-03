@@ -98,11 +98,10 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  */
  router.ws(MsgT.insert, async (ctx: AAContext) => {
 
-    console.log('insert>>>',ctx.body)
+    // console.log('insert>>>',ctx.body)
     const data = await gDbServerSys.insert(ctx.body);
 
     return faSend(ctx, data);
-
 
 });
 

@@ -16,6 +16,13 @@ import { AAContext } from "@a-a-game-studio/aa-server";
 	} catch (e) {
         ctx.err.errorEx(e, ctx.req.url, 'Ошибка маршрута');
 		ctx.error(500);
+
+        ctx.ws.send(JSON.stringify({
+            ok: false,
+            e: true,
+            n:ctx.n,
+            data: data
+        }));
 	}
 
     return false;

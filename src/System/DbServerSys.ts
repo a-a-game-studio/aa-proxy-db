@@ -199,12 +199,34 @@ export class DbServerSys {
         const sQuery = gQuery(msg.table).insert(msg.data).toString()
         vTableC.aQueryInsertLog.push(gQuery(msg.table).insert(msg.data).onConflict().merge().toString())
 
+        // if(adb.length){
+        //     throw new Error('NO WORK DB')
+        // }
+
         const aPromiseQuery:Promise<Knex>[] = [];
         for (let i = 0; i < adb.length; i++) {
             const db = adb[i];
-            aPromiseQuery.push(db.raw(sQuery))
+            aPromiseQuery.push(new Promise(async (resolve, reject) => {
+                const iLocalNumDb = i;
+                try {
+                    
+                    const out = await db.raw(sQuery)
+                    resolve(out);
+
+                } catch (e){
+                    console.log('ERROR>>>','<<<',iLocalNumDb,'>>>', e);
+                    adb.splice(iLocalNumDb, 1);
+                    reject(e);
+                }
+                
+            }))
         }
-        await Promise.all(aPromiseQuery);
+        try {
+            await Promise.all(aPromiseQuery);
+        } catch(e){
+            console.log('количество ДБ в строю:',adb.length);
+        }
+        
         await gDbLogSys.insert(msg);
 
         process.stdout.write('.')
