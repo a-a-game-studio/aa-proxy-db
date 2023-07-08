@@ -41,10 +41,11 @@ async function run(){
     }));
     console.log('[run:item_crash]:',':',idSchemaItem);
 
+    let bInsertCrashTest = false;
 
     // Вставка
     let aItem:{id?:number;name:string;price:number}[] = [];
-    const iCount = 1000;
+    const iCount = 400;
     for (let i = 0; i < iCount; i++) {
 
         const sRandCat = aItemCat[mRandomInteger(0, aItemCat.length - 1)];
@@ -62,7 +63,8 @@ async function run(){
             await mWait(200);
         }
 
-        if(i % 100 === 0 && i > 1){
+        if(i % 100 === 0 && i > 1 && !bInsertCrashTest){
+            bInsertCrashTest = true;
             (async () => {
                 console.log('Переименовываем таблицу');
                 await dbCrashRename.schema.renameTable('item_crash', 'item_crash_temp');

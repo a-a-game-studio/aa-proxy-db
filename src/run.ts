@@ -2,22 +2,28 @@
 import { AAContext, AARoute, AAServer } from '@a-a-game-studio/aa-server';
 
 
-import { faSendRouter as faSend } from './System/ResponseSys';
+import Ctrl from './System/ResponseSys';
 
 import { QueryContextI, MsgT } from './interface/CommonI';
 import { DbServerSys } from './System/DbServerSys';
 import * as conf from './Config/MainConfig';
+import { ErrorSys } from '@a-a-game-studio/aa-components';
+import { DbReplicationSys } from './System/DbReplicationSys';
+import { adb, adbError, adbWait } from './System/DBConnect';
 
 let cntConnect = 0;
 
 const gDbServerSys = new DbServerSys();
+const gDbReplicationSys = new DbReplicationSys();
 
 gDbServerSys.dbInit();
 
 /** Интервал записи данных в бд */
 const intervalDb = setInterval(async () => {
     await gDbServerSys.dbSave();
-    // await gDbServerSys.dbReplication();
+    await gDbReplicationSys.dbReplication();
+    await gDbReplicationSys.dbCheckReplication();
+    console.log('>>>INTERVAL DB EXE', adb.length, adbWait.length, adbError.length)
 },1000)
 
 
@@ -28,6 +34,8 @@ let bConnect = false;
 const app = new AAServer();
 // if (config.common.env === 'dev' || config.common.env === 'test') {
     app.use((ctx: AAContext) => {
+
+        
         // // Проверка доступа
         let sAuthToken = '';
         if(ctx?.headers?.authorization){
@@ -49,14 +57,29 @@ const app = new AAServer();
    
 const router = new AARoute();
 
+
+
 /**
  * Уход сообщений
  */
 router.ws(MsgT.connect, async (ctx: AAContext) => {
 
-    const connectData = await gDbServerSys.connect(ctx.body);
+    // const connectData = await gDbServerSys.connect(ctx.body);
+    const ctrl = new Ctrl(ctx);
+    const connectData = await ctrl.faAction(async () => gDbServerSys.connect(ctx.body));
 
-    return faSend(ctx, connectData);
+    return ctrl.faSend(connectData);
+});
+
+/**
+ * Уход сообщений
+ */
+ router.ws(MsgT.status, async (ctx: AAContext) => {
+
+    const ctrl = new Ctrl(ctx);
+    const statusData = await ctrl.faAction(async () => gDbServerSys.status(ctx.body));
+
+    return ctrl.faSend(statusData);
 });
 
 /**
@@ -65,10 +88,12 @@ router.ws(MsgT.connect, async (ctx: AAContext) => {
 router.ws(MsgT.id, async (ctx: AAContext) => {
 
     console.log('[aid]:',ctx.body);
-    const aid = await gDbServerSys.id(ctx.body);
+    // const aid = await gDbServerSys.id(ctx.body);
+    const ctrl = new Ctrl(ctx);
+    const aid = await ctrl.faAction(async () => gDbServerSys.id(ctx.body));
     console.log('get list id>>>',ctx.body, aid)
 
-    return faSend(ctx, aid);
+    return ctrl.faSend(aid);
 });
 
 /**
@@ -77,9 +102,11 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  router.ws(MsgT.schema, async (ctx: AAContext) => {
 
     console.log('schema>>>',ctx.body)
-    const data = await gDbServerSys.schema(ctx.body);
+    // const data = await gDbServerSys.schema(ctx.body);
+    const ctrl = new Ctrl(ctx);
+    const data = await ctrl.faAction(async () => gDbServerSys.schema(ctx.body));
 
-    return faSend(ctx, data);
+    return ctrl.faSend(data);
 });
 
 /**
@@ -88,20 +115,23 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  router.ws(MsgT.select, async (ctx: AAContext) => {
 
     console.log('select>>>',ctx.body)
-    const data = await gDbServerSys.select(ctx.body);
 
-    return faSend(ctx, data);
+    const ctrl = new Ctrl(ctx);
+    const data = await ctrl.faAction(async () => gDbServerSys.select(ctx.body));
+
+    return ctrl.faSend(data);
 });
 
 /**
  * Уход сообщений
  */
  router.ws(MsgT.insert, async (ctx: AAContext) => {
-
+    
     // console.log('insert>>>',ctx.body)
-    const data = await gDbServerSys.insert(ctx.body);
+    const ctrl = new Ctrl(ctx);
+    const data = await ctrl.faAction(async () => gDbServerSys.insert(ctx.body));
 
-    return faSend(ctx, data);
+    return ctrl.faSend(data);
 
 });
 
@@ -111,10 +141,11 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  router.ws(MsgT.update, async (ctx: AAContext) => {
 
     console.log('update>>>',ctx.body)
-    const data = await gDbServerSys.update(ctx.body);
+    const ctrl = new Ctrl(ctx);
+    const data = await ctrl.faAction(async () => gDbServerSys.update(ctx.body));
     
 
-    return faSend(ctx, data);
+    return ctrl.faSend(data);
 
 
 });
@@ -125,10 +156,11 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  router.ws(MsgT.update_in, async (ctx: AAContext) => {
 
     console.log('update_in>>>',ctx.body)
-    const data = await gDbServerSys.updateIn(ctx.body);
+    const ctrl = new Ctrl(ctx);
+    const data = await ctrl.faAction(async () => gDbServerSys.updateIn(ctx.body));
     
 
-    return faSend(ctx, data);
+    return ctrl.faSend(data);
 
 
 });
@@ -139,9 +171,10 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  router.ws(MsgT.delete, async (ctx: AAContext) => {
 
     console.log('delete>>>',ctx.body)
-    const data = await gDbServerSys.delete(ctx.body);
+    const ctrl = new Ctrl(ctx);
+    const data = await ctrl.faAction(async () => gDbServerSys.delete(ctx.body));
 
-    return faSend(ctx, data);
+    return ctrl.faSend(data);
 });
 
 /**
@@ -150,9 +183,10 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  router.ws(MsgT.delete_in, async (ctx: AAContext) => {
 
     console.log('delete_in>>>',ctx.body)
-    const data = await gDbServerSys.deleteIn(ctx.body);
+    const ctrl = new Ctrl(ctx);
+    const data = await ctrl.faAction(async () => gDbServerSys.deleteIn(ctx.body));
 
-    return faSend(ctx, data);
+    return ctrl.faSend(data);
 });
 
 

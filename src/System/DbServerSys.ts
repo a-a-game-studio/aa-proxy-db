@@ -1,6 +1,6 @@
 
 import ip from 'ip'
-import { dbMaster, dbProxy, adb, gixDb } from './DBConnect';
+import { dbMaster, dbProxy, adb, gixDb, adbError, adbWait, ixDbWaitTime } from './DBConnect';
 import { v4 as uuidv4 } from 'uuid';
 import { mFormatDateTime } from '../Helper/DateTimeH';
 import _, { now, NumericDictionaryIterateeCustom } from 'lodash';
@@ -10,6 +10,7 @@ import { setInterval } from 'timers';
 import { mRandomInteger } from '../Helper/NumberH';
 import { DbLogSys } from './DbLogSys';
 import * as conf from '../Config/MainConfig';
+
 
 
 const gQuery = knex({ // Knex mysql
@@ -80,6 +81,7 @@ export class DbTableC {
     }
 }
 
+
 /** Система очередей */
 export class DbServerSys {
     
@@ -90,6 +92,34 @@ export class DbServerSys {
     private ixTable:Record<string, DbTableC> = {};
 
     private runDb:boolean[] = [];
+
+    private ixStatusError:Record<string,{
+        key:string,
+        text:string,
+        time:number
+        duration:number
+    }> = {}
+
+    /** Получения данных по соединениям */
+    public async status(msg:QueryContextI){
+        const iCurrTime = new Date().valueOf();
+        for (const k in this.ixStatusError) {
+           
+            const vStatusError = this.ixStatusError[k];
+            if(vStatusError.time + vStatusError.duration > iCurrTime){
+                delete this.ixStatusError[k];
+            } else {
+                msg.errors[k] = vStatusError.text;
+            }
+            
+        }
+
+        return {
+            adb:adb.length,
+            adbWait:adbWait.length,
+            adbError:adbError.length
+        };
+    }
 
     /** Получения данных по соединениям */
     public async connect(msg:QueryContextI){
@@ -199,9 +229,10 @@ export class DbServerSys {
         const sQuery = gQuery(msg.table).insert(msg.data).toString()
         vTableC.aQueryInsertLog.push(gQuery(msg.table).insert(msg.data).onConflict().merge().toString())
 
-        // if(adb.length){
-        //     throw new Error('NO WORK DB')
-        // }
+        if(!adb.length){ // В случае если отключились все БД
+            msg.errors['no_work_db'] = 'Нет доступных БД';
+            throw new Error('no_work_db')
+        }
 
         const aPromiseQuery:Promise<Knex>[] = [];
         for (let i = 0; i < adb.length; i++) {
@@ -214,8 +245,55 @@ export class DbServerSys {
                     resolve(out);
 
                 } catch (e){
+                    
                     console.log('ERROR>>>','<<<',iLocalNumDb,'>>>', e);
+                    
+                    const vConnect = adb[i].client.config.connection;
+                    // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
+                    msg.errors['leve_db'] = 'Отсоеденение проблемных БД';
+                    msg.errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database] = 'Отсоеденена проблемная БД - '+vConnect.host+':'+vConnect.port+':'+vConnect.database;
+                    msg.errors['sql_error'] = String(e);
+                    
+                    adbError.push(adb[iLocalNumDb]);
                     adb.splice(iLocalNumDb, 1);
+                    reject(e);
+                }
+                
+            }))
+        }
+        
+        for (let i = 0; i < adbWait.length; i++) {
+            const db = adbWait[i];
+            aPromiseQuery.push(new Promise(async (resolve, reject) => {
+                const iLocalNumDb = i;
+                try {
+                    
+                    const out = await db.raw(gQuery(msg.table).insert(msg.data).onConflict().ignore().toString())
+                    const vConnect = adbWait[i].client.config.connection;
+                    console.log('ПРОВЕРКА ВЫХОДА НА РАБОТУ')
+                    console.log(ixDbWaitTime);
+                    console.log(vConnect.host+':'+vConnect.port+':'+vConnect.database)
+                    console.log(new Date().valueOf())
+                    if(new Date().valueOf() - ixDbWaitTime[vConnect.host+':'+vConnect.port+':'+vConnect.database] > 2000){
+                        console.log('>>>WAIT DB EXE', adbWait.length, adbError.length);
+                        adb.push(adbWait[iLocalNumDb]);
+                        adbWait.splice(iLocalNumDb, 1);
+
+                        msg.errors['append_db'] = 'Присоеденена проблемных БД';
+                        msg.errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database] = 'Присоеденена проблемная БД - '+vConnect.host+':'+vConnect.port+':'+vConnect.database;
+                    
+                    }
+                    resolve(out);
+
+                } catch (e){
+                    
+                    console.log('ERROR>>>','<<<',iLocalNumDb,'>>>', e);
+                    
+                    const vConnect = adbWait[i].client.config.connection;
+                    // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
+
+                    adbError.push(adbWait[iLocalNumDb]);
+                    adbWait.splice(iLocalNumDb, 1);
                     reject(e);
                 }
                 

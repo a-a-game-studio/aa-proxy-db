@@ -1,11 +1,46 @@
+import { Knex } from "knex";
 import _ from "lodash";
 import { aCfDb } from "../Config/MainConfig";
-import { adb, dbProxy, gixDb } from "./DBConnect";
+import { adb, adbError, adbWait, dbProxy, gixDb, ixDbWaitTime } from "./DBConnect";
 
 export class DbReplicationSys {
 
+    
+
+    /** Проверить репликацию */
+    public async dbCheckReplication(){
+
+        for (let i = 0; i < adbError.length; i++) {
+            const dbError = adbError[i];
+            const idMaxSchema = (await dbProxy('query')
+                .max({id:'schema_id'}))[0]?.id || 0;
+            
+            let idMaxRepSchema = (await dbError('__replication__')
+                .max({id:'schema_id'}))[0]?.id || 0;
+
+            let idMaxRepProxy = (await dbProxy('query')
+                .max({id:'id'}))[0]?.id || 0;
+
+            let idMaxRepError = (await dbError('__replication__')
+                .max({id:'id'}))[0]?.id || 0;
+
+            console.log(idMaxSchema  + ' == ' + idMaxRepSchema + ' &&'  + idMaxRepProxy  + ' == ' +  idMaxRepError)
+            if(idMaxSchema == idMaxRepSchema && idMaxRepProxy == idMaxRepError){
+                
+                console.log('<<<БД ПЕРЕВЕДЕНА В ОЖИДАНИЕ>>>')
+                const vConnect = adbError[i].client.config.connection;
+                ixDbWaitTime[vConnect.host+':'+vConnect.port+':'+vConnect.database] = new Date().valueOf();
+                adbWait.push(adbError[i]);
+                adbError.splice(i, 1);
+            }
+        }
+
+    }
+
     /** Сохранить информацию по очереди */
     public async dbReplication(){
+        const adb:Knex[] = [...adbError,...adbWait];
+        
         for (let i = 0; i < adb.length; i++) {
             // const vCfDb = adb[i];
 
@@ -68,6 +103,9 @@ export class DbReplicationSys {
                 })
                 .max({id:'id'}))[0]?.id || 0;
 
+            // ================================================
+            // INSERT
+            // ================================================
 
             let idMaxRepInsertQuery = (await dbMaster('__replication__')
                 .where({
@@ -84,11 +122,13 @@ export class DbReplicationSys {
                     })
                     .where('id', '>', idMaxRepInsertQuery)
                     .select()
-                    .limit(10)
+                    .limit(100)
                 )
 
                 // idMaxQueryInsert = _.max(aQueryInsert.map(el => el.id));
                 // idMinQueryInsert = _.max(aQueryInsert.map(el => el.id));
+
+                
 
                 console.log('>>>dbReplication8>>>', 'aQueryInsert', aQueryInsert.length)
 
@@ -119,6 +159,10 @@ export class DbReplicationSys {
 
             //================================================
             //================================================
+
+            // ================================================
+            // DELETE
+            // ================================================
 
             //================================================
             // МаxDeleteQuery
@@ -181,8 +225,9 @@ export class DbReplicationSys {
 
             }
 
-            //================================================
-            //================================================
+            // ================================================
+            // UPDATE
+            // ================================================
 
             //================================================
             // МаxUpdateQuery
@@ -246,9 +291,8 @@ export class DbReplicationSys {
             }
 
             //================================================
+            // INCREMENT SCHEMA
             //================================================
-
-            
             
 
             if( // Инкремент схемы

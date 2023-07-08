@@ -12,6 +12,34 @@ import { mRandomInteger } from "../Helper/NumberH";
 import { mWait } from "../Helper/WaitH";
 
 let adb:Knex[] = [];
+let adbError:Knex[] = [];
+
+function workErrorDb(errors:Record<string,string>){
+    if(errors['leve_db']){
+        for (let i = 0; i < adb.length; i++) {
+            const vConnect = adb[i].client.config.connection;
+            // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
+            if(errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                adbError.push(adb[i]);
+                adb.splice(i, 1);
+                console.log('Отключение проблемной БД')
+            }
+        }
+    }
+
+    if(errors['append_db']){
+        for (let i = 0; i < adbError.length; i++) {
+            const vConnect = adb[i].client.config.connection;
+            if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                adb.push(adb[i]);
+                adbError.splice(i, 1);
+            }
+            
+            
+        }
+    }
+
+}
 
 /** DbClientSys */
 export class DbClientSys {
@@ -97,7 +125,7 @@ export class DbClientSys {
 
             this.querySys.fActionErr((err:any) => {
                 this.iSendErr++;
-                console.error(err);
+                console.error('ERROR>>>',err);
                 this.bInitDbConnect = false;
             });
             this.querySys.fSend(MsgT.connect, vMsg);
@@ -364,12 +392,23 @@ export class DbClientSys {
             }
 
             this.querySys.fActionOk((dataOut: any) => {
-                console.log('insert end')
+                if(dataOut){
+                    console.log('insert end', dataOut)
+                }
                 resolve(dataIn)
             });
             this.querySys.fActionErr((err:any) => {
-                console.error(err);
+                console.error('ERROR>>>', err);
                 reject(err)
+            });
+            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
+                
+                console.error('ERROR>>>', ok,err,resp);
+                if(resp.errors){
+                   
+                    workErrorDb(resp.errors);
+                }
+                
             });
             this.querySys.fSend(MsgT.insert, vMsg);
             this.iInsert++;

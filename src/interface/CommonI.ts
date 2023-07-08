@@ -1,6 +1,7 @@
 
 export enum MsgT {
     connect = '/connect', // Сообщение о соединении
+    status = '/status', // Статус системы
     check = '/check', // Проверка соединения
     id = '/id', // получить id
     select = '/select', // Получить сообщение
@@ -24,4 +25,11 @@ export interface QueryContextI {
 	query?: string; // запрос/условие
     data?:any; // Данные
     time?:number; // Время отправки для механизмов очистки
+    errors?:Record<string,string>;
+}
+
+export interface QueryErrorT {
+    leve_db:'leve_db',
+    append_db:'append_db',
+    no_work_db:'no_work_db',
 }

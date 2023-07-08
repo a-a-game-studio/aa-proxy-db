@@ -6,6 +6,10 @@ export const dbProxy = knex(cfDbProxy);
 export const dbMaster = knex(cfDbMaster);
 
 export const adb:Knex[] = [];
+export const adbError:Knex[] = [];
+export const adbWait:Knex[] = [];
+export const ixDbWaitTime:Record<string, number> = {};
+
 
 export const gixDb:Record<string, Knex> = {};
 export const gixaDbByIp:Record<string, Knex[]> = {};
