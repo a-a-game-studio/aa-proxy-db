@@ -193,7 +193,7 @@ export class DbReplicationSys {
                     })
                     .where('id', '>', idMaxRepDeleteQuery)
                     .select()
-                    .limit(10)
+                    .limit(100)
                 )
 
                 // idMaxQueryInsert = _.max(aQueryInsert.map(el => el.id));
@@ -258,7 +258,7 @@ export class DbReplicationSys {
                     })
                     .where('id', '>', idMaxRepUpdateQuery)
                     .select()
-                    .limit(10)
+                    .limit(100)
                 )
 
                 // idMaxQueryInsert = _.max(aQueryInsert.map(el => el.id));
