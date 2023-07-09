@@ -253,13 +253,9 @@ export class DbServerSys {
                     resolve(out);
 
                 } catch (e){
-
-                    
                     
                     console.log('ERROR>>>','<<<',iLocalNumDb,'>>>', e);
 
-                    
-                    
                     const vConnect = adb[i].client.config.connection;
                     asDbError.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
                     // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
@@ -268,7 +264,7 @@ export class DbServerSys {
                     msg.errors['sql_error'] = String(e);
                     msg.errors['sql_error'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database] = String(e);
                     
-                    reject(e);
+                    resolve(e);
                 }
                 
             }))
@@ -312,14 +308,14 @@ export class DbServerSys {
 
                     adbError.push(adbWait[iLocalNumDb]);
                     adbWait.splice(iLocalNumDb, 1);
-                    reject(e);
+                    resolve(e);
                 }
                 
             }))
         }
         try {
             await Promise.all(aPromiseQuery);
-            
+
             if(asDbError.length && asDbError.length != iCntDbExe){
                 const ixErrorDb = _.keyBy(asDbError);
                 for (let i = 0; i < adb.length; i++) {
