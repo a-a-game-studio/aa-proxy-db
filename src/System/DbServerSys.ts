@@ -94,11 +94,16 @@ export class DbServerSys {
     private runDb:boolean[] = [];
 
     private ixStatusError:Record<string,{
-        key:string,
         text:string,
         time:number
-        duration:number
     }> = {}
+
+    private fSetErrorStatus(sKey:string,sText:string){
+        this.ixStatusError[sKey] = {
+            text:sText,
+            time: new Date().valueOf()
+        }
+    }
 
     /** Получения данных по соединениям */
     public async status(msg:QueryContextI){
@@ -106,7 +111,7 @@ export class DbServerSys {
         for (const k in this.ixStatusError) {
            
             const vStatusError = this.ixStatusError[k];
-            if(vStatusError.time + vStatusError.duration > iCurrTime){
+            if(vStatusError.time + (120*1000) < iCurrTime){
                 delete this.ixStatusError[k];
             } else {
                 msg.errors[k] = vStatusError.text;
@@ -234,6 +239,9 @@ export class DbServerSys {
             throw new Error('no_work_db')
         }
 
+        const iCntDbExe = adb.length;
+        const asDbError:string[] = [];
+
         const aPromiseQuery:Promise<Knex>[] = [];
         for (let i = 0; i < adb.length; i++) {
             const db = adb[i];
@@ -245,22 +253,27 @@ export class DbServerSys {
                     resolve(out);
 
                 } catch (e){
+
+                    
                     
                     console.log('ERROR>>>','<<<',iLocalNumDb,'>>>', e);
+
+                    
                     
                     const vConnect = adb[i].client.config.connection;
+                    asDbError.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
                     // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
-                    msg.errors['leve_db'] = 'Отсоеденение проблемных БД';
-                    msg.errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database] = 'Отсоеденена проблемная БД - '+vConnect.host+':'+vConnect.port+':'+vConnect.database;
+                    // msg.errors['leve_db'] = 'Отсоеденение проблемных БД';
+                    // msg.errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database] = 'Отсоеденена проблемная БД - '+vConnect.host+':'+vConnect.port+':'+vConnect.database;
                     msg.errors['sql_error'] = String(e);
+                    msg.errors['sql_error'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database] = String(e);
                     
-                    adbError.push(adb[iLocalNumDb]);
-                    adb.splice(iLocalNumDb, 1);
                     reject(e);
                 }
                 
             }))
         }
+
         
         for (let i = 0; i < adbWait.length; i++) {
             const db = adbWait[i];
@@ -269,6 +282,7 @@ export class DbServerSys {
                 try {
                     
                     const out = await db.raw(gQuery(msg.table).insert(msg.data).onConflict().ignore().toString())
+
                     const vConnect = adbWait[i].client.config.connection;
                     console.log('ПРОВЕРКА ВЫХОДА НА РАБОТУ')
                     console.log(ixDbWaitTime);
@@ -279,8 +293,12 @@ export class DbServerSys {
                         adb.push(adbWait[iLocalNumDb]);
                         adbWait.splice(iLocalNumDb, 1);
 
-                        msg.errors['append_db'] = 'Присоеденена проблемных БД';
-                        msg.errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database] = 'Присоеденена проблемная БД - '+vConnect.host+':'+vConnect.port+':'+vConnect.database;
+                        
+                        this.fSetErrorStatus('append_db', 'Присоеденена проблемных БД');
+                        this.fSetErrorStatus(
+                            'append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database, 
+                            'Присоеденена проблемная БД - '+vConnect.host+':'+vConnect.port+':'+vConnect.database
+                        );
                     
                     }
                     resolve(out);
@@ -301,6 +319,28 @@ export class DbServerSys {
         }
         try {
             await Promise.all(aPromiseQuery);
+            
+            if(asDbError.length && asDbError.length != iCntDbExe){
+                const ixErrorDb = _.keyBy(asDbError);
+                for (let i = 0; i < adb.length; i++) {
+                    const db = adb[i];
+                    const vConnect = db.client.config.connection;
+                    const sDbConnect = vConnect.host+':'+vConnect.port+':'+vConnect.database;
+
+                    if(ixErrorDb[sDbConnect]){
+                        this.fSetErrorStatus('leve_db', 'Отсоеденение проблемных БД');
+                        this.fSetErrorStatus(
+                            'leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database,
+                            'Отсоеденена проблемная БД - '+vConnect.host+':'+vConnect.port+':'+vConnect.database
+
+                        );
+                        
+                        adbError.push(adb[i]);
+                        adb.splice(i, 1);
+                    }
+                }
+
+            }
         } catch(e){
             console.log('количество ДБ в строю:',adb.length);
         }
