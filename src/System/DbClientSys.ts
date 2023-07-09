@@ -11,6 +11,9 @@ import _ from "lodash";
 import { mRandomInteger } from "../Helper/NumberH";
 import { mWait } from "../Helper/WaitH";
 
+
+
+
 let adb:Knex[] = [];
 let adbError:Knex[] = [];
 
@@ -19,7 +22,14 @@ function workErrorDb(errors:Record<string,string>){
         for (let i = 0; i < adb.length; i++) {
             const vConnect = adb[i].client.config.connection;
             // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
+            
             if(errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+
+                // Если одновременно и добавление и удаление
+                if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                    delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                    continue;
+                }
                 adbError.push(adb[i]);
                 adb.splice(i, 1);
                 console.log('Отключение проблемной БД')
@@ -33,7 +43,10 @@ function workErrorDb(errors:Record<string,string>){
             if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
                 adb.push(adb[i]);
                 adbError.splice(i, 1);
+
+                console.log('Добавление проблемной БД')
             }
+
             
             
         }
@@ -81,6 +94,8 @@ export class DbClientSys {
         count?:number;
         interval?:any;
     }> = {}
+
+    intervalDbStatus:any = null; // интервал для проверки статуса БД
 
 
     /** init */
@@ -131,6 +146,49 @@ export class DbClientSys {
             this.querySys.fSend(MsgT.connect, vMsg);
         }
 
+
+        /** Интервал записи данных в бд */
+        this.intervalDbStatus = setInterval(async () => {
+            this.status();
+        },30*1000)
+
+    }
+
+    /** Заполнить инкрементный ID */
+    public status():any{
+       
+        return new Promise((resolve, reject) => {
+
+            this.querySys.fInit();
+
+            // ==============
+
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                ip:ip.address(),
+                table:null,
+                type:MsgT.status,
+                data:null,
+                time:Date.now()
+            }
+
+            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
+                
+                console.log('STATUS>>>', ok,err,resp);
+                if(resp.errors){
+                   
+                    workErrorDb(resp.errors);
+                }
+
+                resolve(resp)
+                
+            });
+
+            this.querySys.fSend(MsgT.status, vMsg);
+            this.iSend++;
+        })
+        
     }
 
     /** Заполнить инкрементный ID */
