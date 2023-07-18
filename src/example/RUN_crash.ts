@@ -8,7 +8,20 @@ const db = knex({ // Knex mysql
     client: "mysql2"
 })
 
-const dbCrashRename = knex(conf.aCfDb.test_proxy_master2)
+const dbCrashRename = knex({ // Knex mysql
+    client: "mysql2",
+    connection: {
+        host: "localhost",
+        port: 3306,
+        user: "root",
+        password: "*",
+        database: "test_proxy_master2",
+        decimalNumbers: true,
+        dateStrings: true,
+    },
+    pool: { "min": 0, "max": 7 },
+    acquireConnectionTimeout: 60000
+})
 
 
 import { mWait } from "../Helper/WaitH";
