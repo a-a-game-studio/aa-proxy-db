@@ -893,7 +893,7 @@ export class DbServerSys {
             for (let i = 0; i < adb.length; i++) {
                 const db = adb[i];
 
-                // if(this.runDb[i]){ // TODO Оставить не записывался
+                // if(this.runDb[i]){ // TODO __replication__ не записывался есть проблема с runDb
                     aPromiseQuery.push(db('__replication__').insert(aPacket).onConflict().merge());
                 // }
             }
