@@ -893,9 +893,9 @@ export class DbServerSys {
             for (let i = 0; i < adb.length; i++) {
                 const db = adb[i];
 
-                if(this.runDb[i]){
+                // if(this.runDb[i]){ // TODO Оставить не записывался
                     aPromiseQuery.push(db('__replication__').insert(aPacket).onConflict().merge());
-                }
+                // }
             }
             await Promise.all(aPromiseQuery);
         }
