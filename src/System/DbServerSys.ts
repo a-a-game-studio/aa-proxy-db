@@ -270,7 +270,7 @@ export class DbServerSys {
                     const out = await db.raw(gQuery(msg.table).insert(msg.data).onConflict().ignore().toString())
 
                     const vConnect = adbWait[i].client.config.connection;
-                    console.log('ПРОВЕРКА ВЫХОДА НА РАБОТУ')
+                    console.log('ПРОВЕРКА ВЫХОДА БД НА РАБОТУ')
                     console.log(ixDbWaitTime);
                     console.log(vConnect.host+':'+vConnect.port+':'+vConnect.database)
                     console.log(new Date().valueOf())
