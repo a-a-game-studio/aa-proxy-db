@@ -341,7 +341,7 @@ export class DbServerSys {
 
         const vTableC = this.ixTable[msg.table];
 
-        console.log('t>>>',msg.table,msg.data);
+        // console.log('t>>>',msg.table,msg.data);
 
         const sQuery = gQuery(msg.table).insert(msg.data).toString()
         vTableC.aQueryInsertLog.push(gQuery(msg.table).insert(msg.data).onConflict().merge().toString())
@@ -496,7 +496,7 @@ export class DbServerSys {
 
         const a = (await dbSelect.raw(msg.query))[0];
 
-        console.log(msg.query);
+        // console.log(msg.query);
         console.log('---1>',a)
         const aid = a.map((el:any) => el[msg.key_in]);
         console.log('---2>',aid)
@@ -578,7 +578,7 @@ export class DbServerSys {
 
         const a = (await dbSelect.raw(msg.query))[0];
 
-        console.log(msg.query);
+        // console.log(msg.query);
         console.log('---1>',a)
         const aid = a.map((el:any) => el[msg.key_in]);
         console.log('---2>',aid)
@@ -586,7 +586,7 @@ export class DbServerSys {
         if(aid.length){
 
             const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).delete().toString();
-            console.log(sQuery)
+            // console.log(sQuery)
             vTableC.aQueryDeleteLog.push(sQuery)
 
             // const aPromiseQuery:Promise<Knex>[] = [];
@@ -624,7 +624,7 @@ export class DbServerSys {
         if(aid.length){
 
             const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).delete().toString();
-            console.log(sQuery)
+            // console.log(sQuery)
             vTableC.aQueryDeleteLog.push(sQuery)
 
             // const aPromiseQuery:Promise<Knex>[] = [];

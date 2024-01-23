@@ -87,7 +87,7 @@ router.ws(MsgT.connect, async (ctx: AAContext) => {
  */
 router.ws(MsgT.id, async (ctx: AAContext) => {
 
-    console.log('[aid]:',ctx.body);
+    // console.log('[aid]:',ctx.body);
     // const aid = await gDbServerSys.id(ctx.body);
     const ctrl = new Ctrl(ctx);
     const aid = await ctrl.faAction(async () => gDbServerSys.id(ctx.body));
@@ -114,7 +114,7 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  */
  router.ws(MsgT.select, async (ctx: AAContext) => {
 
-    console.log('select>>>',ctx.body)
+    // console.log('select>>>',ctx.body)
 
     const ctrl = new Ctrl(ctx);
     const data = await ctrl.faAction(async () => gDbServerSys.select(ctx.body));
@@ -153,7 +153,7 @@ router.ws(MsgT.replace, async (ctx: AAContext) => {
  */
  router.ws(MsgT.update, async (ctx: AAContext) => {
 
-    console.log('update>>>',ctx.body)
+    // console.log('update>>>',ctx.body)
     const ctrl = new Ctrl(ctx);
     const data = await ctrl.faAction(async () => gDbServerSys.update(ctx.body));
     
@@ -168,7 +168,7 @@ router.ws(MsgT.replace, async (ctx: AAContext) => {
  */
  router.ws(MsgT.update_in, async (ctx: AAContext) => {
 
-    console.log('update_in>>>',ctx.body)
+    // console.log('update_in>>>',ctx.body)
     const ctrl = new Ctrl(ctx);
     const data = await ctrl.faAction(async () => gDbServerSys.updateIn(ctx.body));
     
@@ -183,7 +183,7 @@ router.ws(MsgT.replace, async (ctx: AAContext) => {
  */
  router.ws(MsgT.delete, async (ctx: AAContext) => {
 
-    console.log('delete>>>',ctx.body)
+    // console.log('delete>>>',ctx.body)
     const ctrl = new Ctrl(ctx);
     const data = await ctrl.faAction(async () => gDbServerSys.delete(ctx.body));
 
@@ -195,7 +195,7 @@ router.ws(MsgT.replace, async (ctx: AAContext) => {
  */
  router.ws(MsgT.delete_in, async (ctx: AAContext) => {
 
-    console.log('delete_in>>>',ctx.body)
+    // console.log('delete_in>>>',ctx.body)
     const ctrl = new Ctrl(ctx);
     const data = await ctrl.faAction(async () => gDbServerSys.deleteIn(ctx.body));
 
