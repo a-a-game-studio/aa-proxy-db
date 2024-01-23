@@ -10,6 +10,8 @@ export class DbReplicationSys {
     /** Проверить репликацию */
     public async dbCheckReplication(){
 
+        console.log('>>>dbCheckReplication>>>','OK:', adb.length, 'WAIT:',adbWait.length,'ERROR:',adbError);
+
         for (let i = 0; i < adbError.length; i++) {
             const dbError = adbError[i];
             const idMaxSchema = (await dbProxy('query')
@@ -94,7 +96,7 @@ export class DbReplicationSys {
             // МаxInsertQuery
             //================================================
 
-            console.log('>>>dbReplication5>>>', 'sync')
+            console.log('>>>dbReplication2_INSERT>>>', 'sync')
 
             const idMaxInsertQuery = (await dbProxy('query')
                 .where({
@@ -129,8 +131,7 @@ export class DbReplicationSys {
                 // idMinQueryInsert = _.max(aQueryInsert.map(el => el.id));
 
                 
-
-                console.log('>>>dbReplication8>>>', 'aQueryInsert', aQueryInsert.length)
+                console.log('>>>dbReplication3_INSERT>>>', 'aQueryInsert', aQueryInsert.length)
 
                 cntQuery+=aQueryInsert.length;
                 cntQueryInsert = aQueryInsert.length;
@@ -168,7 +169,7 @@ export class DbReplicationSys {
             // МаxDeleteQuery
             //================================================
 
-            console.log('>>>dbReplication5>>>', 'sync')
+            console.log('>>>dbReplication3_DELETE>>>', 'sync')
 
             const idMaxDeleteQuery = (await dbProxy('query')
                 .where({
@@ -199,7 +200,7 @@ export class DbReplicationSys {
                 // idMaxQueryInsert = _.max(aQueryInsert.map(el => el.id));
                 // idMinQueryInsert = _.max(aQueryInsert.map(el => el.id));
 
-                console.log('>>>dbReplication8>>>', 'aQueryUpdate', aQueryDelete.length)
+                console.log('>>>dbReplication4_DELETE>>>', 'aQueryDelete', aQueryDelete.length)
 
                 cntQuery+=aQueryDelete.length;
                 
@@ -233,7 +234,7 @@ export class DbReplicationSys {
             // МаxUpdateQuery
             //================================================
 
-            console.log('>>>dbReplication5>>>', 'sync')
+            console.log('>>>dbReplication5_UPDATE>>>', 'sync')
 
             const idMaxUpdateQuery = (await dbProxy('query')
                 .where({
@@ -264,7 +265,7 @@ export class DbReplicationSys {
                 // idMaxQueryInsert = _.max(aQueryInsert.map(el => el.id));
                 // idMinQueryInsert = _.max(aQueryInsert.map(el => el.id));
 
-                console.log('>>>dbReplication8>>>', 'aQueryUpdate', aQueryUpdate.length)
+                console.log('>>>dbReplication6_DELETE>>>', 'aQueryUpdate', aQueryUpdate.length)
 
                 cntQuery+=aQueryUpdate.length;
                 
