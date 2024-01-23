@@ -17,6 +17,9 @@ import { mWait } from "../Helper/WaitH";
 let adb:Knex[] = [];
 let adbError:Knex[] = [];
 
+let adbAll:Knex[] = [];
+let adbAllError:Knex[] = [];
+
 function workErrorDb(errors:Record<string,string>){
     if(errors['leve_db']){
         for (let i = 0; i < adb.length; i++) {
@@ -35,6 +38,22 @@ function workErrorDb(errors:Record<string,string>){
                 console.log('Отключение проблемной БД')
             }
         }
+        for (let i = 0; i < adbAll.length; i++) {
+            const vConnect = adbAll[i].client.config.connection;
+            // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
+            
+            if(errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+
+                // Если одновременно и добавление и удаление
+                if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                    delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                    continue;
+                }
+                adbAllError.push(adbAll[i]);
+                adbAll.splice(i, 1);
+                console.log('Отключение проблемной из общего списка БД')
+            }
+        }
     }
 
     if(errors['append_db']){
@@ -46,9 +65,18 @@ function workErrorDb(errors:Record<string,string>){
 
                 console.log('Добавление проблемной БД')
             }
+            
+        }
 
-            
-            
+        for (let i = 0; i < adbAllError.length; i++) {
+            const vConnect = adbAll[i].client.config.connection;
+            if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                adbAll.push(adbAll[i]);
+                adbAllError.splice(i, 1);
+
+                console.log('Добавление проблемной БД')
+            }
+
         }
     }
 
@@ -123,10 +151,24 @@ export class DbClientSys {
             this.querySys.fActionOk((data: any) => {
 
                 console.log('data.adb>>>',data.adb);
+                console.log('data.adbAll>>>',data.adbAll);
                 if(Object.keys(data.adb).length){
                     for (let [k,db] of Object.entries(data.adb)) {
                         // const db = data.adb[i];
                         adb.push(knex(db))
+                    }
+
+                } else if(Object.keys(data.adbAll).length){
+                    for (let [k,db] of Object.entries(data.adb)) {
+                        // const db = data.adb[i];
+                        adb.push(knex(db))
+                    }
+                }
+
+                if(Object.keys(data.adbAll).length){
+                    for (let [k,db] of Object.entries(data.adb)) {
+                        // const db = data.adb[i];
+                        adbAll.push(knex(db))
                     }
                 }
 
@@ -418,12 +460,12 @@ export class DbClientSys {
         builder.client = dbSelect.client
         
         let out:T = null;
-        // Выполнить запрос
-        if (builder._method){ // _method только у билдера
-            out = await builder
-        } else {
-            out = (await builder)[0]
-        }
+            // Выполнить запрос
+            if (builder._method){ // _method только у билдера
+                out = await builder
+            } else {
+                out = (await builder)[0]
+            }
 
         this.iSelect++;
 

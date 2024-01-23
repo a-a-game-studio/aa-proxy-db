@@ -130,6 +130,7 @@ export class DbServerSys {
     public async connect(msg:QueryContextI){
         
         const adbRead = [];
+        const adbAll = [];
 
         const cfDbRead = _.cloneDeep(conf.aCfDbRead[msg.ip as keyof typeof conf.aCfDbRead]);
         for (let i = 0; i < cfDbRead?.adb?.length; i++) {
@@ -145,11 +146,12 @@ export class DbServerSys {
             db.connection.user = cfgReadFromAllIp.user;
             db.connection.password = cfgReadFromAllIp.password;
 
-            adbRead.push(db);
+            adbAll.push(db);
         }
 
         const out = { 
-            adb: adbRead
+            adb: adbRead,
+            adbAll: adbAll
         }
         return out;
     }
