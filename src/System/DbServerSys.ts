@@ -461,6 +461,26 @@ export class DbServerSys {
 
     }
 
+    /** Поместить значение в очередь */
+    public async replace(msg:QueryContextI){
+        if(!this.ixTable[msg.table]){
+            this.ixTable[msg.table] = new DbTableC();
+            await this.ixTable[msg.table].faInit(msg.table);
+        }
+
+        const vTableC = this.ixTable[msg.table];
+
+        const sQuery = gQuery(msg.table).insert(msg.data).toString()?.replace(/^insert/i, 'replace')
+        vTableC.aQueryInsertLog.push(sQuery)
+
+        await this.fExeQuery(msg, sQuery);
+        
+        await gDbLogSys.insert(msg);
+
+        process.stdout.write('.')
+
+    }
+
     /** Получить количество сообщений в очереди */
     public async update(msg:QueryContextI){
         if(!this.ixTable[msg.table]){

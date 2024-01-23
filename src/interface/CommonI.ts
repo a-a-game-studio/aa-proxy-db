@@ -6,6 +6,7 @@ export enum MsgT {
     id = '/id', // получить id
     select = '/select', // Получить сообщение
     insert = '/insert', // Отправить сообщение
+    replace = '/replace', // Отправить сообщение
     update = '/update', // Получить сообщение
     update_in = '/update-in', // Получить сообщение
     delete = '/delete', // Получить сообщение

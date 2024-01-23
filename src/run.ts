@@ -110,7 +110,7 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
 });
 
 /**
- * Уход сообщений
+ * SELECT
  */
  router.ws(MsgT.select, async (ctx: AAContext) => {
 
@@ -123,7 +123,7 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
 });
 
 /**
- * Уход сообщений
+ * INSERT
  */
  router.ws(MsgT.insert, async (ctx: AAContext) => {
     
@@ -136,7 +136,20 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
 });
 
 /**
- * Уход сообщений
+ * REPLACE
+ */
+router.ws(MsgT.replace, async (ctx: AAContext) => {
+    
+    // console.log('insert>>>',ctx.body)
+    const ctrl = new Ctrl(ctx);
+    const data = await ctrl.faAction(async () => gDbServerSys.replace(ctx.body));
+
+    return ctrl.faSend(data);
+
+});
+
+/**
+ * UPDATE
  */
  router.ws(MsgT.update, async (ctx: AAContext) => {
 

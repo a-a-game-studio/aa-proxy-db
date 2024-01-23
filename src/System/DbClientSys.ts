@@ -79,6 +79,7 @@ export class DbClientSys {
     private iInsert = 0;
     private iUpdate = 0;
     private iDelete = 0;
+    private iReplace = 0;
     
 
     // Работа с буфером
@@ -469,6 +470,50 @@ export class DbClientSys {
                 
             });
             this.querySys.fSend(MsgT.insert, vMsg);
+            this.iInsert++;
+
+            console.log('insert init')
+        });
+    }
+
+    /** REPLCAE by primary key */
+    public async replace(table:string, dataIn:any|any[]){
+        const aDatePrepare = dataIn.length ? dataIn : [dataIn];
+
+        return new Promise((resolve, reject) => {
+
+            this.querySys.fInit();
+
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                ip:ip.address(),
+                table:table,
+                type:MsgT.replace,
+                data:aDatePrepare,
+                time:Date.now()
+            }
+
+            this.querySys.fActionOk((dataOut: any) => {
+                if(dataOut){
+                    console.log('replace end', dataOut)
+                }
+                resolve(dataIn)
+            });
+            this.querySys.fActionErr((err:any) => {
+                console.error('ERROR>>>', err);
+                reject(err)
+            });
+            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
+                
+                console.error('ERROR>>>', ok,err,resp);
+                if(resp.errors){
+                   
+                    workErrorDb(resp.errors);
+                }
+                
+            });
+            this.querySys.fSend(MsgT.replace, vMsg);
             this.iInsert++;
 
             console.log('insert init')
