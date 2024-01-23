@@ -291,7 +291,7 @@ export class DbServerSys {
 
                 } catch (e){
                     
-                    console.log('ERROR>>>','<<<',iLocalNumDb,'>>>', e);
+                    console.log('ERROR ВЫХОДА БД НА РАБОТУ>>>','<<<',iLocalNumDb,'>>>', e);
                     
                     const vConnect = adbWait[i].client.config.connection;
                     // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
