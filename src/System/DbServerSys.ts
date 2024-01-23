@@ -267,7 +267,7 @@ export class DbServerSys {
                 const iLocalNumDb = i;
                 try {
                     
-                    const out = await db.raw(gQuery(msg.table).insert(msg.data).onConflict().ignore().toString())
+                    const out = await db.raw(sQuery)
 
                     const vConnect = adbWait[i].client.config.connection;
                     console.log('ПРОВЕРКА ВЫХОДА БД НА РАБОТУ')
