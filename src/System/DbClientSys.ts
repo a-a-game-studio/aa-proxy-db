@@ -457,7 +457,7 @@ export class DbClientSys {
         // Случайно отдаем одну базу данных из пула
         const iRand = mRandomInteger(0, adb.length - 1)
         const dbSelect = adb[iRand];
-        builder.client = dbSelect.client
+        
 
         // console.log('>>>SELECT:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
         
@@ -465,6 +465,8 @@ export class DbClientSys {
         let okExe = true;
         let vError = null; // Ошибка заполняется если при первом запросе она произошла
         try { // из случайной БД своего контура
+            builder.client = dbSelect.client
+
             // Выполнить запрос
             if (builder._method){ // _method только у билдера
                 out = await builder
@@ -480,9 +482,9 @@ export class DbClientSys {
             console.log('SELECT ERROR - БД IP:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
             for (let i = 0; i < adb.length; i++) {
                 const dbSelect = adb[i];
-                builder.client = dbSelect.client
                 
                 try {
+                    builder.client = dbSelect.client
                     // console.log('SELECT ERROR SELECT QUERY', dbSelect.client.config.connection)
                     // Выполнить запрос
                     if (builder._method){ // _method только у билдера
@@ -503,9 +505,9 @@ export class DbClientSys {
             console.log('SELECT ERROR - БД БД ALL:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
             for (let i = 0; i < adbAll.length; i++) {
                 const dbSelect = adbAll[i];
-                builder.client = dbSelect.client
                 
                 try {
+                    builder.client = dbSelect.client
                     // console.log('SELECT ERROR SELECT QUERY', dbSelect.client.config.connection)
                     // Выполнить запрос
                     if (builder._method){ // _method только у билдера
