@@ -460,12 +460,66 @@ export class DbClientSys {
         builder.client = dbSelect.client
         
         let out:T = null;
+        let okExe = true;
+        let vError = null; // Ошибка заполняется если при первом запросе она произошла
+        try { // из случайной БД своего контура
             // Выполнить запрос
             if (builder._method){ // _method только у билдера
                 out = await builder
             } else {
                 out = (await builder)[0]
             }
+        } catch (e) {
+            okExe = false
+            vError = e;
+        }
+
+        if(!okExe){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД своего контура
+            for (let i = 0; i < adb.length; i++) {
+                const dbSelect = adb[i];
+                builder.client = dbSelect.client
+                
+                try {
+                    // Выполнить запрос
+                    if (builder._method){ // _method только у билдера
+                        out = await builder
+                    } else {
+                        out = (await builder)[0]
+                    }
+    
+                    okExe = true;
+                    break;
+                } catch (e){
+                    okExe = false;
+                }
+            }
+        }
+
+        if(!okExe){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД доступных приложению
+            for (let i = 0; i < adbAll.length; i++) {
+                const dbSelect = adbAll[i];
+                builder.client = dbSelect.client
+                
+                try {
+                    // Выполнить запрос
+                    if (builder._method){ // _method только у билдера
+                        out = await builder
+                    } else {
+                        out = (await builder)[0]
+                    }
+    
+                    okExe = true;
+                    break;
+                } catch (e){
+                    okExe = false;
+                }
+            }
+        }
+
+        if(!okExe){ // Если так и не удалос выполнить запрос выбросить ошибку
+            throw vError;
+        }
+        
 
         this.iSelect++;
 
