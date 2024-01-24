@@ -645,8 +645,11 @@ export class DbServerSys {
     /** Получить информацию по очереди */
     public async dbInit(){
 
+        console.log('>>>ИНИЦИАЛИЗАЦИЯ PROXY_DB<<<')
+
         const bExistTable = await dbProxy.schema.hasTable('table');
         if(!bExistTable){
+            console.log('>>>Проверка/Создание таблицы cfDbProxy.table')
             await dbProxy.schema.createTable('table', (table:any) => {
 
                 table.increments('id')
@@ -673,10 +676,15 @@ export class DbServerSys {
                     .comment('Время обновления записи');
                     
             });
+
+            
         }
 
+        
+        console.log('>>>Проверка/Создание таблицы cfDbProxy.schema')
         const bExistSchema = await dbProxy.schema.hasTable('schema');
         if(!bExistSchema){
+            
             await dbProxy.schema.createTable('schema', (table:any) => {
 
                 table.increments('id')
@@ -701,7 +709,7 @@ export class DbServerSys {
         // Базы данных в репликации
         for (let i = 0; i < adb.length; i++) {
             const vDbReplication = adb[i];
-            
+            console.log('>>>Проверка/Создание таблицы aCfDb.__replication__', vDbReplication.client.config.connection)
             const bExistReplication = await vDbReplication.schema.hasTable('__replication__');
             if(!bExistReplication){
                 await vDbReplication.schema.createTable('__replication__', (table:any) => {
@@ -728,7 +736,7 @@ export class DbServerSys {
             }
         }
         
-
+        console.log('>>>Проверка/Создание таблицы cfDbProxy.query')
         const bExistQuery = await dbProxy.schema.hasTable('query');
         if(!bExistQuery){
             await dbProxy.schema.createTable('query', (table:any) => {
@@ -760,6 +768,7 @@ export class DbServerSys {
             });
         }
 
+        console.log('>>>Проверка/Создание таблицы cfDbProxy.log_packet1')
         const bExistLogPacket1 = await dbProxy.schema.hasTable('log_packet1');
         if(!bExistLogPacket1){
             await dbProxy.schema.createTable('log_packet1', (table:any) => {
@@ -786,6 +795,7 @@ export class DbServerSys {
             });
         }
 
+        console.log('>>>Проверка/Создание таблицы cfDbProxy.log_packet2')
         const bExistLogPacket2 = await dbProxy.schema.hasTable('log_packet2');
         if(!bExistLogPacket2){
             await dbProxy.schema.createTable('log_packet2', (table:any) => {
@@ -823,9 +833,12 @@ export class DbServerSys {
             this.runDb[i] = this.idQuery == idQueryRep;
         }
 
+        
         console.log('this.idSchema',this.idSchema);
 
         this.bInit = true;
+
+        console.log('>>>ИНИЦИАЛИЗАЦИЯ ЗАВЕРШЕНА<<<')
         
     }
 

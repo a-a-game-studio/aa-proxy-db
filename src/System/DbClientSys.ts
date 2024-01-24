@@ -166,7 +166,7 @@ export class DbClientSys {
                 }
 
                 if(Object.keys(data.adbAll).length){
-                    for (let [k,db] of Object.entries(data.adb)) {
+                    for (let [k,db] of Object.entries(data.adbAll)) {
                         // const db = data.adb[i];
                         adbAll.push(knex(db))
                     }
@@ -458,6 +458,8 @@ export class DbClientSys {
         const iRand = mRandomInteger(0, adb.length - 1)
         const dbSelect = adb[iRand];
         builder.client = dbSelect.client
+
+        // console.log('>>>SELECT:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
         
         let out:T = null;
         let okExe = true;
@@ -475,11 +477,13 @@ export class DbClientSys {
         }
 
         if(!okExe){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД своего контура
+            console.log('SELECT ERROR - БД IP:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
             for (let i = 0; i < adb.length; i++) {
                 const dbSelect = adb[i];
                 builder.client = dbSelect.client
                 
                 try {
+                    // console.log('SELECT ERROR SELECT QUERY', dbSelect.client.config.connection)
                     // Выполнить запрос
                     if (builder._method){ // _method только у билдера
                         out = await builder
@@ -496,11 +500,13 @@ export class DbClientSys {
         }
 
         if(!okExe){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД доступных приложению
+            console.log('SELECT ERROR - БД БД ALL:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
             for (let i = 0; i < adbAll.length; i++) {
                 const dbSelect = adbAll[i];
                 builder.client = dbSelect.client
                 
                 try {
+                    // console.log('SELECT ERROR SELECT QUERY', dbSelect.client.config.connection)
                     // Выполнить запрос
                     if (builder._method){ // _method только у билдера
                         out = await builder
@@ -553,12 +559,12 @@ export class DbClientSys {
                 resolve(dataIn)
             });
             this.querySys.fActionErr((err:any) => {
-                console.error('ERROR>>>', err);
+                console.error('ERROR INSERT CLIENT>>>', err);
                 reject(err)
             });
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
                 
-                console.error('ERROR>>>', ok,err,resp);
+                // console.error('ERROR>>>', ok,err,resp);
                 if(resp.errors){
                    
                     workErrorDb(resp.errors);
@@ -597,12 +603,12 @@ export class DbClientSys {
                 resolve(dataIn)
             });
             this.querySys.fActionErr((err:any) => {
-                console.error('ERROR>>>', err);
+                console.error('ERROR REPLACE CLIENT>>>', err);
                 reject(err)
             });
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
                 
-                console.error('ERROR>>>', ok,err,resp);
+                // console.error('ERROR>>>', ok,err,resp);
                 if(resp.errors){
                    
                     workErrorDb(resp.errors);
@@ -612,7 +618,7 @@ export class DbClientSys {
             this.querySys.fSend(MsgT.replace, vMsg);
             this.iInsert++;
 
-            console.log('insert init')
+            console.log('replace init')
         });
     }
 
