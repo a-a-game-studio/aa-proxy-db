@@ -35,7 +35,7 @@ function workErrorDb(errors:Record<string,string>){
                 }
                 adbError.push(adb[i]);
                 adb.splice(i, 1);
-                console.log('Отключение проблемной БД')
+                console.log('Отключение проблемной БД IP')
             }
         }
         for (let i = 0; i < adbAll.length; i++) {
@@ -51,30 +51,30 @@ function workErrorDb(errors:Record<string,string>){
                 }
                 adbAllError.push(adbAll[i]);
                 adbAll.splice(i, 1);
-                console.log('Отключение проблемной из общего списка БД')
+                console.log('Отключение проблемной БД All')
             }
         }
     }
 
     if(errors['append_db']){
         for (let i = 0; i < adbError.length; i++) {
-            const vConnect = adb[i].client.config.connection;
+            const vConnect = adbError[i].client.config.connection;
             if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
                 adb.push(adb[i]);
                 adbError.splice(i, 1);
 
-                console.log('Добавление проблемной БД')
+                console.log('Добавление проблемной БД IP')
             }
             
         }
 
         for (let i = 0; i < adbAllError.length; i++) {
-            const vConnect = adbAll[i].client.config.connection;
+            const vConnect = adbAllError[i].client.config.connection;
             if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
                 adbAll.push(adbAll[i]);
                 adbAllError.splice(i, 1);
 
-                console.log('Добавление проблемной БД')
+                console.log('Добавление проблемной БД ALL')
             }
 
         }
@@ -685,7 +685,7 @@ export class DbClientSys {
                     workErrorDb(resp.errors);
                 }
             });
-            
+
             this.querySys.fSend(MsgT.update_in, vMsg);
             this.iUpdate++;
         });
