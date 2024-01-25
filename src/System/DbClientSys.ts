@@ -69,7 +69,7 @@ function workErrorDb(errors:Record<string,string>){
             for (let i = 0; i < adbError.length; i++) {
                 const vConnect = adbError[i].client.config.connection;
                 if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                    adb.push(adb[i]);
+                    adb.push(adbError[i]);
                     adbError.splice(i, 1);
 
                     console.log('Добавление проблемной БД IP')
@@ -80,7 +80,7 @@ function workErrorDb(errors:Record<string,string>){
             for (let i = 0; i < adbAllError.length; i++) {
                 const vConnect = adbAllError[i].client.config.connection;
                 if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                    adbAll.push(adbAll[i]);
+                    adbAll.push(adbAllError[i]);
                     adbAllError.splice(i, 1);
 
                     console.log('Добавление проблемной БД ALL')
@@ -523,11 +523,11 @@ export class DbClientSys {
                         out = (await builder)[0]
                     }
     
-                    console.log('SELECT ERROR - БД IP: SUCCESS')
+                    console.log('SELECT ERROR - БД IP: SUCCESS', i);
                     okExe = true;
                     break;
                 } catch (e){
-                    console.log('SELECT ERROR - БД IP: FAIL', e)
+                    console.log('SELECT ERROR - БД IP: FAIL', i, e);
                     okExe = false;
                 }
             }
@@ -548,11 +548,11 @@ export class DbClientSys {
                         out = (await builder)[0]
                     }
     
-                    console.log('SELECT ERROR - БД ALL: SUCCESS')
+                    console.log('SELECT ERROR - БД ALL: SUCCESS ', i)
                     okExe = true;
                     break;
                 } catch (e){
-                    console.log('SELECT ERROR - БД ALL: FAIL', e)
+                    console.log('SELECT ERROR - БД ALL: FAIL ', i, e)
                     okExe = false;
                 }
             }
