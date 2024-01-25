@@ -30,7 +30,7 @@ function workErrorDb(errors:Record<string,string>){
 
                 // Если одновременно и добавление и удаление
                 if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                    delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                    delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
                     continue;
                 }
                 adbError.push(adb[i]);
@@ -46,7 +46,7 @@ function workErrorDb(errors:Record<string,string>){
 
                 // Если одновременно и добавление и удаление
                 if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                    delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                    delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
                     continue;
                 }
                 adbAllError.push(adbAll[i]);
