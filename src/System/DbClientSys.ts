@@ -20,6 +20,8 @@ let adbError:Knex[] = [];
 let adbAll:Knex[] = [];
 let adbAllError:Knex[] = [];
 
+let adbAllClaster:Knex[] = [];
+
 /** Обработка ошибок отключения/присоединения БД */
 function workErrorDb(errors:Record<string,string>){
     try {
@@ -186,8 +188,11 @@ export class DbClientSys {
                     for (let [k,db] of Object.entries(data.adbAll)) {
                         // const db = data.adb[i];
                         adbAll.push(knex(db))
+                        adbAllClaster.push(knex(db))
                     }
                 }
+
+                
 
                 if(adb.length){
                     this.bInitDbConnect = true;
@@ -557,6 +562,33 @@ export class DbClientSys {
                 }
             }
         }
+
+        if(!okExe && adbAllClaster?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД доступных приложению
+            console.log('SELECT ERROR - БД БД ALL:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
+            for (let i = 0; i < adbAllClaster.length; i++) {
+                const dbSelect = adbAllClaster[i];
+                
+                try {
+                    builder.client = dbSelect.client
+                    // console.log('SELECT ERROR SELECT QUERY', dbSelect.client.config.connection)
+                    // Выполнить запрос
+                    if (builder._method){ // _method только у билдера
+                        out = await builder
+                    } else {
+                        out = (await builder)[0]
+                    }
+    
+                    console.log('SELECT ERROR - БД ALL CLUSTER: SUCCESS ', i)
+                    okExe = true;
+                    break;
+                } catch (e){
+                    console.log('SELECT ERROR - БД ALL CLUSTER: FAIL ', i, e)
+                    okExe = false;
+                }
+            }
+        }
+
+        
 
         if(!okExe){ // Если так и не удалос выполнить запрос выбросить ошибку
             throw vError;
