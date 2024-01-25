@@ -20,68 +20,72 @@ let adbError:Knex[] = [];
 let adbAll:Knex[] = [];
 let adbAllError:Knex[] = [];
 
+/** Обработка ошибок отключения/присоединения БД */
 function workErrorDb(errors:Record<string,string>){
-    if(errors['leve_db']){
-        for (let i = 0; i < adb.length; i++) {
-            const vConnect = adb[i].client.config.connection;
-            // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
-            
-            if(errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+    try {
+        if(errors['leve_db']){
+            for (let i = 0; i < adb.length; i++) {
+                const vConnect = adb[i].client.config.connection;
+                // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
+                
+                if(errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
 
-                // Если одновременно и добавление и удаление
-                if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                    delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
-                    delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
-                    continue;
+                    // Если одновременно и добавление и удаление
+                    if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                        delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                        delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                        continue;
+                    }
+                    adbError.push(adb[i]);
+                    adb.splice(i, 1);
+                    console.log('Отключение проблемной БД IP')
                 }
-                adbError.push(adb[i]);
-                adb.splice(i, 1);
-                console.log('Отключение проблемной БД IP')
             }
-        }
-        for (let i = 0; i < adbAll.length; i++) {
-            const vConnect = adbAll[i].client.config.connection;
-            // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
-            
-            if(errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+            for (let i = 0; i < adbAll.length; i++) {
+                const vConnect = adbAll[i].client.config.connection;
+                // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
+                
+                if(errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
 
-                // Если одновременно и добавление и удаление
-                if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                    delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
-                    delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
-                    continue;
+                    // Если одновременно и добавление и удаление
+                    if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                        delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                        delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                        continue;
+                    }
+                    adbAllError.push(adbAll[i]);
+                    adbAll.splice(i, 1);
+                    console.log('Отключение проблемной БД All')
                 }
-                adbAllError.push(adbAll[i]);
-                adbAll.splice(i, 1);
-                console.log('Отключение проблемной БД All')
             }
         }
+
+        if(errors['append_db']){
+            for (let i = 0; i < adbError.length; i++) {
+                const vConnect = adbError[i].client.config.connection;
+                if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                    adb.push(adb[i]);
+                    adbError.splice(i, 1);
+
+                    console.log('Добавление проблемной БД IP')
+                }
+                
+            }
+
+            for (let i = 0; i < adbAllError.length; i++) {
+                const vConnect = adbAllError[i].client.config.connection;
+                if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                    adbAll.push(adbAll[i]);
+                    adbAllError.splice(i, 1);
+
+                    console.log('Добавление проблемной БД ALL')
+                }
+
+            }
+        }
+    } catch(e) {
+        console.log('ProxyDb.workErrorDb>>>',e);
     }
-
-    if(errors['append_db']){
-        for (let i = 0; i < adbError.length; i++) {
-            const vConnect = adbError[i].client.config.connection;
-            if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                adb.push(adb[i]);
-                adbError.splice(i, 1);
-
-                console.log('Добавление проблемной БД IP')
-            }
-            
-        }
-
-        for (let i = 0; i < adbAllError.length; i++) {
-            const vConnect = adbAllError[i].client.config.connection;
-            if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                adbAll.push(adbAll[i]);
-                adbAllError.splice(i, 1);
-
-                console.log('Добавление проблемной БД ALL')
-            }
-
-        }
-    }
-
 }
 
 /** DbClientSys */
