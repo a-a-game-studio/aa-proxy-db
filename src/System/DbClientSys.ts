@@ -421,6 +421,11 @@ export class DbClientSys {
                 console.error(err);
                 reject(err)
             });
+            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
+                if(resp.errors){
+                    workErrorDb(resp.errors);
+                }
+            });
             this.querySys.fSend(MsgT.common, vMsg);
             this.iSelect++;
         });
@@ -842,6 +847,11 @@ export class DbClientSys {
                 console.error(err);
                 reject(err)
             });
+            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
+                if(resp.errors){
+                    workErrorDb(resp.errors);
+                }
+            });
             this.querySys.fSend(MsgT.update, vMsg);
             this.iUpdate++;
         });
@@ -1044,6 +1054,11 @@ export class DbClientSys {
                 this.iSendErr++;
                 console.error(err);
                 reject(err)
+            });
+            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
+                if(resp.errors){
+                    workErrorDb(resp.errors);
+                }
             });
             this.querySys.fSend(MsgT.delete, vMsg);
             this.iUpdate++;
