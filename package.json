@@ -1,6 +1,6 @@
 {
   "name": "@a-a-game-studio/aa-proxy-db",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Прокси балансировщик баз данных",
   "main": "build/index.js",
   "types": "build/index.d.ts",
