@@ -37,12 +37,12 @@ function workErrorDb(errors:Record<string,string>){
                 
                 if(errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
 
-                    // Если одновременно и добавление и удаление
-                    if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                        delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
-                        delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
-                        continue;
-                    }
+                    // // Если одновременно и добавление и удаление
+                    // if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                    //     // delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                    //     // delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                    //     continue;
+                    // }
                     adbError.push(adb[i]);
                     adb.splice(i, 1);
                     console.log('Отключение проблемной БД IP')
@@ -54,12 +54,12 @@ function workErrorDb(errors:Record<string,string>){
                 
                 if(errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
 
-                    // Если одновременно и добавление и удаление
-                    if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                        delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
-                        delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
-                        continue;
-                    }
+                    // // Если одновременно и добавление и удаление
+                    // if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                    //     // delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                    //     // delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                    //     continue;
+                    // }
                     adbAllError.push(adbAll[i]);
                     adbAll.splice(i, 1);
                     console.log('Отключение проблемной БД All')
@@ -631,13 +631,9 @@ export class DbClientSys {
                 reject(err)
             });
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                
-                // console.error('ERROR>>>', ok,err,resp);
                 if(resp.errors){
-                   
                     workErrorDb(resp.errors);
                 }
-                
             });
             this.querySys.fSend(MsgT.insert, vMsg);
             this.iInsert++;
