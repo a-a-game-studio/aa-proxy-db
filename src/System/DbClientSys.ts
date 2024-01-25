@@ -455,8 +455,7 @@ export class DbClientSys {
         }
 
         // Случайно отдаем одну базу данных из пула
-        const iRand = mRandomInteger(0, adb.length - 1)
-        const dbSelect = adb[iRand];
+        
         
 
         // console.log('>>>SELECT:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
@@ -465,20 +464,28 @@ export class DbClientSys {
         let okExe = true;
         let vError = null; // Ошибка заполняется если при первом запросе она произошла
         try { // из случайной БД своего контура
-            builder.client = dbSelect.client
 
-            // Выполнить запрос
-            if (builder._method){ // _method только у билдера
-                out = await builder
+            if(adb?.length > 0){
+                const iRand = mRandomInteger(0, adb.length - 1)
+                const dbSelect = adb[iRand];
+                builder.client = dbSelect.client
+
+                // Выполнить запрос
+                if (builder._method){ // _method только у билдера
+                    out = await builder
+                } else {
+                    out = (await builder)[0]
+                }
             } else {
-                out = (await builder)[0]
+                okExe = false;
+                vError = new Error('БД недоступна - '+this.conf?.nameApp+' - БД по IP'+adb?.length+' БД доступные - '+adbAll?.length);
             }
         } catch (e) {
             okExe = false
             vError = e;
         }
 
-        if(!okExe){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД своего контура
+        if(!okExe && adb?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД своего контура
             console.log('SELECT ERROR - БД IP:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
             for (let i = 0; i < adb.length; i++) {
                 const dbSelect = adb[i];
@@ -501,7 +508,7 @@ export class DbClientSys {
             }
         }
 
-        if(!okExe){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД доступных приложению
+        if(!okExe && adbAll?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД доступных приложению
             console.log('SELECT ERROR - БД БД ALL:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
             for (let i = 0; i < adbAll.length; i++) {
                 const dbSelect = adbAll[i];

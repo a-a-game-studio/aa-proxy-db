@@ -645,200 +645,206 @@ export class DbServerSys {
     /** Получить информацию по очереди */
     public async dbInit(){
 
-        console.log('>>>ИНИЦИАЛИЗАЦИЯ PROXY_DB<<<')
+        try {
+            console.log('>>>ИНИЦИАЛИЗАЦИЯ PROXY_DB<<<')
 
-        const bExistTable = await dbProxy.schema.hasTable('table');
-        if(!bExistTable){
-            console.log('>>>Проверка/Создание таблицы cfDbProxy.table')
-            await dbProxy.schema.createTable('table', (table:any) => {
+            const bExistTable = await dbProxy.schema.hasTable('table');
+            if(!bExistTable){
+                console.log('>>>Проверка/Создание таблицы cfDbProxy.table')
+                await dbProxy.schema.createTable('table', (table:any) => {
 
-                table.increments('id')
-                    .comment('ID');
-
-                table.string('table', 100)
-                    .unique('table')
-                    .comment('Таблица');
-
-                table.bigInteger('table_id')
-                    .comment('table_id');
-
-                table.integer('schema_id')
-                    .comment('schema_id');
-
-                table.dateTime('created_at', null)
-                    .notNullable()
-                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
-                    .comment('Время создания записи');
-
-                table.dateTime('updated_at')
-                    .notNullable()
-                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
-                    .comment('Время обновления записи');
-                    
-            });
-
-            
-        }
-
-        
-        console.log('>>>Проверка/Создание таблицы cfDbProxy.schema')
-        const bExistSchema = await dbProxy.schema.hasTable('schema');
-        if(!bExistSchema){
-            
-            await dbProxy.schema.createTable('schema', (table:any) => {
-
-                table.increments('id')
-                    .comment('ID');
-
-                table.string('table', 100)
-                    .index('table')
-                    .comment('Таблица');
-
-                table.text('data')
-                    .comment('data');
-
-                table.dateTime('created_at', null)
-                    .index('created_at')
-                    .notNullable()
-                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
-                    .comment('Время создания записи');
-                    
-            });
-        }
-
-        // Базы данных в репликации
-        for (let i = 0; i < adb.length; i++) {
-            const vDbReplication = adb[i];
-            console.log('>>>Проверка/Создание таблицы aCfDb.__replication__', vDbReplication.client.config.connection)
-            const bExistReplication = await vDbReplication.schema.hasTable('__replication__');
-            if(!bExistReplication){
-                await vDbReplication.schema.createTable('__replication__', (table:any) => {
-
-                    table.bigIncrements('id')
+                    table.increments('id')
                         .comment('ID');
 
+                    table.string('table', 100)
+                        .unique('table')
+                        .comment('Таблица');
+
+                    table.bigInteger('table_id')
+                        .comment('table_id');
 
                     table.integer('schema_id')
-                        .index('schema_id')
-                        .comment('Таблица');
-
-                    table.enum('cmd',['insert', 'update', 'delete', 'schema'])
-                        .index('cmd')
-                        .comment('Таблица');
-
+                        .comment('schema_id');
 
                     table.dateTime('created_at', null)
                         .notNullable()
                         .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
                         .comment('Время создания записи');
-                            
-                    });
+
+                    table.dateTime('updated_at')
+                        .notNullable()
+                        .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+                        .comment('Время обновления записи');
+                        
+                });
+
+                
             }
+
+            
+            console.log('>>>Проверка/Создание таблицы cfDbProxy.schema')
+            const bExistSchema = await dbProxy.schema.hasTable('schema');
+            if(!bExistSchema){
+                
+                await dbProxy.schema.createTable('schema', (table:any) => {
+
+                    table.increments('id')
+                        .comment('ID');
+
+                    table.string('table', 100)
+                        .index('table')
+                        .comment('Таблица');
+
+                    table.text('data')
+                        .comment('data');
+
+                    table.dateTime('created_at', null)
+                        .index('created_at')
+                        .notNullable()
+                        .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
+                        .comment('Время создания записи');
+                        
+                });
+            }
+
+            // Базы данных в репликации
+            for (let i = 0; i < adb.length; i++) {
+                const vDbReplication = adb[i];
+                console.log('>>>Проверка/Создание таблицы aCfDb.__replication__', vDbReplication.client.config.connection)
+                const bExistReplication = await vDbReplication.schema.hasTable('__replication__');
+                if(!bExistReplication){
+                    await vDbReplication.schema.createTable('__replication__', (table:any) => {
+
+                        table.bigIncrements('id')
+                            .comment('ID');
+
+
+                        table.integer('schema_id')
+                            .index('schema_id')
+                            .comment('Таблица');
+
+                        table.enum('cmd',['insert', 'update', 'delete', 'schema'])
+                            .index('cmd')
+                            .comment('Таблица');
+
+
+                        table.dateTime('created_at', null)
+                            .notNullable()
+                            .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
+                            .comment('Время создания записи');
+                                
+                        });
+                }
+            }
+            
+            console.log('>>>Проверка/Создание таблицы cfDbProxy.query')
+            const bExistQuery = await dbProxy.schema.hasTable('query');
+            if(!bExistQuery){
+                await dbProxy.schema.createTable('query', (table:any) => {
+
+                    table.bigIncrements('id')
+                        .comment('ID');
+
+                    table.string('table', 100)
+                        .index('table')
+                        .comment('Таблица');
+
+                    table.integer('schema_id')
+                        .index('schema_id')
+                        .comment('Таблица');
+
+                    table.enum('cmd',['insert', 'update', 'delete'])
+                        .index('cmd')
+                        .comment('Таблица');
+
+                    table.text('data','mediumtext')
+                        .comment('данные');
+
+                    table.dateTime('created_at', null)
+                        .index('created_at')
+                        .notNullable()
+                        .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
+                        .comment('Время создания записи');
+
+                });
+            }
+
+            console.log('>>>Проверка/Создание таблицы cfDbProxy.log_packet1')
+            const bExistLogPacket1 = await dbProxy.schema.hasTable('log_packet1');
+            if(!bExistLogPacket1){
+                await dbProxy.schema.createTable('log_packet1', (table:any) => {
+
+                    table.increments('id')
+                        .comment('ID');
+
+                    table.boolean('status')
+                        .index('status')
+                        .defaultTo(0)
+                        .comment('Статус');
+
+                    table.string('table', 255)
+                        .comment('Имя таблицы');
+
+                    table.text('data')
+                        .comment('Данные');
+
+                    table.dateTime('created_at', null)
+                        .notNullable()
+                        .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
+                        .comment('Время создания записи');
+                        
+                });
+            }
+
+            console.log('>>>Проверка/Создание таблицы cfDbProxy.log_packet2')
+            const bExistLogPacket2 = await dbProxy.schema.hasTable('log_packet2');
+            if(!bExistLogPacket2){
+                await dbProxy.schema.createTable('log_packet2', (table:any) => {
+
+                    table.increments('id')
+                        .comment('ID');
+
+                    table.boolean('status')
+                        .index('status')
+                        .defaultTo(0)
+                        .comment('Статус');
+
+                    table.string('table', 255)
+                        .comment('Имя таблицы');
+
+                    table.text('data')
+                        .comment('Данные');
+
+                    table.dateTime('created_at', null)
+                        .notNullable()
+                        .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
+                        .comment('Время создания записи');
+                        
+                });
+            }
+
+
+            this.idSchema = (await dbProxy('schema').max({id:'id'}))[0]?.id || 0;
+            this.idQuery = (await dbProxy('query').max({id:'id'}))[0]?.id || 0;
+
+            for (let i = 0; i < adb.length; i++) {
+                const db = adb[i];
+                const idQueryRep = (await db('__replication__').max({id:'id'}))[0]?.id || 0;
+
+                this.runDb[i] = this.idQuery == idQueryRep;
+            }
+
+            
+            console.log('this.idSchema',this.idSchema);
+
+            this.bInit = true;
+
+            console.log('>>>ИНИЦИАЛИЗАЦИЯ ЗАВЕРШЕНА<<<')
+        } catch (e) {
+            console.log(e);
+            console.log('>>>ОШИБКА ПРИ ИНИЦИАЛИЗАЦИИ<<<')
+            process.exit(1); // завершить программу
         }
-        
-        console.log('>>>Проверка/Создание таблицы cfDbProxy.query')
-        const bExistQuery = await dbProxy.schema.hasTable('query');
-        if(!bExistQuery){
-            await dbProxy.schema.createTable('query', (table:any) => {
-
-                table.bigIncrements('id')
-                    .comment('ID');
-
-                table.string('table', 100)
-                    .index('table')
-                    .comment('Таблица');
-
-                table.integer('schema_id')
-                    .index('schema_id')
-                    .comment('Таблица');
-
-                table.enum('cmd',['insert', 'update', 'delete'])
-                    .index('cmd')
-                    .comment('Таблица');
-
-                table.text('data','mediumtext')
-                    .comment('данные');
-
-                table.dateTime('created_at', null)
-                    .index('created_at')
-                    .notNullable()
-                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
-                    .comment('Время создания записи');
-
-            });
-        }
-
-        console.log('>>>Проверка/Создание таблицы cfDbProxy.log_packet1')
-        const bExistLogPacket1 = await dbProxy.schema.hasTable('log_packet1');
-        if(!bExistLogPacket1){
-            await dbProxy.schema.createTable('log_packet1', (table:any) => {
-
-                table.increments('id')
-                    .comment('ID');
-
-                table.boolean('status')
-                    .index('status')
-                    .defaultTo(0)
-                    .comment('Статус');
-
-                table.string('table', 255)
-                    .comment('Имя таблицы');
-
-                table.text('data')
-                    .comment('Данные');
-
-                table.dateTime('created_at', null)
-                    .notNullable()
-                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
-                    .comment('Время создания записи');
-                    
-            });
-        }
-
-        console.log('>>>Проверка/Создание таблицы cfDbProxy.log_packet2')
-        const bExistLogPacket2 = await dbProxy.schema.hasTable('log_packet2');
-        if(!bExistLogPacket2){
-            await dbProxy.schema.createTable('log_packet2', (table:any) => {
-
-                table.increments('id')
-                    .comment('ID');
-
-                table.boolean('status')
-                    .index('status')
-                    .defaultTo(0)
-                    .comment('Статус');
-
-                table.string('table', 255)
-                    .comment('Имя таблицы');
-
-                table.text('data')
-                    .comment('Данные');
-
-                table.dateTime('created_at', null)
-                    .notNullable()
-                    .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
-                    .comment('Время создания записи');
-                    
-            });
-        }
-
-
-        this.idSchema = (await dbProxy('schema').max({id:'id'}))[0]?.id || 0;
-        this.idQuery = (await dbProxy('query').max({id:'id'}))[0]?.id || 0;
-
-        for (let i = 0; i < adb.length; i++) {
-            const db = adb[i];
-            const idQueryRep = (await db('__replication__').max({id:'id'}))[0]?.id || 0;
-
-            this.runDb[i] = this.idQuery == idQueryRep;
-        }
-
-        
-        console.log('this.idSchema',this.idSchema);
-
-        this.bInit = true;
-
-        console.log('>>>ИНИЦИАЛИЗАЦИЯ ЗАВЕРШЕНА<<<')
         
     }
 
