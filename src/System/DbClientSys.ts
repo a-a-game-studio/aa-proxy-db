@@ -503,6 +503,7 @@ export class DbClientSys {
                 vError = new Error('БД недоступна - '+this.conf?.nameApp+' - БД по IP'+adb?.length+' БД доступные - '+adbAll?.length);
             }
         } catch (e) {
+            console.log('БД недоступна - '+this.conf?.nameApp+' - БД по IP'+adb?.length+' БД доступные - '+adbAll?.length);
             okExe = false
             vError = e;
         }
@@ -522,9 +523,11 @@ export class DbClientSys {
                         out = (await builder)[0]
                     }
     
+                    console.log('SELECT ERROR - БД IP: SUCCESS')
                     okExe = true;
                     break;
                 } catch (e){
+                    console.log('SELECT ERROR - БД IP: FAIL', e)
                     okExe = false;
                 }
             }
@@ -545,9 +548,11 @@ export class DbClientSys {
                         out = (await builder)[0]
                     }
     
+                    console.log('SELECT ERROR - БД ALL: SUCCESS')
                     okExe = true;
                     break;
                 } catch (e){
+                    console.log('SELECT ERROR - БД ALL: FAIL', e)
                     okExe = false;
                 }
             }
