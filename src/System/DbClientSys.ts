@@ -23,6 +23,11 @@ let adbAllError:Knex[] = [];
 /** Обработка ошибок отключения/присоединения БД */
 function workErrorDb(errors:Record<string,string>){
     try {
+        console.log(
+            '>>>workErrorDb.STATUS_START:', 
+            ' БД по IP',adb?.length,'|',adbError?.length, 
+            ' БД доступные',adbAll?.length,'|',adbAllError?.length
+        )
         if(errors['leve_db']){
             for (let i = 0; i < adb.length; i++) {
                 const vConnect = adb[i].client.config.connection;
@@ -86,6 +91,12 @@ function workErrorDb(errors:Record<string,string>){
     } catch(e) {
         console.log('ProxyDb.workErrorDb>>>',e);
     }
+
+    console.log(
+        '>>>workErrorDb.STATUS_END:', 
+        ' БД по IP',adb?.length,'|',adbError?.length, 
+        ' БД доступные',adbAll?.length,'|',adbAllError?.length
+    )
 }
 
 /** DbClientSys */
