@@ -564,7 +564,7 @@ export class DbClientSys {
         }
 
         if(!okExe && adbAllClaster?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД доступных приложению
-            console.log('SELECT ERROR - БД БД ALL:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
+            console.log('SELECT ERROR - БД БД ALL CLUSTER:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
             for (let i = 0; i < adbAllClaster.length; i++) {
                 const dbSelect = adbAllClaster[i];
                 
