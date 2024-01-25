@@ -616,13 +616,9 @@ export class DbClientSys {
                 reject(err)
             });
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                
-                // console.error('ERROR>>>', ok,err,resp);
                 if(resp.errors){
-                   
                     workErrorDb(resp.errors);
                 }
-                
             });
             this.querySys.fSend(MsgT.replace, vMsg);
             this.iInsert++;
@@ -683,6 +679,13 @@ export class DbClientSys {
                 console.error(err);
                 reject(err)
             });
+
+            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
+                if(resp.errors){
+                    workErrorDb(resp.errors);
+                }
+            });
+            
             this.querySys.fSend(MsgT.update_in, vMsg);
             this.iUpdate++;
         });
@@ -751,6 +754,13 @@ export class DbClientSys {
                 console.error(err);
                 reject(err)
             });
+
+            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
+                if(resp.errors){
+                    workErrorDb(resp.errors);
+                }
+            });
+
             this.querySys.fSend(MsgT.update, vMsg);
             this.iUpdate++;
         });
@@ -895,6 +905,13 @@ export class DbClientSys {
                 console.error(err);
                 reject(err)
             });
+
+            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
+                if(resp.errors){
+                    workErrorDb(resp.errors);
+                }
+            });
+
             this.querySys.fSend(MsgT.delete, vMsg);
             this.iUpdate++;
         });
@@ -950,6 +967,13 @@ export class DbClientSys {
                 console.error(err);
                 reject(err)
             });
+
+            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
+                if(resp.errors){
+                    workErrorDb(resp.errors);
+                }
+            });
+
             this.querySys.fSend(MsgT.delete_in, vMsg);
             this.iDelete++;
         });
