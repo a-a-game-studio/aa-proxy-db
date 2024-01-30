@@ -222,6 +222,68 @@ export class DbServerSys {
         
     }
 
+    /** получить коннект для изменения данных update|delete */
+    private async fGetIDForDataChange(msg:QueryContextI): Promise<number[]>{
+
+
+        let aid = []
+        let okExe = true;
+        let vError = null; // Ошибка заполняется если при первом запросе она произошла
+        try { // из случайной БД своего контура
+
+            if(adb?.length > 0){
+
+                const iRand = mRandomInteger(0, adb.length - 1)
+                const dbSelect = adb[iRand];
+
+                const a = (await dbSelect.raw(msg.query))[0];
+
+                // console.log(msg.query);
+                console.log('---1>',a)
+                aid = a.map((el:any) => el[msg.key_in]);
+                console.log('---2>',aid)
+            } else {
+                okExe = false;
+                vError = new Error('БД недоступна - '+conf?.common?.nameApp+' - БД по IP'+adb?.length+' БД доступные - '+adb?.length);
+            }
+        } catch (e) {
+            console.log('БД недоступна - '+conf?.common?.nameApp+' - БД по IP'+adb?.length+' БД доступные - '+adb?.length);
+            okExe = false
+            vError = e;
+        }
+
+        if(!okExe && adb?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД своего контура
+            console.log('SELECT ERROR - БД ALL:', ' БД по ALL',adb.length)
+            for (let i = 0; i < adb.length; i++) {
+                
+                try {
+                    const iRand = mRandomInteger(0, adb.length - 1)
+                    const dbSelect = adb[iRand];
+
+                    const a = (await dbSelect.raw(msg.query))[0];
+
+                    // console.log(msg.query);
+                    console.log('---1>',a)
+                    aid = a.map((el:any) => el[msg.key_in]);
+                    console.log('---2>',aid)
+    
+                    console.log('SELECT ERROR - БД ALL: SUCCESS', i);
+                    okExe = true;
+                    break;
+                } catch (e){
+                    console.log('SELECT ERROR - БД ALL: FAIL', i, e);
+                    okExe = false;
+                }
+            }
+        }
+
+        if(!okExe){ // Если так и не удалос выполнить запрос выбросить ошибку
+            throw vError;
+        }
+
+        return aid
+    }
+
 
     /** Выполнить запрос с обработкой ошибок */
     private async fExeQuery(msg:QueryContextI, sQuery:string){
@@ -492,16 +554,7 @@ export class DbServerSys {
 
         const vTableC = this.ixTable[msg.table];
 
-        // Случайно отдаем одну базу данных из пула
-        const iRand = mRandomInteger(0, adb.length - 1)
-        const dbSelect = adb[iRand];
-
-        const a = (await dbSelect.raw(msg.query))[0];
-
-        // console.log(msg.query);
-        console.log('---1>',a)
-        const aid = a.map((el:any) => el[msg.key_in]);
-        console.log('---2>',aid)
+        const aid = await this.fGetIDForDataChange(msg);
 
         
         if(aid.length){
@@ -574,16 +627,7 @@ export class DbServerSys {
 
         const vTableC = this.ixTable[msg.table];
 
-        // Случайно отдаем одну базу данных из пула
-        const iRand = mRandomInteger(0, adb.length - 1)
-        const dbSelect = adb[iRand];
-
-        const a = (await dbSelect.raw(msg.query))[0];
-
-        // console.log(msg.query);
-        console.log('---1>',a)
-        const aid = a.map((el:any) => el[msg.key_in]);
-        console.log('---2>',aid)
+        const aid = await this.fGetIDForDataChange(msg);
 
         if(aid.length){
 
