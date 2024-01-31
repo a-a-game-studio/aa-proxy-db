@@ -42,7 +42,7 @@ export class DbTableC {
         // const lastid = (await dbMaster.raw(`SELECT LAST_INSERT_ID() as id`))[0][0]?.id;
 
         const idAutoMaster = this.statusMaster ? this.statusMaster['Auto_Increment'] || 0 : 0;
-        const idLastInsertMaster = this.statusMaster ? (await dbMaster.raw(`SELECT LAST_INSERT_ID() as id`))[0][0]?.id || 0 : 0;
+        // const idLastInsertMaster = this.statusMaster ? (await dbMaster.raw(`SELECT LAST_INSERT_ID() as id`))[0][0]?.id || 0 : 0;
         const idMaxMaster = this.statusMaster ? (await dbMaster(sTable).max({id:'id'}))[0]?.id || 0 : 0;
 
         this.statusProxy = (await dbProxy('table').where('table',sTable).select())[0];
@@ -56,7 +56,7 @@ export class DbTableC {
         this.idSchema = this.statusProxy?.schema_id || 0;
 
         this.id = idAutoMaster 
-        this.id = this.id < idLastInsertMaster ? idLastInsertMaster : this.id;
+        // this.id = this.id < idLastInsertMaster ? idLastInsertMaster : this.id;
         this.id = this.id < idMaxMaster ? idMaxMaster : this.id;
         this.id = this.id < idAutoProxy ? idAutoProxy : this.id;
 

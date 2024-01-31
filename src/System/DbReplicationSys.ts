@@ -55,6 +55,18 @@ export class DbReplicationSys {
 
             const dbMaster = adb[i];
 
+            try { // Проверка БД на доступность
+                await dbMaster('__replication__').max({id:'id'});
+            } catch (e){
+                const vConnect = dbMaster?.client?.config?.connection;   
+                if(vConnect){
+                    console.log('<<<ERROR>>>', vConnect.host+':'+vConnect.port+':'+vConnect.database,' - Соединение отсутствует');
+                } else {
+                    console.log('<<<ERROR>>>','adb[',i,']', ' == несуществует|undefined');
+                }
+                continue;
+            }
+      
             //================================================
             //================================================
 
