@@ -58,7 +58,7 @@ export class DbReplicationSys {
             try { // Проверка БД на доступность
                 await dbMaster('__replication__').max({id:'id'});
             } catch (e){
-                const vConnect = dbMaster?.client?.config?.connection;   
+                const vConnect = dbMaster?.client?.config?.connection;
                 if(vConnect){
                     console.log('<<<ERROR>>>', vConnect.host+':'+vConnect.port+':'+vConnect.database,' - Соединение отсутствует');
                 } else {
