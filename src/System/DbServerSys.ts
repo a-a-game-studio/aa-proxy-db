@@ -871,11 +871,35 @@ export class DbServerSys {
             this.idSchema = (await dbProxy('schema').max({id:'id'}))[0]?.id || 0;
             this.idQuery = (await dbProxy('query').max({id:'id'}))[0]?.id || 0;
 
+
+            // Фиксация проблемных БД
+            let asErrorDB:string[] = [];
             for (let i = 0; i < adb.length; i++) {
                 const db = adb[i];
                 const idQueryRep = (await db('__replication__').max({id:'id'}))[0]?.id || 0;
 
+                if(idQueryRep < this.idQuery){
+                    const vConnect = adb[i].client.config.connection;   
+                    asErrorDB.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
+                }
+
                 this.runDb[i] = this.idQuery == idQueryRep;
+            }
+
+            // Отключение проблемных БД
+            for (let i = 0; i < asErrorDB.length; i++) {
+                const sErrorDB = asErrorDB[i];
+                for (let j = 0; j < adb.length; j++) {
+                    const vConnect = adb[j].client.config.connection;
+                    if(sErrorDB == vConnect.host+':'+vConnect.port+':'+vConnect.database){
+                        adbError.push(adb[j]);
+                        adb.splice(j, 1);
+                        console.log(
+                            '<<<ERROR_INIT Отсоеденена проблемная БД>>> - '+vConnect.host+':'+vConnect.port+':'+vConnect.database
+                        );
+                        break;
+                    }
+                }
             }
 
             
