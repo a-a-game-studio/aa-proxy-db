@@ -102,4 +102,36 @@ export class DbLogSys {
 
     }
 
+    /** Поместить значение в очередь */
+    public async delete(aid:number[], msg:QueryContextI){
+
+        console.log('===LOG_DELETE1====')
+        
+        if(!gixLogChangeByFrom[msg.table]){
+            return; // Прерывание
+        }
+
+        console.log('===LOG_DELETE2====')
+
+        const aLog:{table:string, data:string}[] = [];
+
+        const aTrigger = gixLogChangeByFrom[msg.table];
+        for (let i = 0; i < aTrigger.length; i++) {
+            const vTrigger = aTrigger[i];
+
+            console.log('===LOG_DELETE3====')
+
+            for (let j = 0; j < aid.length; j++) {
+                const id = aid[j];
+                const vRow = <any>{};
+                vRow[msg.key_in] = id;
+            
+                aLog.push({table:vTrigger.to, data:JSON.stringify(vRow)});
+            }
+        }
+
+        await dbProxy(cfLogChange.logBuffer.log1).insert(aLog);
+
+    }
+
 }
