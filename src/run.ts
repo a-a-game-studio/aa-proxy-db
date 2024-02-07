@@ -9,7 +9,7 @@ import { DbServerSys } from './System/DbServerSys';
 import * as conf from './Config/MainConfig';
 import { ErrorSys } from '@a-a-game-studio/aa-components';
 import { DbReplicationSys } from './System/DbReplicationSys';
-import { adb, adbError, adbWait } from './System/DBConnect';
+import { adb, adbError, adbWait, mReplicationEnable } from './System/DBConnect';
 
 let cntConnect = 0;
 
@@ -22,8 +22,11 @@ gDbServerSys.dbInit();
 /** Интервал записи данных в бд */
 const intervalDb = setInterval(async () => {
     await gDbServerSys.dbSave();
-    await gDbReplicationSys.dbReplication();
-    await gDbReplicationSys.dbCheckReplication();
+
+    if(mReplicationEnable()){
+        await gDbReplicationSys.dbReplication();
+        await gDbReplicationSys.dbCheckReplication();
+    }
     console.log('>>>INTERVAL DB EXE', adb.length, adbWait.length, adbError.length)
 },1000)
 

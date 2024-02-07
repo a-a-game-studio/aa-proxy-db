@@ -1,6 +1,6 @@
 
 import ip from 'ip'
-import { dbMaster, dbProxy, adb, gixDb, adbError, adbWait, ixDbWaitTime } from './DBConnect';
+import { dbMaster, dbProxy, adb, gixDb, adbError, adbWait, ixDbWaitTime, mReplicationEnable } from './DBConnect';
 import { v4 as uuidv4 } from 'uuid';
 import { mFormatDateTime } from '../Helper/DateTimeH';
 import _, { now, NumericDictionaryIterateeCustom } from 'lodash';
@@ -752,32 +752,34 @@ export class DbServerSys {
             }
 
             // Базы данных в репликации
-            for (let i = 0; i < adb.length; i++) {
-                const vDbReplication = adb[i];
-                console.log('>>>Проверка/Создание таблицы aCfDb.__replication__', vDbReplication.client.config.connection)
-                const bExistReplication = await vDbReplication.schema.hasTable('__replication__');
-                if(!bExistReplication){
-                    await vDbReplication.schema.createTable('__replication__', (table:any) => {
+            if(mReplicationEnable()){
+                for (let i = 0; i < adb.length; i++) {
+                    const vDbReplication = adb[i];
+                    console.log('>>>Проверка/Создание таблицы aCfDb.__replication__', vDbReplication.client.config.connection)
+                    const bExistReplication = await vDbReplication.schema.hasTable('__replication__');
+                    if(!bExistReplication){
+                        await vDbReplication.schema.createTable('__replication__', (table:any) => {
 
-                        table.bigIncrements('id')
-                            .comment('ID');
-
-
-                        table.integer('schema_id')
-                            .index('schema_id')
-                            .comment('Таблица');
-
-                        table.enum('cmd',['insert', 'update', 'delete', 'schema'])
-                            .index('cmd')
-                            .comment('Таблица');
+                            table.bigIncrements('id')
+                                .comment('ID');
 
 
-                        table.dateTime('created_at', null)
-                            .notNullable()
-                            .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
-                            .comment('Время создания записи');
-                                
-                        });
+                            table.integer('schema_id')
+                                .index('schema_id')
+                                .comment('Таблица');
+
+                            table.enum('cmd',['insert', 'update', 'delete', 'schema'])
+                                .index('cmd')
+                                .comment('Таблица');
+
+
+                            table.dateTime('created_at', null)
+                                .notNullable()
+                                .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
+                                .comment('Время создания записи');
+                                    
+                            });
+                    }
                 }
             }
             
@@ -874,30 +876,32 @@ export class DbServerSys {
 
             // Фиксация проблемных БД
             let asErrorDB:string[] = [];
-            for (let i = 0; i < adb.length; i++) {
-                const db = adb[i];
-                const idQueryRep = (await db('__replication__').max({id:'id'}))[0]?.id || 0;
+            if(mReplicationEnable()){
+                for (let i = 0; i < adb.length; i++) {
+                    const db = adb[i];
+                    const idQueryRep = (await db('__replication__').max({id:'id'}))[0]?.id || 0;
 
-                if(idQueryRep < this.idQuery){
-                    const vConnect = adb[i].client.config.connection;   
-                    asErrorDB.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
+                    if(idQueryRep < this.idQuery){
+                        const vConnect = adb[i].client.config.connection;   
+                        asErrorDB.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
+                    }
+
+                    this.runDb[i] = this.idQuery == idQueryRep;
                 }
 
-                this.runDb[i] = this.idQuery == idQueryRep;
-            }
-
-            // Отключение проблемных БД
-            for (let i = 0; i < asErrorDB.length; i++) {
-                const sErrorDB = asErrorDB[i];
-                for (let j = 0; j < adb.length; j++) {
-                    const vConnect = adb[j].client.config.connection;
-                    if(sErrorDB == vConnect.host+':'+vConnect.port+':'+vConnect.database){
-                        adbError.push(adb[j]);
-                        adb.splice(j, 1);
-                        console.log(
-                            '<<<ERROR_INIT Отсоеденена проблемная БД>>> - '+vConnect.host+':'+vConnect.port+':'+vConnect.database
-                        );
-                        break;
+                // Отключение проблемных БД
+                for (let i = 0; i < asErrorDB.length; i++) {
+                    const sErrorDB = asErrorDB[i];
+                    for (let j = 0; j < adb.length; j++) {
+                        const vConnect = adb[j].client.config.connection;
+                        if(sErrorDB == vConnect.host+':'+vConnect.port+':'+vConnect.database){
+                            adbError.push(adb[j]);
+                            adb.splice(j, 1);
+                            console.log(
+                                '<<<ERROR_INIT Отсоеденена проблемная БД>>> - '+vConnect.host+':'+vConnect.port+':'+vConnect.database
+                            );
+                            break;
+                        }
                     }
                 }
             }
@@ -985,7 +989,7 @@ export class DbServerSys {
 
         }
 
-        if(aDbLog.length){
+        if(aDbLog.length && mReplicationEnable()){
 
             let aPacket:any[] = [];
             for (let i = 0; i < aDbLog.length; i++) {

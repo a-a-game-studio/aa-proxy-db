@@ -153,7 +153,7 @@ export class DbReplicationSys {
 
                     const vQueryInsert = aQueryInsert[i];
 
-                    console.log(vQueryInsert);
+                    // console.log(vQueryInsert);
 
                     try {
                         await dbMaster.raw(vQueryInsert.data);
@@ -221,7 +221,7 @@ export class DbReplicationSys {
 
                     const vQueryDelete = aQueryDelete[i];
 
-                    console.log(vQueryDelete);
+                    // console.log(vQueryDelete);
 
                     try {
                         await dbMaster.raw(vQueryDelete.data);
@@ -286,7 +286,7 @@ export class DbReplicationSys {
 
                     const vQueryUpdate = aQueryUpdate[i];
 
-                    console.log(vQueryUpdate);
+                    // console.log(vQueryUpdate);
 
                     try {
                         await dbMaster.raw(vQueryUpdate.data);
