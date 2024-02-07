@@ -165,7 +165,7 @@ export class DbClientSys {
         this.querySys.fConfigWs(conf);
         this.conf = conf;
 
-        if(!adb.length){
+        if(!Object.keys(adb).length){
             // Соединение
             const vMsg:QueryContextI = {
                 uid:uuidv4(),
@@ -207,7 +207,7 @@ export class DbClientSys {
 
                 
 
-                if(adb.length){
+                if(Object.keys(adb).length){
                     this.bInitDbConnect = true;
 
                     console.log('Соединение на чтение успешно установленно');
