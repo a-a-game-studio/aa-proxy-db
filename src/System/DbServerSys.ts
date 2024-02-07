@@ -119,10 +119,31 @@ export class DbServerSys {
             
         }
 
+
+        const adbConnect:string[] = [];
+        const adbConnectWait:string[] = [];
+        const adbConnectError:string[] = [];
+        for (let i = 0; i < adb.length; i++) {
+            const db = adb[i];
+            const vConnect = adb[i].client.config.connection;
+            adbConnect.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
+        }
+        for (let i = 0; i < adbWait.length; i++) {
+            const vConnect = adbWait[i].client.config.connection;
+            adbConnectWait.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
+        }
+        for (let i = 0; i < adbError.length; i++) {
+            const vConnect = adbError[i].client.config.connection;
+            adbConnectError.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
+        }
+        
         return {
-            adb:adb.length,
-            adbWait:adbWait.length,
-            adbError:adbError.length
+            abp:adbConnect,
+            adbWait:adbConnectWait,
+            adbError:adbConnectError,
+            adbCount:adb.length,
+            adbWaitCount:adbWait.length,
+            adbErrorCount:adbError.length
         };
     }
 

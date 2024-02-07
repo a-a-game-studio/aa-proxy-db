@@ -252,7 +252,29 @@ export class DbClientSys {
             }
 
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                
+
+                // abp:adbConnect,
+                // adbWait:adbConnectWait,
+                // adbError:adbConnectError,
+                // adbCount:adb.length,
+                // adbWaitCount:adbWait.length,
+                // adbErrorCount:adbError.length
+
+                for (let i = 0; i < resp.abp.length; i++) {
+                    const sDbConnect = resp.abp[i];
+                    if(!adb[sDbConnect] && adbError[sDbConnect]){
+                        resp.errors['append_db'] = true;
+                        resp.errors['append_db'+':'+sDbConnect];
+                    }
+                }
+                for (let i = 0; i < resp.abpError.length; i++) {
+                    const sDbConnect = resp.abpError[i];
+                    if(adb[sDbConnect] && !adbError[sDbConnect]){
+                        resp.errors['leve_db'] = true;
+                        resp.errors['leve_db'+':'+sDbConnect];
+                    }
+                }
+
                 console.log('STATUS>>>', ok,err,resp);
                 if(resp.errors){
                    
