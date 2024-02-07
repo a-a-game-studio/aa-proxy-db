@@ -6,7 +6,8 @@ export const common = {
     host: '127.0.0.1', // Внутренний host на котором стартует noda слушается обращение к API
     port: 9000, // порт на котором будет работать нода
     host_public: 'https://larastory.ru', // Публичный host балансер к которому идет обращение с фронта
-    pswd:'*'
+    pswd:'*',
+    client:'mysql' // mysql|manticore|clickhouse
 }
 
 export const cfDbProxy = { // Knex mysql

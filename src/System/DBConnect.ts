@@ -3,7 +3,7 @@ import { common, aCfDb, cfDbMaster, cfDbProxy } from "../Config/MainConfig";
 
 export function mReplicationEnable(){
     let bEnable = false;
-    if(common?.client == 'mysql' || common?.client == undefined){
+    if(common.client == 'mysql'){
         bEnable = true;
     }
     return bEnable
