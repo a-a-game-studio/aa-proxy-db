@@ -14,13 +14,13 @@ import { mWait } from "../Helper/WaitH";
 
 
 
-let adb:Knex[] = [];
-let adbError:Knex[] = [];
+let adb:Record<string, Knex> = {};
+let adbError:Record<string, Knex> = {};
 
-let adbAll:Knex[] = [];
-let adbAllError:Knex[] = [];
+let adbAll:Record<string, Knex> = {};
+let adbAllError:Record<string, Knex> = {};
 
-let adbAllClaster:Knex[] = [];
+let adbAllClaster:Record<string, Knex> = {};
 
 /** Обработка ошибок отключения/присоединения БД */
 function workErrorDb(errors:Record<string,string>){
@@ -31,7 +31,7 @@ function workErrorDb(errors:Record<string,string>){
             ' БД доступные',adbAll?.length,'|',adbAllError?.length
         )
         if(errors['leve_db']){
-            for (let i = 0; i < adb.length; i++) {
+            for (const i in adb) {
                 const vConnect = adb[i].client.config.connection;
                 // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
                 
@@ -43,12 +43,14 @@ function workErrorDb(errors:Record<string,string>){
                     //     // delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
                     //     continue;
                     // }
-                    adbError.push(adb[i]);
-                    adb.splice(i, 1);
+                    if(adb[i]){
+                        adbError[i] = adb[i];
+                    }
+                    delete adb[i];
                     console.log('Отключение проблемной БД IP')
                 }
             }
-            for (let i = 0; i < adbAll.length; i++) {
+            for (const i in adbAll) {
                 const vConnect = adbAll[i].client.config.connection;
                 // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
                 
@@ -60,30 +62,38 @@ function workErrorDb(errors:Record<string,string>){
                     //     // delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
                     //     continue;
                     // }
-                    adbAllError.push(adbAll[i]);
-                    adbAll.splice(i, 1);
+                    if(adbAll[i]){
+                        adbAllError[i] = adbAll[i];
+                    }
+                    delete adbAll[i];
                     console.log('Отключение проблемной БД All')
                 }
             }
         }
 
         if(errors['append_db']){
-            for (let i = 0; i < adbError.length; i++) {
+            for (const i in adbError) {
+            // for (let i = 0; i < adbError.length; i++) {
                 const vConnect = adbError[i].client.config.connection;
                 if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                    adb.push(adbError[i]);
-                    adbError.splice(i, 1);
+                    if(adbError[i]){
+                        adb[i] = adbError[i];
+                    }
+                    delete adbError[i];
 
                     console.log('Добавление проблемной БД IP')
                 }
                 
             }
 
-            for (let i = 0; i < adbAllError.length; i++) {
+            for (const i in adbAllError) {
+            // for (let i = 0; i < adbAllError.length; i++) {
                 const vConnect = adbAllError[i].client.config.connection;
                 if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                    adbAll.push(adbAllError[i]);
-                    adbAllError.splice(i, 1);
+                    if(adbAllError[i]){
+                        adbAll[i] = adbAllError[i];
+                    }
+                    delete adbAllError[i];
 
                     console.log('Добавление проблемной БД ALL')
                 }
@@ -173,22 +183,25 @@ export class DbClientSys {
                 console.log('data.adbAll>>>',data.adbAll);
                 if(Object.keys(data.adb).length){
                     for (let [k,db] of Object.entries(data.adb)) {
-                        // const db = data.adb[i];
-                        adb.push(knex(db))
+
+                        adb[k] = knex(db);
                     }
 
                 } else if(Object.keys(data.adbAll).length){
                     for (let [k,db] of Object.entries(data.adb)) {
-                        // const db = data.adb[i];
-                        adb.push(knex(db))
+                        
+                        //adb.push(knex(db))
+                        adb[k] = knex(db);
                     }
                 }
 
                 if(Object.keys(data.adbAll).length){
                     for (let [k,db] of Object.entries(data.adbAll)) {
-                        // const db = data.adb[i];
-                        adbAll.push(knex(db))
-                        adbAllClaster.push(knex(db))
+                        
+                        adbAll[k] = knex(db);
+                        adbAllClaster[k] = knex(db);
+                        // adbAll.push(knex(db))
+                        // adbAllClaster.push(knex(db))
                     }
                 }
 
@@ -490,10 +503,13 @@ export class DbClientSys {
         let out:T = null;
         let okExe = true;
         let vError = null; // Ошибка заполняется если при первом запросе она произошла
+
+        const akAdb = Object.keys(adb);
+        
         try { // из случайной БД своего контура
 
-            if(adb?.length > 0){
-                const iRand = mRandomInteger(0, adb.length - 1)
+            if(akAdb?.length > 0){
+                const iRand = akAdb[mRandomInteger(0, akAdb.length - 1)]
                 const dbSelect = adb[iRand];
                 builder.client = dbSelect.client
 
@@ -513,9 +529,10 @@ export class DbClientSys {
             vError = e;
         }
 
-        if(!okExe && adb?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД своего контура
-            console.log('SELECT ERROR - БД IP:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
-            for (let i = 0; i < adb.length; i++) {
+        const akAdbAll = Object.keys(adbAll);
+        if(!okExe && akAdb?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД своего контура
+            console.log('SELECT ERROR - БД IP:', ' БД по IP',akAdb.length, ' БД доступные',akAdbAll.length)
+            for (const i in adb) {
                 const dbSelect = adb[i];
                 
                 try {
@@ -538,9 +555,9 @@ export class DbClientSys {
             }
         }
 
-        if(!okExe && adbAll?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД доступных приложению
-            console.log('SELECT ERROR - БД БД ALL:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
-            for (let i = 0; i < adbAll.length; i++) {
+        if(!okExe && akAdbAll?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД доступных приложению
+            console.log('SELECT ERROR - БД БД ALL:', ' БД по IP',akAdb.length, ' БД доступные',akAdbAll.length)
+            for (const i in adbAll) {
                 const dbSelect = adbAll[i];
                 
                 try {
@@ -563,9 +580,10 @@ export class DbClientSys {
             }
         }
 
-        if(!okExe && adbAllClaster?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД доступных приложению
+        const akAdbAllClaster = Object.keys(adbAllClaster);
+        if(!okExe && akAdbAllClaster?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД доступных приложению
             console.log('SELECT ERROR - БД ALL CLUSTER:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
-            for (let i = 0; i < adbAllClaster.length; i++) {
+            for (const i in adbAllClaster) {
                 const dbSelect = adbAllClaster[i];
                 
                 try {
