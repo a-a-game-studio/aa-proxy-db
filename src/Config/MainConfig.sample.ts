@@ -7,6 +7,7 @@ export const common = {
     port: 9000, // порт на котором будет работать нода
     host_public: 'https://larastory.ru', // Публичный host балансер к которому идет обращение с фронта
     pswd:'*',
+    // mysql поддерживает репликацию БД при отключении и переподключении
     client:'mysql' // mysql|manticore|clickhouse
 }
 
