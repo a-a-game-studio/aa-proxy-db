@@ -124,7 +124,6 @@ export class DbServerSys {
         const adbConnectWait:string[] = [];
         const adbConnectError:string[] = [];
         for (let i = 0; i < adb.length; i++) {
-            const db = adb[i];
             const vConnect = adb[i].client.config.connection;
             adbConnect.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
         }

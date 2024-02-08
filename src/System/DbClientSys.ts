@@ -260,15 +260,15 @@ export class DbClientSys {
                 // adbWaitCount:adbWait.length,
                 // adbErrorCount:adbError.length
 
-                for (let i = 0; i < resp.abp.length; i++) {
-                    const sDbConnect = resp.abp[i];
+                for (let i = 0; i < resp.adb.length; i++) {
+                    const sDbConnect = resp.adb[i];
                     if(!adb[sDbConnect] && adbError[sDbConnect]){
                         resp.errors['append_db'] = true;
                         resp.errors['append_db'+':'+sDbConnect];
                     }
                 }
-                for (let i = 0; i < resp.abpError.length; i++) {
-                    const sDbConnect = resp.abpError[i];
+                for (let i = 0; i < resp.adbError.length; i++) {
+                    const sDbConnect = resp.adbError[i];
                     if(adb[sDbConnect] && !adbError[sDbConnect]){
                         resp.errors['leve_db'] = true;
                         resp.errors['leve_db'+':'+sDbConnect];
