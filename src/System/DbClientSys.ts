@@ -262,21 +262,24 @@ export class DbClientSys {
 
                 console.log('STATUS>>>', ' ok:',ok,' data:',data,' resp:',resp);
 
-                for (let i = 0; i < data.adb.length; i++) {
-                    const sDbConnect = data.adb[i];
-                    if(!adb[sDbConnect] && adbError[sDbConnect]){
-                        resp.errors['append_db'] = 'Присоединение БД через STATUS';
-                        resp.errors['append_db'+':'+sDbConnect];
+                if(data?.adb?.length){
+                    for (let i = 0; i < data.adb.length; i++) {
+                        const sDbConnect = data.adb[i];
+                        if(!adb[sDbConnect] && adbError[sDbConnect]){
+                            resp.errors['append_db'] = 'Присоединение БД через STATUS';
+                            resp.errors['append_db'+':'+sDbConnect];
+                        }
                     }
                 }
-                for (let i = 0; i < data.adbError.length; i++) {
-                    const sDbConnect = data.adbError[i];
-                    if(adb[sDbConnect] && !adbError[sDbConnect]){
-                        resp.errors['leve_db'] = 'Отсоединение БД через STATUS';
-                        resp.errors['leve_db'+':'+sDbConnect];
+                if(data?.adbError?.length){
+                    for (let i = 0; i < data.adbError.length; i++) {
+                        const sDbConnect = data.adbError[i];
+                        if(adb[sDbConnect] && !adbError[sDbConnect]){
+                            resp.errors['leve_db'] = 'Отсоединение БД через STATUS';
+                            resp.errors['leve_db'+':'+sDbConnect];
+                        }
                     }
                 }
-
                 
                 if(_.size(resp.errors)){
                     workErrorDb(resp.errors);
