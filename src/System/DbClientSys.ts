@@ -260,6 +260,8 @@ export class DbClientSys {
                 // adbWaitCount:adbWait.length,
                 // adbErrorCount:adbError.length
 
+                console.log('STATUS>>>', ok,err,resp);
+
                 for (let i = 0; i < resp.adb.length; i++) {
                     const sDbConnect = resp.adb[i];
                     if(!adb[sDbConnect] && adbError[sDbConnect]){
@@ -275,7 +277,7 @@ export class DbClientSys {
                     }
                 }
 
-                console.log('STATUS>>>', ok,err,resp);
+                
                 if(resp.errors){
                    
                     workErrorDb(resp.errors);
