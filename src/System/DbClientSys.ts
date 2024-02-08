@@ -27,8 +27,8 @@ function workErrorDb(errors:Record<string,string>){
     try {
         console.log(
             '>>>workErrorDb.STATUS_START:', 
-            ' БД по IP',adb?.length,'|',adbError?.length, 
-            ' БД доступные',adbAll?.length,'|',adbAllError?.length
+            ' БД по IP',Object.keys(adb)?.length,'|',Object.keys(adbError)?.length, 
+            ' БД доступные',Object.keys(adbAll)?.length,'|',Object.keys(adbAllError)?.length
         )
         if(errors['leve_db']){
             for (const i in adb) {
@@ -106,8 +106,8 @@ function workErrorDb(errors:Record<string,string>){
 
     console.log(
         '>>>workErrorDb.STATUS_END:', 
-        ' БД по IP',adb?.length,'|',adbError?.length, 
-        ' БД доступные',adbAll?.length,'|',adbAllError?.length
+        ' БД по IP',Object.keys(adb)?.length,'|',Object.keys(adbError)?.length, 
+        ' БД доступные',Object.keys(adbAll)?.length,'|',Object.keys(adbAllError)?.length
     )
 }
 
@@ -251,7 +251,7 @@ export class DbClientSys {
                 time:Date.now()
             }
 
-            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:QueryStatusI) => {
+            this.querySys.fAction((ok:boolean, data:Record<string,string>,resp:QueryStatusI) => {
 
                 // abp:adbConnect,
                 // adbWait:adbConnectWait,
@@ -260,17 +260,17 @@ export class DbClientSys {
                 // adbWaitCount:adbWait.length,
                 // adbErrorCount:adbError.length
 
-                console.log('STATUS>>>', ok,err,resp);
+                console.log('STATUS>>>', ' ok:',ok,' data:',data,' resp:',resp);
 
-                for (let i = 0; i < resp.adb.length; i++) {
-                    const sDbConnect = resp.adb[i];
+                for (let i = 0; i < data.adb.length; i++) {
+                    const sDbConnect = data.adb[i];
                     if(!adb[sDbConnect] && adbError[sDbConnect]){
                         resp.errors['append_db'] = 'Присоединение БД через STATUS';
                         resp.errors['append_db'+':'+sDbConnect];
                     }
                 }
-                for (let i = 0; i < resp.adbError.length; i++) {
-                    const sDbConnect = resp.adbError[i];
+                for (let i = 0; i < data.adbError.length; i++) {
+                    const sDbConnect = data.adbError[i];
                     if(adb[sDbConnect] && !adbError[sDbConnect]){
                         resp.errors['leve_db'] = 'Отсоединение БД через STATUS';
                         resp.errors['leve_db'+':'+sDbConnect];
@@ -278,8 +278,7 @@ export class DbClientSys {
                 }
 
                 
-                if(resp.errors){
-                   
+                if(_.size(resp.errors)){
                     workErrorDb(resp.errors);
                 }
 
@@ -481,7 +480,7 @@ export class DbClientSys {
                 reject(err)
             });
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                if(resp.errors){
+                if(_.size(resp.errors)){
                     workErrorDb(resp.errors);
                 }
             });
@@ -673,7 +672,7 @@ export class DbClientSys {
                 reject(err)
             });
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                if(resp.errors){
+                if(_.size(resp.errors)){
                     workErrorDb(resp.errors);
                 }
             });
@@ -713,7 +712,7 @@ export class DbClientSys {
                 reject(err)
             });
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                if(resp.errors){
+                if(_.size(resp.errors)){
                     workErrorDb(resp.errors);
                 }
             });
@@ -778,7 +777,7 @@ export class DbClientSys {
             });
 
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                if(resp.errors){
+                if(_.size(resp.errors)){
                     workErrorDb(resp.errors);
                 }
             });
@@ -853,7 +852,7 @@ export class DbClientSys {
             });
 
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                if(resp.errors){
+                if(_.size(resp.errors)){
                     workErrorDb(resp.errors);
                 }
             });
@@ -940,7 +939,7 @@ export class DbClientSys {
                 reject(err)
             });
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                if(resp.errors){
+                if(_.size(resp.errors)){
                     workErrorDb(resp.errors);
                 }
             });
@@ -1009,7 +1008,7 @@ export class DbClientSys {
             });
 
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                if(resp.errors){
+                if(_.size(resp.errors)){
                     workErrorDb(resp.errors);
                 }
             });
@@ -1060,7 +1059,6 @@ export class DbClientSys {
 
             this.querySys.fActionOk((dataOut: any) => {
 
-                console.log('[delete_in]:',dataOut);
                 // this.iSendComplete++;
                 resolve(dataOut)
             });
@@ -1071,7 +1069,7 @@ export class DbClientSys {
             });
 
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                if(resp.errors){
+                if(_.size(resp.errors)){
                     workErrorDb(resp.errors);
                 }
             });
@@ -1148,7 +1146,7 @@ export class DbClientSys {
                 reject(err)
             });
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                if(resp.errors){
+                if(_.size(resp.errors)){
                     workErrorDb(resp.errors);
                 }
             });

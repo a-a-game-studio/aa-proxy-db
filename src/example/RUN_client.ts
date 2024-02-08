@@ -22,7 +22,7 @@ async function run(){
 
     // Вставка
     const aMsg = []
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 100; i++) {
         const sMsg = '['+i+'] СообщениЕ ['+i+']';
 
         aMsg.push({text:sMsg});
@@ -68,6 +68,8 @@ async function run(){
     const updateInStatus = await mqClientSys.updateIn('test.id', aidMsg.slice(7,9), {
         text:sMsgIn
     });
+
+    
 
     console.log('[run:update_in]:',':',updateInStatus);
 
