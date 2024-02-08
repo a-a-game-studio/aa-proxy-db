@@ -34,3 +34,14 @@ export interface QueryErrorT {
     append_db:'append_db',
     no_work_db:'no_work_db',
 }
+
+/** запрос на состояние */
+export interface QueryStatusI {
+    adb:string[],
+    adbWait:string[],
+    adbError:string[],
+    adbCount:number,
+    adbWaitCount:number,
+    adbErrorCount:number,
+    errors?:Record<string,string>
+}

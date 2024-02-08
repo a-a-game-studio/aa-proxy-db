@@ -4,7 +4,7 @@ import { QuerySys } from "@a-a-game-studio/aa-front";
 import { v4 as uuidv4 } from 'uuid';
 
 import ip from 'ip'
-import { QueryContextI, MsgT } from "../interface/CommonI";
+import { QueryContextI, MsgT, QueryStatusI } from "../interface/CommonI";
 
 import knex, { Knex } from "knex";
 import _ from "lodash";
@@ -251,7 +251,7 @@ export class DbClientSys {
                 time:Date.now()
             }
 
-            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
+            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:QueryStatusI) => {
 
                 // abp:adbConnect,
                 // adbWait:adbConnectWait,
@@ -263,14 +263,14 @@ export class DbClientSys {
                 for (let i = 0; i < resp.adb.length; i++) {
                     const sDbConnect = resp.adb[i];
                     if(!adb[sDbConnect] && adbError[sDbConnect]){
-                        resp.errors['append_db'] = true;
+                        resp.errors['append_db'] = 'Присоединение БД через STATUS';
                         resp.errors['append_db'+':'+sDbConnect];
                     }
                 }
                 for (let i = 0; i < resp.adbError.length; i++) {
                     const sDbConnect = resp.adbError[i];
                     if(adb[sDbConnect] && !adbError[sDbConnect]){
-                        resp.errors['leve_db'] = true;
+                        resp.errors['leve_db'] = 'Отсоединение БД через STATUS';
                         resp.errors['leve_db'+':'+sDbConnect];
                     }
                 }

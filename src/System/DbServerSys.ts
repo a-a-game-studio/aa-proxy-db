@@ -4,7 +4,7 @@ import { dbMaster, dbProxy, adb, gixDb, adbError, adbWait, ixDbWaitTime, mReplic
 import { v4 as uuidv4 } from 'uuid';
 import { mFormatDateTime } from '../Helper/DateTimeH';
 import _, { now, NumericDictionaryIterateeCustom } from 'lodash';
-import { QueryContextI } from '../interface/CommonI';
+import { QueryContextI, QueryStatusI } from '../interface/CommonI';
 import  knex, { Knex } from 'knex';
 import { setInterval } from 'timers';
 import { mRandomInteger } from '../Helper/NumberH';
@@ -106,7 +106,7 @@ export class DbServerSys {
     }
 
     /** Получения данных по соединениям */
-    public async status(msg:QueryContextI){
+    public async status(msg:QueryContextI): Promise<QueryStatusI>{
         const iCurrTime = new Date().valueOf();
         for (const k in this.ixStatusError) {
            
