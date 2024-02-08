@@ -138,7 +138,7 @@ export class DbServerSys {
         }
         
         return {
-            abp:adbConnect,
+            adb:adbConnect,
             adbWait:adbConnectWait,
             adbError:adbConnectError,
             adbCount:adb.length,
