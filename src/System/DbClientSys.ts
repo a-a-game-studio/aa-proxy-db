@@ -188,7 +188,7 @@ export class DbClientSys {
                     }
 
                 } else if(Object.keys(data.adbAll).length){
-                    for (let [k,db] of Object.entries(data.adb)) {
+                    for (let [k,db] of Object.entries(data.adbAll)) {
                         
                         //adb.push(knex(db))
                         adb[k] = knex(db);
