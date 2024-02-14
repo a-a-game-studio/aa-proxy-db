@@ -268,7 +268,7 @@ export class DbServerSys {
                 vError = new Error('ERROR>>> БД недоступна кол 0 - '+conf?.common?.nameApp+' БД доступные - '+adb?.length);
             }
         } catch (e) {
-            console.log('ERROR>>> БД catch_log- '+conf?.common?.nameApp+' БД доступные - '+adb?.length);
+            console.log('ERROR>>> БД catch_log- '+conf?.common?.nameApp+' БД доступные - '+adb?.length, e);
             okExe = false
             vError = e;
         }
