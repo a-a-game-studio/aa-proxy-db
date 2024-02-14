@@ -245,6 +245,7 @@ export class DbServerSys {
     /** получить коннект для изменения данных update|delete */
     private async fGetIDForDataChange(msg:QueryContextI): Promise<number[]>{
 
+        console.log('fGetIDForDataChange>>> msg.query', msg?.query);
 
         let aid = []
         let okExe = true;
@@ -253,7 +254,7 @@ export class DbServerSys {
 
             if(adb?.length > 0){
 
-                const iRand = mRandomInteger(0, adb.length - 1)
+                const iRand = mRandomInteger(0, adb.length - 1);
                 const dbSelect = adb[iRand];
 
                 const a = (await dbSelect.raw(msg.query))[0];
@@ -264,10 +265,10 @@ export class DbServerSys {
                 console.log('---2>',aid)
             } else {
                 okExe = false;
-                vError = new Error('БД недоступна - '+conf?.common?.nameApp+' - БД по IP'+adb?.length+' БД доступные - '+adb?.length);
+                vError = new Error('ERROR>>> БД недоступна кол 0 - '+conf?.common?.nameApp+' БД доступные - '+adb?.length);
             }
         } catch (e) {
-            console.log('БД недоступна - '+conf?.common?.nameApp+' - БД по IP'+adb?.length+' БД доступные - '+adb?.length);
+            console.log('ERROR>>> БД недоступна catch_log- '+conf?.common?.nameApp+' БД доступные - '+adb?.length);
             okExe = false
             vError = e;
         }
@@ -280,9 +281,10 @@ export class DbServerSys {
                     const iRand = mRandomInteger(0, adb.length - 1)
                     const dbSelect = adb[iRand];
 
+                    
                     const a = (await dbSelect.raw(msg.query))[0];
 
-                    // console.log(msg.query);
+                    
                     console.log('---1>',a)
                     aid = a.map((el:any) => el[msg.key_in]);
                     console.log('---2>',aid)
