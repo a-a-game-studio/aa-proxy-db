@@ -257,6 +257,9 @@ export class DbServerSys {
                 const iRand = mRandomInteger(0, adb.length - 1);
                 const dbSelect = adb[iRand];
 
+                const vConnect = dbSelect.client.config.connection;
+                console.log('SELECT RAND DB >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
+
                 const a = (await dbSelect.raw(msg.query))[0];
 
                 // console.log(msg.query);
