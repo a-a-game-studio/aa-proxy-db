@@ -245,7 +245,7 @@ export class DbServerSys {
     /** получить коннект для изменения данных update|delete */
     private async fGetIDForDataChange(msg:QueryContextI): Promise<number[]>{
 
-        console.log('fGetIDForDataChange>>> msg.query', msg?.query);
+        console.log('fGetIDForDataChange>>> msg.query', msg);
 
         let aid = []
         let okExe = true;
