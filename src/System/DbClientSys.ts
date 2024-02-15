@@ -228,7 +228,7 @@ export class DbClientSys {
         /** Интервал записи данных в бд */
         this.intervalDbStatus = setInterval(async () => {
             this.status();
-        },30*1000)
+        },60*1000)
 
     }
 
@@ -260,7 +260,8 @@ export class DbClientSys {
                 // adbWaitCount:adbWait.length,
                 // adbErrorCount:adbError.length
 
-                console.log('STATUS>>>', ' ok:',ok,' data:',data,' resp:',resp);
+                // console.log('STATUS>>>', ' ok:',ok,' data:',data,' resp:',resp);
+                console.log('STATUS>>>', data);
 
                 if(data?.adb?.length){
                     for (let i = 0; i < data.adb.length; i++) {
