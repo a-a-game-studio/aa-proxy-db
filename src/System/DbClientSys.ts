@@ -537,7 +537,10 @@ export class DbClientSys {
             if(akAdb?.length > 0){
                 const iRand = akAdb[mRandomInteger(0, akAdb.length - 1)]
                 const dbSelect = adb[iRand];
-                builder.client = dbSelect.client
+                builder.client = dbSelect.client;
+
+                const vConnect = dbSelect.client.config.connection;
+                console.log('SELECT RANDOM DB >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
 
                 // Выполнить запрос
                 if (builder._method){ // _method только у билдера
@@ -560,6 +563,9 @@ export class DbClientSys {
             console.log('SELECT ERROR - БД IP:', ' БД по IP',akAdb.length, ' БД доступные',akAdbAll.length)
             for (const i in adb) {
                 const dbSelect = adb[i];
+
+                const vConnect = dbSelect.client.config.connection;
+                console.log('SELECT IP [',i,'] DB >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
                 
                 try {
                     builder.client = dbSelect.client
@@ -588,6 +594,10 @@ export class DbClientSys {
                 
                 try {
                     builder.client = dbSelect.client
+
+                    const vConnect = dbSelect.client.config.connection;
+                    console.log('SELECT ALL [',i,'] DB >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
+                    
                     // console.log('SELECT ERROR SELECT QUERY', dbSelect.client.config.connection)
                     // Выполнить запрос
                     if (builder._method){ // _method только у билдера
