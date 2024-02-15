@@ -73,13 +73,13 @@ export class DbLogSys {
     /** Поместить значение в очередь */
     public async update(aid:number[], msg:QueryContextI){
 
-        console.log('===LOG_UPDATE1====')
+        // console.log('===LOG_UPDATE1====')
         
         if(!gixLogChangeByFrom[msg.table]){
             return; // Прерывание
         }
 
-        console.log('===LOG_UPDATE2====')
+        // console.log('===LOG_UPDATE2====')
 
         const aLog:{table:string, data:string}[] = [];
 
@@ -87,7 +87,7 @@ export class DbLogSys {
         for (let i = 0; i < aTrigger.length; i++) {
             const vTrigger = aTrigger[i];
 
-            console.log('===LOG_UPDATE3====')
+            // console.log('===LOG_UPDATE3====')
 
             for (let j = 0; j < aid.length; j++) {
                 const id = aid[j];
@@ -105,13 +105,13 @@ export class DbLogSys {
     /** Поместить значение в очередь */
     public async delete(aid:number[], msg:QueryContextI){
 
-        console.log('===LOG_DELETE1====')
+        // console.log('===LOG_DELETE1====')
         
         if(!gixLogChangeByFrom[msg.table]){
             return; // Прерывание
         }
 
-        console.log('===LOG_DELETE2====')
+        // console.log('===LOG_DELETE2====')
 
         const aLog:{table:string, data:string}[] = [];
 
@@ -119,7 +119,7 @@ export class DbLogSys {
         for (let i = 0; i < aTrigger.length; i++) {
             const vTrigger = aTrigger[i];
 
-            console.log('===LOG_DELETE3====')
+            // console.log('===LOG_DELETE3====')
 
             for (let j = 0; j < aid.length; j++) {
                 const id = aid[j];
