@@ -313,10 +313,14 @@ export class DbServerSys {
     /** Выполнить запрос с обработкой ошибок */
     private async fExeQuery(msg:QueryContextI, sQuery:string){
 
+        console.log('---6> fExeQuery начало');
+
         if(!adb.length){ // В случае если отключились все БД
             msg.errors['no_work_db'] = 'Нет доступных БД';
             throw new Error('no_work_db')
         }
+
+        console.log('---7> fExeQuery БД количество = ', adb.length);
 
         const iCntDbExe = adb.length;
         const asDbError:string[] = [];
@@ -327,13 +331,18 @@ export class DbServerSys {
             aPromiseQuery.push(new Promise(async (resolve, reject) => {
                 const iLocalNumDb = i;
                 try {
+
+                    const vConnect = db.client.config.connection;
+                    console.log('---8> fExeQuery IN DB START >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
                     
                     const out = await db.raw(sQuery)
+
+                    console.log('---9> fExeQuery IN DB END >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
                     resolve(out);
 
                 } catch (e){
                     
-                    console.log('ERROR>>>','<<<',iLocalNumDb,'>>>', e);
+                    console.log('---9> fExeQuery IN DB END ERROR >>>','<<<',iLocalNumDb,'>>>', e);
 
                     const vConnect = adb[i].client.config.connection;
                     asDbError.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
@@ -349,6 +358,8 @@ export class DbServerSys {
             }))
         }
 
+        console.log('---10> fExeQuery Before adbWait block wait count = ',adbWait.length);
+
         
         for (let i = 0; i < adbWait.length; i++) {
             const db = adbWait[i];
@@ -356,6 +367,7 @@ export class DbServerSys {
                 const iLocalNumDb = i;
                 try {
                     
+                    console.log('---11> fExeQuery');
                     const out = await db.raw(sQuery)
 
                     const vConnect = adbWait[i].client.config.connection;
@@ -393,9 +405,14 @@ export class DbServerSys {
             }))
         }
         try {
+
+            console.log('---12> fExeQuery паралельное начало выполнение запроса');
             await Promise.all(aPromiseQuery);
+            console.log('---13> fExeQuery паралельное окончание выполнение запроса');
 
             if(asDbError.length && asDbError.length != iCntDbExe){
+
+                console.log('---14> fExeQuery что то пошло не так начало отсоединение БД');
                 const ixErrorDb = _.keyBy(asDbError);
                 for (let i = 0; i < adb.length; i++) {
                     const db = adb[i];
@@ -683,7 +700,7 @@ export class DbServerSys {
 
         const vTableC = this.ixTable[msg.table];
   
-        console.log('---1>', msg.query);
+        // console.log('---1>', msg.query);
         let aid = [];
         try { 
             aid = JSON.parse(msg.query) 
@@ -694,9 +711,15 @@ export class DbServerSys {
 
         if(aid.length){
 
+            console.log('---3> delete.aid > 0');
+
             const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).delete().toString();
+
+            console.log('---4> query created');
             // console.log(sQuery)
             vTableC.aQueryDeleteLog.push(sQuery)
+
+            console.log('---5> добаленна запись на сохранение логов');
 
             // const aPromiseQuery:Promise<Knex>[] = [];
             // for (let i = 0; i < adb.length; i++) {
