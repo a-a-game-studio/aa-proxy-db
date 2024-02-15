@@ -30,7 +30,7 @@ import { AAContext } from "@a-a-game-studio/aa-server";
      */
      async faSend(data:any): Promise<boolean> {
 
-        console.log('TEST>>>',this.ctx.body.errors);
+        // console.log('TEST>>>',this.ctx.body.errors);
         if(this.ctx.err.isOk()){
             try {
             
