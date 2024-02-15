@@ -27,7 +27,10 @@ const intervalDb = setInterval(async () => {
         await gDbReplicationSys.dbReplication();
         await gDbReplicationSys.dbCheckReplication();
     }
-    console.log('>>>INTERVAL DB EXE', adb.length, adbWait.length, adbError.length)
+
+    if((Date.now() / 1000) % 30 == 0){
+        console.log('>>>INTERVAL DB EXE', adb.length, adbWait.length, adbError.length)
+    }
 },1000)
 
 
@@ -95,7 +98,7 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
     // const aid = await gDbServerSys.id(ctx.body);
     const ctrl = new Ctrl(ctx);
     const aid = await ctrl.faAction(async () => gDbServerSys.id(ctx.body));
-    console.log('get list id>>>',ctx.body, aid)
+    // console.log('get list id>>>',ctx.body, aid)
 
     return ctrl.faSend(aid);
 });

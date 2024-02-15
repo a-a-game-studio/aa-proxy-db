@@ -539,8 +539,8 @@ export class DbClientSys {
                 const dbSelect = adb[iRand];
                 builder.client = dbSelect.client;
 
-                const vConnect = dbSelect.client.config.connection;
-                console.log('SELECT RANDOM DB >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
+                // const vConnect = dbSelect.client.config.connection;
+                // console.log('SELECT RANDOM DB >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
 
                 // Выполнить запрос
                 if (builder._method){ // _method только у билдера

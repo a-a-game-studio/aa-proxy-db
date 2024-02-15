@@ -10,7 +10,9 @@ export class DbReplicationSys {
     /** Проверить репликацию */
     public async dbCheckReplication(){
 
-        console.log('>>>dbCheckReplication>>>','OK:', adb.length, 'WAIT:',adbWait.length,'ERROR:',adbError.length);
+        if(adbWait?.length || adbError?.length){
+            console.log('>>>dbCheckReplication>>>','OK:', adb.length, 'WAIT:',adbWait.length,'ERROR:',adbError.length);
+        }
 
         for (let i = 0; i < adbError.length; i++) {
             const dbError = adbError[i];
