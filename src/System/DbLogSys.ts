@@ -40,12 +40,12 @@ export class DbLogSys {
     public async insert(msg:QueryContextI){
 
 
-        console.log('===LOG====')
+        // console.log('===LOG====')
         if(!gixLogChangeByFrom[msg.table]){
             return; // Прерывание
         }
 
-        console.log('===LOG1====')
+        // console.log('===LOG1====')
 
         const aLog:{table:string, data:string}[] = [];
 
@@ -53,7 +53,7 @@ export class DbLogSys {
         for (let i = 0; i < aTrigger.length; i++) {
             const vTrigger = aTrigger[i];
 
-            console.log('===LOG2====')
+            // console.log('===LOG2====')
 
             if(msg.data.length){
                 for (let j = 0; j < msg.data.length; j++) {
