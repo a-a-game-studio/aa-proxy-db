@@ -43,6 +43,8 @@ async function run(){
     } catch(e){
         console.log('ERROR>>>',e);
     }
+
+    console.log('====END====');
 }
 
 run();
