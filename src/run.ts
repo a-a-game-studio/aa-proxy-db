@@ -10,6 +10,7 @@ import * as conf from './Config/MainConfig';
 import { ErrorSys } from '@a-a-game-studio/aa-components';
 import { DbReplicationSys } from './System/DbReplicationSys';
 import { adb, adbError, adbWait, mReplicationEnable } from './System/DBConnect';
+import { mFormatDateTime } from './Helper/DateTimeH';
 
 let cntConnect = 0;
 
@@ -28,8 +29,9 @@ const intervalDb = setInterval(async () => {
         await gDbReplicationSys.dbCheckReplication();
     }
 
-    if((Date.now() / 1000) % 30 == 0){
-        console.log('>>>INTERVAL DB EXE', adb.length, adbWait.length, adbError.length)
+    
+    if(parseInt(String(Date.now() / 1000)) % 30 == 0){ // Каждые 30 секунд
+        console.log('>>>INTERVAL DB EXE', adb.length, adbWait.length, adbError.length, mFormatDateTime())
     }
 },1000)
 

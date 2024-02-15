@@ -22,6 +22,7 @@ import { dbMaster, dbProxy, adb } from './System/DBConnect';
 // console.log('aMatch2>>>',aMatch2);
 
 // import  knex, { Knex } from 'knex';
+import { mDateValue, mFormatDateTime } from './Helper/DateTimeH';
 
 // const vKnext = knex({ // Knex mysql
 //     client: "mysql2"
@@ -35,14 +36,26 @@ async function run(){
     // console.log(dbMaster('test').insert([{id:1, text:'-------'},{id:2, text:'---1----'}],).onConflict().ignore().toString());
     // console.log(a);
 
-    try {
-    await dbMaster.raw(`
+    /** Интервал записи данных в бд */
+// const intervalDb = setInterval(async () => {
+    
+//     // console.log('>>>INTERVAL DB EXE',  );
+//     if(parseInt(String(Date.now() / 1000)) % 30 == 0){
+//         console.log('>>>INTERVAL DB EXE', Date.now() / 1000)
+//     }
+// },1000)
+
+
+    // try {
+    // await dbMaster.raw(`
     
     
-    `);
-    } catch(e){
-        console.log('ERROR>>>',e);
-    }
+    // `);
+    // } catch(e){
+    //     console.log('ERROR>>>',e);
+    // }
+
+    // console.log(mFormatDateTime());
 
     console.log('====END====');
 }
