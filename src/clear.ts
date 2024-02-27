@@ -9,8 +9,9 @@ async function run(){
     // Удаляем логи старше 10 дней
     const dtClear10Day = mFormatDateTime(dayjs().subtract(10, 'day'));
 
-    const query = await dbProxy('query').where('created_at', '<', dtClear10Day).limit(10000).del();
-    console.log('Удалено записей обработанных спустя 10 дней:', query);
+    const aidQuery = await dbProxy('query').where('created_at', '<', dtClear10Day).limit(10000).pluck('id');
+    await dbProxy('query').whereIn('id', aidQuery).del()
+    console.log('Удалено записей обработанных спустя 10 дней:', aidQuery.length);
 
     console.log('=========================');
     console.log('END');
