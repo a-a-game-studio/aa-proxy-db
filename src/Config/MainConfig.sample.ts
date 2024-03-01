@@ -11,6 +11,13 @@ export const common = {
     client:'mysql' // mysql|manticore|clickhouse
 }
 
+/** Настройки под базу данных - поддерживаемые */
+export const option = {
+    replication:true, // Сохранять ли логи запросов, делать ли репликацию БД
+    log:true, // Включено ли логирование по данным
+    mergeOnConflict:true // Поддерживает ли БД при update и insert при дупликации строк их совмещение
+}
+
 export const cfDbProxy = { // Knex mysql
     client: "mysql2",
     connection: {
