@@ -1,6 +1,6 @@
 
 import ip from 'ip'
-import { dbMaster, dbProxy, adb, gixDb, adbError, adbWait, ixDbWaitTime, mReplicationEnable } from './DBConnect';
+import { dbMaster, dbProxy, adb, gixDb, adbError, adbWait, ixDbWaitTime } from './DBConnect';
 import { v4 as uuidv4 } from 'uuid';
 import { mFormatDateTime } from '../Helper/DateTimeH';
 import _, { now, NumericDictionaryIterateeCustom } from 'lodash';
@@ -449,121 +449,17 @@ export class DbServerSys {
 
         const vTableC = this.ixTable[msg.table];
 
-        // console.log('t>>>',msg.table,msg.data);
-
         const sQuery = gQuery(msg.table).insert(msg.data).toString()
-        vTableC.aQueryInsertLog.push(gQuery(msg.table).insert(msg.data).onConflict().merge().toString())
 
-        // if(!adb.length){ // В случае если отключились все БД
-        //     msg.errors['no_work_db'] = 'Нет доступных БД';
-        //     throw new Error('no_work_db')
-        // }
-
-        // const iCntDbExe = adb.length;
-        // const asDbError:string[] = [];
-
-        // const aPromiseQuery:Promise<Knex>[] = [];
-        // for (let i = 0; i < adb.length; i++) {
-        //     const db = adb[i];
-        //     aPromiseQuery.push(new Promise(async (resolve, reject) => {
-        //         const iLocalNumDb = i;
-        //         try {
-                    
-        //             const out = await db.raw(sQuery)
-        //             resolve(out);
-
-        //         } catch (e){
-                    
-        //             console.log('ERROR>>>','<<<',iLocalNumDb,'>>>', e);
-
-        //             const vConnect = adb[i].client.config.connection;
-        //             asDbError.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
-        //             // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
-        //             // msg.errors['leve_db'] = 'Отсоеденение проблемных БД';
-        //             // msg.errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database] = 'Отсоеденена проблемная БД - '+vConnect.host+':'+vConnect.port+':'+vConnect.database;
-        //             msg.errors['sql_error'] = String(e);
-        //             msg.errors['sql_error'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database] = String(e);
-                    
-        //             resolve(e);
-        //         }
-                
-        //     }))
-        // }
-
-        
-        // for (let i = 0; i < adbWait.length; i++) {
-        //     const db = adbWait[i];
-        //     aPromiseQuery.push(new Promise(async (resolve, reject) => {
-        //         const iLocalNumDb = i;
-        //         try {
-                    
-        //             const out = await db.raw(gQuery(msg.table).insert(msg.data).onConflict().ignore().toString())
-
-        //             const vConnect = adbWait[i].client.config.connection;
-        //             console.log('ПРОВЕРКА ВЫХОДА НА РАБОТУ')
-        //             console.log(ixDbWaitTime);
-        //             console.log(vConnect.host+':'+vConnect.port+':'+vConnect.database)
-        //             console.log(new Date().valueOf())
-        //             if(new Date().valueOf() - ixDbWaitTime[vConnect.host+':'+vConnect.port+':'+vConnect.database] > 2000){
-        //                 console.log('>>>WAIT DB EXE', adbWait.length, adbError.length);
-        //                 adb.push(adbWait[iLocalNumDb]);
-        //                 adbWait.splice(iLocalNumDb, 1);
-
-                        
-        //                 this.fSetErrorStatus('append_db', 'Присоеденена проблемных БД');
-        //                 this.fSetErrorStatus(
-        //                     'append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database, 
-        //                     'Присоеденена проблемная БД - '+vConnect.host+':'+vConnect.port+':'+vConnect.database
-        //                 );
-                    
-        //             }
-        //             resolve(out);
-
-        //         } catch (e){
-                    
-        //             console.log('ERROR>>>','<<<',iLocalNumDb,'>>>', e);
-                    
-        //             const vConnect = adbWait[i].client.config.connection;
-        //             // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
-
-        //             adbError.push(adbWait[iLocalNumDb]);
-        //             adbWait.splice(iLocalNumDb, 1);
-        //             resolve(e);
-        //         }
-                
-        //     }))
-        // }
-        // try {
-        //     await Promise.all(aPromiseQuery);
-
-        //     if(asDbError.length && asDbError.length != iCntDbExe){
-        //         const ixErrorDb = _.keyBy(asDbError);
-        //         for (let i = 0; i < adb.length; i++) {
-        //             const db = adb[i];
-        //             const vConnect = db.client.config.connection;
-        //             const sDbConnect = vConnect.host+':'+vConnect.port+':'+vConnect.database;
-
-        //             if(ixErrorDb[sDbConnect]){
-        //                 this.fSetErrorStatus('leve_db', 'Отсоеденение проблемных БД');
-        //                 this.fSetErrorStatus(
-        //                     'leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database,
-        //                     'Отсоеденена проблемная БД - '+vConnect.host+':'+vConnect.port+':'+vConnect.database
-
-        //                 );
-                        
-        //                 adbError.push(adb[i]);
-        //                 adb.splice(i, 1);
-        //             }
-        //         }
-
-        //     }
-        // } catch(e){
-        //     console.log('количество ДБ в строю:',adb.length);
-        // }
+        if(conf.option.replication){
+            vTableC.aQueryInsertLog.push(gQuery(msg.table).insert(msg.data).onConflict().merge().toString())
+        }
 
         await this.fExeQuery(msg, sQuery);
         
-        await gDbLogSys.insert(msg);
+        if(conf.option.log){
+            await gDbLogSys.insert(msg);
+        }
 
         process.stdout.write('.')
 
@@ -579,11 +475,15 @@ export class DbServerSys {
         const vTableC = this.ixTable[msg.table];
 
         const sQuery = gQuery(msg.table).insert(msg.data).toString()?.replace(/^insert/i, 'replace')
-        vTableC.aQueryInsertLog.push(sQuery)
+        if(conf.option.replication){
+            vTableC.aQueryInsertLog.push(sQuery)
+        }
 
         await this.fExeQuery(msg, sQuery);
         
-        await gDbLogSys.insert(msg);
+        if(conf.option.log){
+            await gDbLogSys.insert(msg);
+        }
 
         process.stdout.write('.')
 
@@ -603,19 +503,16 @@ export class DbServerSys {
         
         if(aid.length){
             const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).toString();
-            vTableC.aQueryUpdateLog.push(gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).onConflict().merge().toString())
+
+            if(conf.option.replication){
+                vTableC.aQueryUpdateLog.push(gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).onConflict().merge().toString())
+            }
 
             await this.fExeQuery(msg, sQuery);
 
-            // const aPromiseQuery:Promise<Knex>[] = [];
-            // for (let i = 0; i < adb.length; i++) {
-            //     const db = adb[i];
-            //     console.log(db(msg.table).whereIn(msg.key_in, aid).update(msg.data).toString())
-            //     aPromiseQuery.push(db.raw(sQuery));
-                
-            // }
-            // await Promise.all(aPromiseQuery);
-            await gDbLogSys.update(aid,msg);
+            if(conf.option.log){
+                await gDbLogSys.update(aid, msg);
+            }
         }
 
         return aid;
@@ -642,20 +539,16 @@ export class DbServerSys {
         
         if(aid.length){
             const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).onConflict().merge().toString();
-            vTableC.aQueryUpdateLog.push(gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).onConflict().merge().toString())
-
-            // const aPromiseQuery:Promise<Knex>[] = [];
-            // for (let i = 0; i < adb.length; i++) {
-            //     const db = adb[i];
-            //     console.log(sQuery)
-            //     aPromiseQuery.push(db.raw(sQuery));
-                
-            // }
-            // await Promise.all(aPromiseQuery);
+            
+            if(conf.option.replication){
+                vTableC.aQueryUpdateLog.push(gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).onConflict().merge().toString())
+            }
 
             await this.fExeQuery(msg, sQuery);
 
-            await gDbLogSys.update(aid,msg);
+            if(conf.option.log){
+                await gDbLogSys.update(aid,msg);
+            }
         }
 
         return aid;
@@ -676,15 +569,11 @@ export class DbServerSys {
         if(aid.length){
 
             const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).delete().toString();
-            // console.log(sQuery)
-            vTableC.aQueryDeleteLog.push(sQuery)
 
-            // const aPromiseQuery:Promise<Knex>[] = [];
-            // for (let i = 0; i < adb.length; i++) {
-            //     const db = adb[i];
-            //     aPromiseQuery.push(db.raw(sQuery));
-            // }
-            // await Promise.all(aPromiseQuery);
+            if(conf.option.replication){
+                vTableC.aQueryDeleteLog.push(sQuery)
+            }
+
 
             await this.fExeQuery(msg, sQuery);
         }
@@ -713,22 +602,13 @@ export class DbServerSys {
 
         if(aid.length){
 
-            // console.log('---3> delete.aid > 0');
 
             const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).delete().toString();
 
-            // console.log('---4> query created');
-            // console.log(sQuery)
-            vTableC.aQueryDeleteLog.push(sQuery)
+            if(conf.option.replication){
+                vTableC.aQueryDeleteLog.push(sQuery)
+            }
 
-            // console.log('---5> добаленна запись на сохранение логов');
-
-            // const aPromiseQuery:Promise<Knex>[] = [];
-            // for (let i = 0; i < adb.length; i++) {
-            //     const db = adb[i];
-            //     aPromiseQuery.push(db.raw(sQuery));
-            // }
-            // await Promise.all(aPromiseQuery);
             
             await this.fExeQuery(msg, sQuery);
         }
@@ -802,7 +682,7 @@ export class DbServerSys {
             }
 
             // Базы данных в репликации
-            if(mReplicationEnable()){
+            if(conf.option.replication){
                 for (let i = 0; i < adb.length; i++) {
                     const vDbReplication = adb[i];
                     console.log('>>>Проверка/Создание таблицы aCfDb.__replication__', vDbReplication.client.config.connection)
@@ -927,7 +807,7 @@ export class DbServerSys {
 
             // Фиксация проблемных БД
             let asErrorDB:string[] = [];
-            if(mReplicationEnable()){
+            if(conf.option.replication){
                 for (let i = 0; i < adb.length; i++) {
                     const db = adb[i];
                     const idQueryRep = (await db('__replication__').max({id:'id'}))[0]?.id || 0;
@@ -1040,7 +920,7 @@ export class DbServerSys {
 
         }
 
-        if(aDbLog.length && mReplicationEnable()){
+        if(aDbLog.length && conf.option.replication){
 
             let aPacket:any[] = [];
             for (let i = 0; i < aDbLog.length; i++) {

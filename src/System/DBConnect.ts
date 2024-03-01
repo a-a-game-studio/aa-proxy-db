@@ -1,13 +1,6 @@
 import  knex, { Knex } from 'knex';
-import { common, aCfDb, cfDbMaster, cfDbProxy } from "../Config/MainConfig";
+import { option, common, aCfDb, cfDbMaster, cfDbProxy } from "../Config/MainConfig";
 
-export function mReplicationEnable(){
-    let bEnable = false;
-    if(common.client == 'mysql'){
-        bEnable = true;
-    }
-    return bEnable
-}
 
 export const dbProxy = knex(cfDbProxy);
 
