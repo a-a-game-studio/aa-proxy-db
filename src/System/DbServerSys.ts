@@ -854,7 +854,8 @@ export class DbServerSys {
                         .comment('Таблица');
 
                     table.text('data','mediumtext')
-                        .comment('данные');
+                        .comment('данные')
+                        .collate('utf8mb4_bin');;
 
                     table.dateTime('created_at', null)
                         .index('created_at')
