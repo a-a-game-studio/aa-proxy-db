@@ -538,7 +538,9 @@ export class DbServerSys {
 
         
         if(aid.length){
-            const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).onConflict().merge().toString();
+            let sQuery = '';
+            
+            sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).toString();
             
             if(conf.option.replication){
                 vTableC.aQueryUpdateLog.push(gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).onConflict().merge().toString())
@@ -937,9 +939,7 @@ export class DbServerSys {
             for (let i = 0; i < adb.length; i++) {
                 const db = adb[i];
 
-                // if(this.runDb[i]){ // TODO __replication__ не записывался есть проблема с runDb
-                    aPromiseQuery.push(db('__replication__').insert(aPacket).onConflict().merge());
-                // }
+                aPromiseQuery.push(db('__replication__').insert(aPacket).onConflict().merge());
             }
             await Promise.all(aPromiseQuery);
         }
