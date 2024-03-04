@@ -9,7 +9,7 @@ import { DbServerSys } from './System/DbServerSys';
 import * as conf from './Config/MainConfig';
 import { ErrorSys } from '@a-a-game-studio/aa-components';
 import { DbReplicationSys } from './System/DbReplicationSys';
-import { adb, adbError, adbWait, mReplicationEnable } from './System/DBConnect';
+import { adb, adbError, adbWait } from './System/DBConnect';
 import { mFormatDateTime } from './Helper/DateTimeH';
 
 let cntConnect = 0;
