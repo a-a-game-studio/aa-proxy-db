@@ -745,7 +745,7 @@ export class DbClientSys {
 
             const asTableKey = sTableKey.split('.');
             const sTable = asTableKey[0];
-            const sWhereKey =  asTableKey[1];
+            const sWhereKey =  asTableKey[1] || 'id';
 
             console.log(whereIn);
 
@@ -1040,7 +1040,7 @@ export class DbClientSys {
 
             const asTableKey = sTableKey.split('.');
             const sTable = asTableKey[0];
-            const sWhereKey =  asTableKey[1];
+            const sWhereKey =  asTableKey[1] || 'id';
 
             if(!sTable && !sWhereKey && whereIn.length !== 0){
                 reject(new Error(
