@@ -148,7 +148,7 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  */
 router.ws(MsgT.replace, async (ctx: AAContext) => {
     
-    // console.log('insert>>>',ctx.body)
+    console.log('replace>>>',ctx.body)
     const ctrl = new Ctrl(ctx);
     const data = await ctrl.faAction(async () => gDbServerSys.replace(ctx.body));
 

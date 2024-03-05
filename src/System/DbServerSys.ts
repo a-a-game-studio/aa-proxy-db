@@ -344,7 +344,7 @@ export class DbServerSys {
 
                 } catch (e){
                     
-                    // console.log('---9> fExeQuery IN DB END ERROR >>>','<<<',iLocalNumDb,'>>>', e);
+                    console.log('---9> fExeQuery IN DB END ERROR >>>','<<<',iLocalNumDb,'>>>', e);
 
                     const vConnect = adb[i].client.config.connection;
                     asDbError.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
