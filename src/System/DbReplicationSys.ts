@@ -6,6 +6,28 @@ import { adb, adbError, adbWait, dbProxy, gixDb, ixDbWaitTime } from "./DBConnec
 export class DbReplicationSys {
 
     
+    /** Проверить и переподключить БД если присходила ошибка */
+    public async dbReconnectToAvailable(){
+        
+        for (let i = 0; i < adbError.length; i++) {
+            const dbError = adbError[i];
+            try {
+                await dbError.raw('SHOW TABLES;')
+
+                const vConnect = adbError[i].client.config.connection;
+                console.log('<<<RECONECT БД ПЕРЕВЕДЕНА В ОЖИДАНИЕ>>>', vConnect.host+':'+vConnect.port+':'+vConnect.database)
+                
+                ixDbWaitTime[vConnect.host+':'+vConnect.port+':'+vConnect.database] = new Date().valueOf();
+                adbWait.push(adbError[i]);
+                adbError.splice(i, 1);
+                
+            } catch(e){
+                const vConnect = adbError[i].client.config.connection;
+                console.log('<<<RECONECT БД НЕДОСТУПНА>>>', vConnect.host+':'+vConnect.port+':'+vConnect.database)
+            }
+            
+        }
+    }
 
     /** Проверить репликацию */
     public async dbCheckReplication(){

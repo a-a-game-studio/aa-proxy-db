@@ -28,9 +28,16 @@ const intervalDb = setInterval(async () => {
         await gDbReplicationSys.dbReplication();
         await gDbReplicationSys.dbCheckReplication();
     }
+
+    
     
     if(parseInt(String(Date.now() / 1000)) % 30 == 0){ // Каждые 30 секунд
-        console.log('>>>INTERVAL DB EXE', adb.length, adbWait.length, adbError.length, mFormatDateTime())
+        console.log('>>>INTERVAL DB EXE', adb.length, adbWait.length, adbError.length, mFormatDateTime())   
+
+        // В случае если БД отключена проверяем наличие БД и включаем ее обратно
+        if(!conf.option.replication){
+            await gDbReplicationSys.dbReconnectToAvailable();
+        }
     }
 },1000)
 
