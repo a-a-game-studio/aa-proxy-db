@@ -454,12 +454,12 @@ export class DbClientSys {
 
             console.log(sQueryStart);
 
-            const aMatch = sQueryStart.match(/^(select)|(insert)|(update)|(delete)|(alter)|(create)|(drop)/);
+            const aMatch = sQueryStart.match(/^(select)|(insert)|(update)|(delete)|(alter)|(create)|(drop)|(truncate)/);
 
             if(aMatch){
                 reject(new Error(
                     'Запрос не корректный, подходит под правило - только общие запросы - \n' + 
-                    '/^(select)|(insert)|(update)|(delete)|(alter)|(create)|(drop)/'
+                    '/^(select)|(insert)|(update)|(delete)|(alter)|(create)|(drop)|(truncate)/'
                 ))
             }
             
