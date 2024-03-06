@@ -505,12 +505,12 @@ export class DbClientSys {
 
         console.log(sQueryStart);
 
-        const aMatch = sQueryStart.match(/^select/);
+        const aMatch = sQueryStart.match(/^(select)|(call suggest)/);
 
         if(!aMatch){
             throw (new Error(
                 'Запрос не корректный, не подходит под правило - \n' + 
-                '/^select/'
+                '/^(select)|(call suggest)/'
             ))
         }
 
