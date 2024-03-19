@@ -325,7 +325,7 @@ export class DbServerSys {
         const iCntDbExe = adb.length;
         const asDbError:string[] = [];
 
-        console.log('SQL>>>',sQuery)
+        // console.log('SQL>>>',sQuery)
 
         const aPromiseQuery:Promise<Knex>[] = [];
         for (let i = 0; i < adb.length; i++) {
@@ -335,11 +335,11 @@ export class DbServerSys {
                 try {
 
                     const vConnect = db.client.config.connection;
-                    console.log('---8> fExeQuery IN DB START >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
+                    // console.log('---8> fExeQuery IN DB START >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
                     
                     const out = await db.raw(sQuery)
 
-                    console.log('---9> fExeQuery IN DB END >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
+                    // console.log('---9> fExeQuery IN DB END >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
                     resolve(out);
 
                 } catch (e){
