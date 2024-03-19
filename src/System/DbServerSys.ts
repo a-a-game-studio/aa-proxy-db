@@ -325,7 +325,7 @@ export class DbServerSys {
         const iCntDbExe = adb.length;
         const asDbError:string[] = [];
 
-        // console.log('SQL>>>',sQuery)
+        console.log('SQL>>>',sQuery)
 
         const aPromiseQuery:Promise<Knex>[] = [];
         for (let i = 0; i < adb.length; i++) {
