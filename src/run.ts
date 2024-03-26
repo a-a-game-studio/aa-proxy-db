@@ -25,18 +25,21 @@ let bReplication = false; // Блокировка наслоения репли�
 /** Интервал записи данных в бд */
 const intervalDb = setInterval(async () => {
     
-    if(conf.option.replication && !bReplication){
-        bReplication = true;
+    if(conf.option.replication){
         
-        try{
-            await gDbServerSys.dbSave();
-            await gDbReplicationSys.dbReplication();
-            await gDbReplicationSys.dbCheckReplication();
-        } catch(e){
-            console.log('>>>ОШИБКА РЕПЛИКАЦИ>>>',e);
+        await gDbServerSys.dbSave();
+        if(!bReplication){
+            bReplication = true;
+            try{
+                await gDbReplicationSys.dbReplication();
+            } catch(e){
+                console.log('>>>ОШИБКА РЕПЛИКАЦИ>>>',e);
+            }
+            bReplication = false;
         }
-
-        bReplication = false;
+        
+        await gDbReplicationSys.dbCheckReplication();
+        
     }
 
     
