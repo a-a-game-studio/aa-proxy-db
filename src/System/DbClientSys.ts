@@ -14,102 +14,7 @@ import { mWait } from "../Helper/WaitH";
 
 
 
-let adb:Record<string, Knex> = {};
-let adbError:Record<string, Knex> = {};
 
-let adbAll:Record<string, Knex> = {};
-let adbAllError:Record<string, Knex> = {};
-
-let adbAllClaster:Record<string, Knex> = {};
-
-/** Обработка ошибок отключения/присоединения БД */
-function workErrorDb(errors:Record<string,string>){
-    try {
-        console.log(
-            '>>>workErrorDb.STATUS_START:', 
-            ' БД по IP',Object.keys(adb)?.length,'|',Object.keys(adbError)?.length, 
-            ' БД доступные',Object.keys(adbAll)?.length,'|',Object.keys(adbAllError)?.length
-        )
-        if(errors['leve_db']){
-            for (const i in adb) {
-                const vConnect = adb[i].client.config.connection;
-                // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
-                
-                if(errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-
-                    // // Если одновременно и добавление и удаление
-                    // if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                    //     // delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
-                    //     // delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
-                    //     continue;
-                    // }
-                    if(adb[i]){
-                        adbError[i] = adb[i];
-                    }
-                    delete adb[i];
-                    console.log('Отключение проблемной БД IP')
-                }
-            }
-            for (const i in adbAll) {
-                const vConnect = adbAll[i].client.config.connection;
-                // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
-                
-                if(errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-
-                    // // Если одновременно и добавление и удаление
-                    // if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                    //     // delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
-                    //     // delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
-                    //     continue;
-                    // }
-                    if(adbAll[i]){
-                        adbAllError[i] = adbAll[i];
-                    }
-                    delete adbAll[i];
-                    console.log('Отключение проблемной БД All')
-                }
-            }
-        }
-
-        if(errors['append_db']){
-            for (const i in adbError) {
-            // for (let i = 0; i < adbError.length; i++) {
-                const vConnect = adbError[i].client.config.connection;
-                if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                    if(adbError[i]){
-                        adb[i] = adbError[i];
-                    }
-                    delete adbError[i];
-
-                    console.log('Добавление проблемной БД IP')
-                }
-                
-            }
-
-            for (const i in adbAllError) {
-            // for (let i = 0; i < adbAllError.length; i++) {
-                const vConnect = adbAllError[i].client.config.connection;
-                if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
-                    if(adbAllError[i]){
-                        adbAll[i] = adbAllError[i];
-                    }
-                    delete adbAllError[i];
-
-                    console.log('Добавление проблемной БД ALL')
-                }
-
-            }
-        }
-    } catch(e) {
-        console.log('ProxyDb.workErrorDb>>>',e);
-    }
-
-    console.log(
-        '>>>workErrorDb.STATUS_END:', 
-        ' БД по IP',Object.keys(adb)?.length,'|',Object.keys(adbError)?.length, 
-        ' БД доступные',Object.keys(adbAll)?.length,'|',Object.keys(adbAllError)?.length
-    )
-}
 
 /** DbClientSys */
 export class DbClientSys {
@@ -120,10 +25,18 @@ export class DbClientSys {
     } = null;
 
 
+
+    // =======================================================
+    adb:Record<string, Knex> = {};
+    adbError:Record<string, Knex> = {};
     
+    adbAll:Record<string, Knex> = {};
+    adbAllError:Record<string, Knex> = {};
+    
+    adbAllClaster:Record<string, Knex> = {};
+    // =======================================================
 
-   
-
+    
     private querySys:QuerySys = null;
     iSend:number = 0;
     iSendComplete:number = 0;
@@ -165,7 +78,7 @@ export class DbClientSys {
         this.querySys.fConfigWs(conf);
         this.conf = conf;
 
-        if(!Object.keys(adb).length){
+        if(!Object.keys(this.adb).length){
             // Соединение
             const vMsg:QueryContextI = {
                 uid:uuidv4(),
@@ -184,22 +97,22 @@ export class DbClientSys {
                 if(Object.keys(data.adb).length){
                     for (let [k,db] of Object.entries(data.adb)) {
 
-                        adb[k] = knex(db);
+                        this.adb[k] = knex(db);
                     }
 
                 } else if(Object.keys(data.adbAll).length){
                     for (let [k,db] of Object.entries(data.adbAll)) {
                         
                         //adb.push(knex(db))
-                        adb[k] = knex(db);
+                        this.adb[k] = knex(db);
                     }
                 }
 
                 if(Object.keys(data.adbAll).length){
                     for (let [k,db] of Object.entries(data.adbAll)) {
                         
-                        adbAll[k] = knex(db);
-                        adbAllClaster[k] = knex(db);
+                        this.adbAll[k] = knex(db);
+                        this.adbAllClaster[k] = knex(db);
                         // adbAll.push(knex(db))
                         // adbAllClaster.push(knex(db))
                     }
@@ -207,7 +120,7 @@ export class DbClientSys {
 
                 
 
-                if(Object.keys(adb).length){
+                if(Object.keys(this.adb).length){
                     this.bInitDbConnect = true;
 
                     console.log('Соединение на чтение успешно установленно');
@@ -266,7 +179,7 @@ export class DbClientSys {
                 if(data?.adb?.length){
                     for (let i = 0; i < data.adb.length; i++) {
                         const sDbConnect = data.adb[i];
-                        if(!adb[sDbConnect] && adbError[sDbConnect]){
+                        if(!this.adb[sDbConnect] && this.adbError[sDbConnect]){
                             resp.errors['append_db'] = 'Присоединение БД через STATUS';
                             resp.errors['append_db'+':'+sDbConnect];
                         }
@@ -275,7 +188,7 @@ export class DbClientSys {
                 if(data?.adbError?.length){
                     for (let i = 0; i < data.adbError.length; i++) {
                         const sDbConnect = data.adbError[i];
-                        if(adb[sDbConnect] && !adbError[sDbConnect]){
+                        if(this.adb[sDbConnect] && !this.adbError[sDbConnect]){
                             resp.errors['leve_db'] = 'Отсоединение БД через STATUS';
                             resp.errors['leve_db'+':'+sDbConnect];
                         }
@@ -283,7 +196,7 @@ export class DbClientSys {
                 }
                 
                 if(_.size(resp.errors)){
-                    workErrorDb(resp.errors);
+                    this.workErrorDb(resp.errors);
                 }
 
                 resolve(resp)
@@ -485,7 +398,7 @@ export class DbClientSys {
             });
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
                 if(_.size(resp.errors)){
-                    workErrorDb(resp.errors);
+                    this.workErrorDb(resp.errors);
                 }
             });
             this.querySys.fSend(MsgT.common, vMsg);
@@ -531,13 +444,13 @@ export class DbClientSys {
         let okExe = true;
         let vError = null; // Ошибка заполняется если при первом запросе она произошла
 
-        const akAdb = Object.keys(adb);
+        const akAdb = Object.keys(this.adb);
         
         try { // из случайной БД своего контура
 
             if(akAdb?.length > 0){
                 const iRand = akAdb[mRandomInteger(0, akAdb.length - 1)]
-                const dbSelect = adb[iRand];
+                const dbSelect = this.adb[iRand];
                 builder.client = dbSelect.client;
 
                 // const vConnect = dbSelect.client.config.connection;
@@ -551,19 +464,19 @@ export class DbClientSys {
                 }
             } else {
                 okExe = false;
-                vError = new Error('БД недоступна - '+this.conf?.nameApp+' - БД по IP'+adb?.length+' БД доступные - '+adbAll?.length);
+                vError = new Error('БД недоступна - '+this.conf?.nameApp+' - БД по IP'+this.adb?.length+' БД доступные - '+this.adbAll?.length);
             }
         } catch (e) {
-            console.log('БД недоступна - '+this.conf?.nameApp+' - БД по IP'+adb?.length+' БД доступные - '+adbAll?.length);
+            console.log('БД недоступна - '+this.conf?.nameApp+' - БД по IP'+this.adb?.length+' БД доступные - '+this.adbAll?.length);
             okExe = false
             vError = e;
         }
 
-        const akAdbAll = Object.keys(adbAll);
+        const akAdbAll = Object.keys(this.adbAll);
         if(!okExe && akAdb?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД своего контура
             console.log('SELECT ERROR - БД IP:', ' БД по IP',akAdb.length, ' БД доступные',akAdbAll.length)
-            for (const i in adb) {
-                const dbSelect = adb[i];
+            for (const i in this.adb) {
+                const dbSelect = this.adb[i];
 
                 const vConnect = dbSelect.client.config.connection;
                 console.log('SELECT IP [',i,'] DB >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
@@ -590,8 +503,8 @@ export class DbClientSys {
 
         if(!okExe && akAdbAll?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД доступных приложению
             console.log('SELECT ERROR - БД БД ALL:', ' БД по IP',akAdb.length, ' БД доступные',akAdbAll.length)
-            for (const i in adbAll) {
-                const dbSelect = adbAll[i];
+            for (const i in this.adbAll) {
+                const dbSelect = this.adbAll[i];
                 
                 try {
                     builder.client = dbSelect.client
@@ -617,11 +530,11 @@ export class DbClientSys {
             }
         }
 
-        const akAdbAllClaster = Object.keys(adbAllClaster);
+        const akAdbAllClaster = Object.keys(this.adbAllClaster);
         if(!okExe && akAdbAllClaster?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД доступных приложению
             console.log('SELECT ERROR - БД ALL CLUSTER:', ' БД по IP',akAdb.length, ' БД доступные',akAdbAll.length)
-            for (const i in adbAllClaster) {
-                const dbSelect = adbAllClaster[i];
+            for (const i in this.adbAllClaster) {
+                const dbSelect = this.adbAllClaster[i];
                 
                 try {
                     builder.client = dbSelect.client
@@ -687,7 +600,7 @@ export class DbClientSys {
             });
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
                 if(_.size(resp.errors)){
-                    workErrorDb(resp.errors);
+                    this.workErrorDb(resp.errors);
                 }
             });
             this.querySys.fSend(MsgT.insert, vMsg);
@@ -727,7 +640,7 @@ export class DbClientSys {
             });
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
                 if(_.size(resp.errors)){
-                    workErrorDb(resp.errors);
+                    this.workErrorDb(resp.errors);
                 }
             });
             this.querySys.fSend(MsgT.replace, vMsg);
@@ -792,7 +705,7 @@ export class DbClientSys {
 
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
                 if(_.size(resp.errors)){
-                    workErrorDb(resp.errors);
+                    this.workErrorDb(resp.errors);
                 }
             });
 
@@ -867,7 +780,7 @@ export class DbClientSys {
 
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
                 if(_.size(resp.errors)){
-                    workErrorDb(resp.errors);
+                    this.workErrorDb(resp.errors);
                 }
             });
 
@@ -954,7 +867,7 @@ export class DbClientSys {
             });
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
                 if(_.size(resp.errors)){
-                    workErrorDb(resp.errors);
+                    this.workErrorDb(resp.errors);
                 }
             });
             this.querySys.fSend(MsgT.update, vMsg);
@@ -1023,7 +936,7 @@ export class DbClientSys {
 
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
                 if(_.size(resp.errors)){
-                    workErrorDb(resp.errors);
+                    this.workErrorDb(resp.errors);
                 }
             });
 
@@ -1084,7 +997,7 @@ export class DbClientSys {
 
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
                 if(_.size(resp.errors)){
-                    workErrorDb(resp.errors);
+                    this.workErrorDb(resp.errors);
                 }
             });
 
@@ -1161,12 +1074,102 @@ export class DbClientSys {
             });
             this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
                 if(_.size(resp.errors)){
-                    workErrorDb(resp.errors);
+                    this.workErrorDb(resp.errors);
                 }
             });
             this.querySys.fSend(MsgT.delete, vMsg);
             this.iUpdate++;
         });
+    }
+
+
+    /** Обработка ошибок отключения/присоединения БД */
+    workErrorDb(errors:Record<string,string>){
+        try {
+            console.log(
+                '>>>workErrorDb.STATUS_START:', 
+                ' БД по IP',Object.keys(this.adb)?.length,'|',Object.keys(this.adbError)?.length, 
+                ' БД доступные',Object.keys(this.adbAll)?.length,'|',Object.keys(this.adbAllError)?.length
+            )
+            if(errors['leve_db']){
+                for (const i in this.adb) {
+                    const vConnect = this.adb[i].client.config.connection;
+                    // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
+                    
+                    if(errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+    
+                        // // Если одновременно и добавление и удаление
+                        // if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                        //     // delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                        //     // delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                        //     continue;
+                        // }
+                        if(this.adb[i]){
+                            this.adbError[i] = this.adb[i];
+                        }
+                        delete this.adb[i];
+                        console.log('Отключение проблемной БД IP')
+                    }
+                }
+                for (const i in this.adbAll) {
+                    const vConnect = this.adbAll[i].client.config.connection;
+                    // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
+                    
+                    if(errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+    
+                        // // Если одновременно и добавление и удаление
+                        // if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                        //     // delete errors['leve_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                        //     // delete errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database];
+                        //     continue;
+                        // }
+                        if(this.adbAll[i]){
+                            this.adbAllError[i] = this.adbAll[i];
+                        }
+                        delete this.adbAll[i];
+                        console.log('Отключение проблемной БД All')
+                    }
+                }
+            }
+    
+            if(errors['append_db']){
+                for (const i in this.adbError) {
+                // for (let i = 0; i < adbError.length; i++) {
+                    const vConnect = this.adbError[i].client.config.connection;
+                    if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                        if(this.adbError[i]){
+                            this.adb[i] = this.adbError[i];
+                        }
+                        delete this.adbError[i];
+    
+                        console.log('Добавление проблемной БД IP')
+                    }
+                    
+                }
+    
+                for (const i in this.adbAllError) {
+                // for (let i = 0; i < adbAllError.length; i++) {
+                    const vConnect = this.adbAllError[i].client.config.connection;
+                    if(errors['append_db'+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database]){
+                        if(this.adbAllError[i]){
+                            this.adbAll[i] = this.adbAllError[i];
+                        }
+                        delete this.adbAllError[i];
+    
+                        console.log('Добавление проблемной БД ALL')
+                    }
+    
+                }
+            }
+        } catch(e) {
+            console.log('ProxyDb.workErrorDb>>>',e);
+        }
+    
+        console.log(
+            '>>>workErrorDb.STATUS_END:', 
+            ' БД по IP',Object.keys(this.adb)?.length,'|',Object.keys(this.adbError)?.length, 
+            ' БД доступные',Object.keys(this.adbAll)?.length,'|',Object.keys(this.adbAllError)?.length
+        )
     }
 
 }
