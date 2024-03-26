@@ -20,13 +20,23 @@ const gDbReplicationSys = new DbReplicationSys();
 gDbServerSys.dbInit();
 
 
+
+let bReplication = false; // Блокировка наслоения репликаций
 /** Интервал записи данных в бд */
 const intervalDb = setInterval(async () => {
     
-    if(conf.option.replication){
-        await gDbServerSys.dbSave();
-        await gDbReplicationSys.dbReplication();
-        await gDbReplicationSys.dbCheckReplication();
+    if(conf.option.replication && !bReplication){
+        bReplication = true;
+        
+        try{
+            await gDbServerSys.dbSave();
+            await gDbReplicationSys.dbReplication();
+            await gDbReplicationSys.dbCheckReplication();
+        } catch(e){
+            console.log('>>>ОШИБКА РЕПЛИКАЦИ>>>',e);
+        }
+
+        bReplication = false;
     }
 
     
