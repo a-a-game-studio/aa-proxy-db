@@ -357,53 +357,162 @@ export class DbClientSys {
     }
 
     /** Общие запросы другой категории */
-    public common(query:Knex.QueryBuilder){
-        return new Promise((resolve, reject) => {
+    public async common<T = any>(query:Knex.QueryBuilder|Knex.Raw): Promise<T>{
 
-            // Парсинг запроса
-            const sql = query.toQuery();
+        const builder = <any>query;
+        
+        // Парсинг запроса
+        const sql = query.toQuery();
 
-            const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
+        const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
 
-            console.log(sQueryStart);
+        // console.log(sQueryStart);
 
-            const aMatch = sQueryStart.match(/^(select)|(insert)|(update)|(delete)|(alter)|(create)|(drop)|(truncate)/);
+        const aMatch = sQueryStart.match(/^(insert)|(update)|(delete)|(truncate)|(alter)|(create)|(drop)/);
 
-            if(aMatch){
-                reject(new Error(
-                    'Запрос не корректный, подходит под правило - только общие запросы - \n' + 
-                    '/^(select)|(insert)|(update)|(delete)|(alter)|(create)|(drop)|(truncate)/'
-                ))
+        if(aMatch){
+            throw (new Error(
+                'Запрос не корректный, подходит под запрещенные запросы - \n' + 
+                '/^(insert)|(update)|(delete)|(truncate)|(alter)|(create)|(drop)/'
+            ))
+        }
+        
+        if(!this.bInitDbConnect){
+            while(!this.bInitDbConnect){
+                console.log('Пытаемся соединится с БД для чтения')
+                await mWait(1000);
             }
-            
-            this.querySys.fInit();
+        }
 
-            const vMsg:QueryContextI = {
-                uid:uuidv4(),
-                app:this.conf.nameApp,
-                ip:ip.address(),
-                table:'',
-                type:MsgT.common,
-                query:query.toString(),
-                time:Date.now()
-            }
+        // Случайно отдаем одну базу данных из пула
+        
+        
 
-            this.querySys.fActionOk((data: any) => {
-                resolve(data)
-            });
-            this.querySys.fActionErr((err:any) => {
-                this.iSendErr++;
-                console.error(err);
-                reject(err)
-            });
-            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                if(_.size(resp.errors)){
-                    this.workErrorDb(resp.errors);
+        // console.log('>>>SELECT:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
+        
+        let out:T = null;
+        let okExe = true;
+        let vError = null; // Ошибка заполняется если при первом запросе она произошла
+
+        const akAdb = Object.keys(this.adb);
+        
+        try { // из случайной БД своего контура
+
+            if(akAdb?.length > 0){
+                const iRand = akAdb[mRandomInteger(0, akAdb.length - 1)]
+                const dbSelect = this.adb[iRand];
+                builder.client = dbSelect.client;
+
+                // const vConnect = dbSelect.client.config.connection;
+                // console.log('SELECT RANDOM DB >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
+
+                // Выполнить запрос
+                if (builder._method){ // _method только у билдера
+                    out = await builder
+                } else {
+                    out = (await builder)[0]
                 }
-            });
-            this.querySys.fSend(MsgT.common, vMsg);
-            this.iSelect++;
-        });
+            } else {
+                okExe = false;
+                vError = new Error('БД недоступна - '+this.conf?.nameApp+' - БД по IP'+this.adb?.length+' БД доступные - '+this.adbAll?.length);
+            }
+        } catch (e) {
+            console.log('БД недоступна - '+this.conf?.nameApp+' - БД по IP'+this.adb?.length+' БД доступные - '+this.adbAll?.length);
+            okExe = false
+            vError = e;
+        }
+
+        const akAdbAll = Object.keys(this.adbAll);
+        if(!okExe && akAdb?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД своего контура
+            console.log('common SELECT ERROR - БД IP:', ' БД по IP',akAdb.length, ' БД доступные',akAdbAll.length)
+            for (const i in this.adb) {
+                const dbSelect = this.adb[i];
+
+                const vConnect = dbSelect.client.config.connection;
+                console.log('common SELECT IP [',i,'] DB >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
+                
+                try {
+                    builder.client = dbSelect.client
+                    // console.log('SELECT ERROR SELECT QUERY', dbSelect.client.config.connection)
+                    // Выполнить запрос
+                    if (builder._method){ // _method только у билдера
+                        out = await builder
+                    } else {
+                        out = (await builder)[0]
+                    }
+    
+                    console.log('common SELECT ERROR - БД IP: SUCCESS', i);
+                    okExe = true;
+                    break;
+                } catch (e){
+                    console.log('common SELECT ERROR - БД IP: FAIL', i, e);
+                    okExe = false;
+                }
+            }
+        }
+
+        if(!okExe && akAdbAll?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД доступных приложению
+            console.log('common SELECT ERROR - БД БД ALL:', ' БД по IP',akAdb.length, ' БД доступные',akAdbAll.length)
+            for (const i in this.adbAll) {
+                const dbSelect = this.adbAll[i];
+                
+                try {
+                    builder.client = dbSelect.client
+
+                    const vConnect = dbSelect.client.config.connection;
+                    console.log('common SELECT ALL [',i,'] DB >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
+                    
+                    // console.log('SELECT ERROR SELECT QUERY', dbSelect.client.config.connection)
+                    // Выполнить запрос
+                    if (builder._method){ // _method только у билдера
+                        out = await builder
+                    } else {
+                        out = (await builder)[0]
+                    }
+    
+                    console.log('common SELECT ERROR - БД ALL: SUCCESS ', i)
+                    okExe = true;
+                    break;
+                } catch (e){
+                    console.log('common SELECT ERROR - БД ALL: FAIL ', i, e)
+                    okExe = false;
+                }
+            }
+        }
+
+        const akAdbAllClaster = Object.keys(this.adbAllClaster);
+        if(!okExe && akAdbAllClaster?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД доступных приложению
+            console.log('common SELECT ERROR - БД ALL CLUSTER:', ' БД по IP',akAdb.length, ' БД доступные',akAdbAll.length)
+            for (const i in this.adbAllClaster) {
+                const dbSelect = this.adbAllClaster[i];
+                
+                try {
+                    builder.client = dbSelect.client
+                    // console.log('SELECT ERROR SELECT QUERY', dbSelect.client.config.connection)
+                    // Выполнить запрос
+                    if (builder._method){ // _method только у билдера
+                        out = await builder
+                    } else {
+                        out = (await builder)[0]
+                    }
+    
+                    console.log('common SELECT ERROR - БД ALL CLUSTER: SUCCESS ', i)
+                    okExe = true;
+                    break;
+                } catch (e){
+                    console.log('common SELECT ERROR - БД ALL CLUSTER: FAIL ', i, e)
+                    okExe = false;
+                }
+            }
+        }
+
+        if(!okExe){ // Если так и не удалос выполнить запрос выбросить ошибку
+            throw vError;
+        }
+        
+        this.iSelect++;
+
+        return out; 
     }
 
     /** SELECT */
@@ -416,7 +525,7 @@ export class DbClientSys {
 
         const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
 
-        console.log(sQueryStart);
+        // console.log(sQueryStart);
 
         const aMatch = sQueryStart.match(/^(select)|(call suggest)/);
 
