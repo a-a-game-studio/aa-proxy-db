@@ -20,6 +20,7 @@ import { mWait } from "../Helper/WaitH";
 export class DbClientSys {
 
     conf:{
+        env:string,
         baseURL: string, // 'ws://127.0.0.1:8080',
         nameApp: string, // Наименование приложения
     } = null;
@@ -71,6 +72,7 @@ export class DbClientSys {
 
     /** init */
     constructor(conf:{
+        env:string,
         baseURL: string, // 'ws://127.0.0.1:8080',
         nameApp: string, // Наименование приложения
     }){
@@ -174,7 +176,10 @@ export class DbClientSys {
                 // adbErrorCount:adbError.length
 
                 // console.log('STATUS>>>', ' ok:',ok,' data:',data,' resp:',resp);
-                console.log('STATUS>>>', data);
+
+                if(this.conf.env == 'dev'){
+                    console.log('STATUS>>>', data);
+                }
 
                 if(data?.adb?.length){
                     for (let i = 0; i < data.adb.length; i++) {
