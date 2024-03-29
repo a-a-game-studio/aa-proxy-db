@@ -7,7 +7,7 @@ import ip from 'ip'
 import { QueryContextI, MsgT, QueryStatusI } from "../interface/CommonI";
 
 import knex, { Knex } from "knex";
-import _ from "lodash";
+import _, { cond } from "lodash";
 import { mRandomInteger } from "../Helper/NumberH";
 import { mWait } from "../Helper/WaitH";
 
@@ -72,13 +72,16 @@ export class DbClientSys {
 
     /** init */
     constructor(conf:{
-        env:string,
+        env?:string,
         baseURL: string, // 'ws://127.0.0.1:8080',
         nameApp: string, // Наименование приложения
     }){
         this.querySys = new QuerySys()
         this.querySys.fConfigWs(conf);
-        this.conf = conf;
+        this.conf = {
+            ...conf,
+            env: conf.env ? conf.env : 'prod'
+        };
 
         if(!Object.keys(this.adb).length){
             // Соединение
