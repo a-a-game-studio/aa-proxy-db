@@ -523,6 +523,47 @@ export class DbClientSys {
         return out; 
     }
 
+    /** Выполнить запрос на случайной БД для чтения */
+    public async exe<T = any>(cb:(dbRand:Knex) =>  Promise<T>): Promise<T> {
+
+        let iCntConnectTry = 0; // Число попыток соединения
+        if(!this.bInitDbConnect){
+            while(!this.bInitDbConnect){
+                console.log('Пытаемся соединится с БД для чтения', this.conf.baseURL)
+                await mWait(1000);
+                iCntConnectTry++;
+                if(iCntConnectTry > 10){
+                    throw Error('Не удалось соединится с БД для чтения соединение = '+this.conf.baseURL)
+                }
+            }
+        }
+        
+        let out:T = null;
+        let okExe = true;
+
+        const akAdb = Object.keys(this.adb);
+        
+        try { // из случайной БД своего контура
+
+            if(akAdb?.length > 0){
+                const iRand = akAdb[mRandomInteger(0, akAdb.length - 1)]
+                const dbSelect = this.adb[iRand];
+                out = await cb(dbSelect);
+
+            } else {
+                okExe = false;
+                throw new Error('БД недоступна - '+this.conf.baseURL+'-'+this.conf?.nameApp+' - БД по IP'+this.adb?.length+' БД доступные - '+this.adbAll?.length);
+            }
+        } catch (e) {
+            console.log('БД недоступна - '+this.conf.baseURL+'-'+this.conf?.nameApp+' - БД по IP'+this.adb?.length+' БД доступные - '+this.adbAll?.length);
+            console.log(e)
+            throw e;
+        }
+
+        return out;
+        
+    }
+
     /** SELECT */
     public async select<T = any>(query:Knex.QueryBuilder|Knex.Raw): Promise<T> {
 
