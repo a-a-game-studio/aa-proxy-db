@@ -569,7 +569,7 @@ export class DbClientSys {
     }
 
     /** SELECT */
-    public async select<T = any>(query:Knex.QueryBuilder|Knex.Raw): Promise<T> {
+    public async select<T = any>(query:Knex.QueryBuilder|Knex.Raw): Promise<T[]> {
 
         const builder = <any>query;
         
