@@ -226,7 +226,11 @@ export class DbClientSys {
 
 
     /** Заполнить инкрементный ID */
-    public fillID(sTable:string, aRowsIn:any[]):any{
+    public fillID(sTableIn:string, aRowsIn:any[]):any{
+
+        const asTable = sTableIn.split('.');
+        const sTable = asTable[0];
+        const idTable =  asTable[1] || 'id';
        
         return new Promise((resolve, reject) => {
 
@@ -241,7 +245,7 @@ export class DbClientSys {
                 for (let i = 0; i < aRows.length; i++) {
                     const vRow = aRows[i];
 
-                    if(!vRow.id){
+                    if(!vRow[idTable]){
                         
                         cntID++;
                     }
@@ -273,9 +277,9 @@ export class DbClientSys {
                     for (let i = 0; i < aRows.length; i++) {
                         const vRows = aRows[i];
 
-                        if(!vRows.id){
+                        if(!vRows[idTable]){
                             
-                            vRows.id = data[iFillID];
+                            vRows[idTable] = data[iFillID];
                             iFillID++;
                         }
                     }
@@ -728,8 +732,11 @@ export class DbClientSys {
     }
 
     /** INSERT */
-    public async insert(table:string, dataIn:any|any[],onConflict?:'ignore'|'merge'){
-        const aDatePrepare = dataIn.length ? dataIn : [dataIn];
+    public async insert<T>(table:string, dataIn:T|T[],onConflict?:'ignore'|'merge'): Promise<T[]>{
+        const aDatePrepare = ((<any>dataIn)?.length ? dataIn : [dataIn]) as T[];
+
+        
+
         await this.fillID(table, aDatePrepare)
 
         return new Promise((resolve, reject) => {
@@ -750,7 +757,7 @@ export class DbClientSys {
                 if(dataOut){
                     console.log('insert end', dataOut)
                 }
-                resolve(dataIn)
+                resolve(aDatePrepare)
             });
             this.querySys.fActionErr((err:any) => {
                 console.error('ERROR INSERT CLIENT>>>', err);
