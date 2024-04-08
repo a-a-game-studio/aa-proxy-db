@@ -319,8 +319,10 @@ export class DbClientSys {
         }
     }
 
-    /** Схема */
-    public schema(table:string, query:Knex.SchemaBuilder){
+    /** Схема
+     * @returns id выполненного запроса миграции
+     */
+    public schema(table:string, query:Knex.SchemaBuilder):Promise<number>{
         return new Promise((resolve, reject) => {
 
             // Парсинг запроса
@@ -328,7 +330,7 @@ export class DbClientSys {
 
             const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
 
-            console.log(sQueryStart);
+            console.log('[SCHEMA]:',sQueryStart);
 
             const aMatch = sQueryStart.match(/^(alter)|(create)|(drop)|(truncate)/);
 
@@ -354,7 +356,7 @@ export class DbClientSys {
 
             this.querySys.fActionOk((data: any) => {
 
-                console.log('[id_in]:',data);
+                // console.log('[id_in]:',data);
                 // this.iSendComplete++;
                 resolve(data)
             });
@@ -735,8 +737,6 @@ export class DbClientSys {
     public async insert<T>(table:string, dataIn:T|T[],onConflict?:'ignore'|'merge'): Promise<T[]>{
         const aDatePrepare = ((<any>dataIn)?.length ? dataIn : [dataIn]) as T[];
 
-        
-
         await this.fillID(table, aDatePrepare)
 
         return new Promise((resolve, reject) => {
@@ -755,7 +755,7 @@ export class DbClientSys {
 
             this.querySys.fActionOk((dataOut: any) => {
                 if(dataOut){
-                    console.log('insert end', dataOut)
+                    // console.log('insert end', dataOut)
                 }
                 resolve(aDatePrepare)
             });
@@ -771,7 +771,7 @@ export class DbClientSys {
             this.querySys.fSend(MsgT.insert, vMsg);
             this.iInsert++;
 
-            console.log('insert init')
+            // console.log('insert init')
         });
     }
 
@@ -794,9 +794,9 @@ export class DbClientSys {
             }
 
             this.querySys.fActionOk((dataOut: any) => {
-                if(dataOut){
-                    console.log('replace end', dataOut)
-                }
+                // if(dataOut){
+                //     // console.log('replace end', dataOut)
+                // }
                 resolve(dataIn)
             });
             this.querySys.fActionErr((err:any) => {
@@ -811,21 +811,21 @@ export class DbClientSys {
             this.querySys.fSend(MsgT.replace, vMsg);
             this.iInsert++;
 
-            console.log('replace init')
+            // console.log('replace init')
         });
     }
 
     /** UPDATE IN
      * updateIn('item.item_id', [22,33], {name:'new_name'})
      */
-    public updateIn(sTableKey:string, whereIn:number[]|string[], dataIn:any){
+    public updateIn(sTableKey:string, whereIn:number[]|string[], dataIn:any): Promise<number[]>{
         return new Promise((resolve, reject) => {
 
             const asTableKey = sTableKey.split('.');
             const sTable = asTableKey[0];
             const sWhereKey =  asTableKey[1] || 'id';
 
-            console.log(whereIn);
+            // console.log(whereIn);
 
             if(!sTable && !sWhereKey && whereIn.length !== 0){
                 reject(new Error(
@@ -858,7 +858,7 @@ export class DbClientSys {
 
             this.querySys.fActionOk((dataOut: any) => {
 
-                console.log('[update]:',dataOut);
+                // console.log('[update]:',dataOut);
                 // this.iSendComplete++;
                 resolve(dataOut)
             });
@@ -880,7 +880,7 @@ export class DbClientSys {
     }
 
     /** UPDATE */
-    public update(dataIn:any, query:Knex.QueryBuilder|Knex.Raw){
+    public update(dataIn:any, query:Knex.QueryBuilder|Knex.Raw): Promise<number[]>{
         return new Promise((resolve, reject) => {
 
             // Парсинг запроса
@@ -888,7 +888,7 @@ export class DbClientSys {
 
             const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
 
-            console.log(sQueryStart);
+            // console.log(sQueryStart);
 
             const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/);
 
@@ -896,7 +896,7 @@ export class DbClientSys {
             let sWhereKey = ''
             let sTable = ''
 
-            console.log(aMatch);
+            // console.log(aMatch);
 
             // Проверка синтаксиса
             if(aMatch){
@@ -933,7 +933,7 @@ export class DbClientSys {
 
             this.querySys.fActionOk((dataOut: any) => {
 
-                console.log('[update]:',dataOut);
+                // console.log('[update]:',dataOut);
                 // this.iSendComplete++;
                 resolve(dataOut)
             });
@@ -1041,7 +1041,7 @@ export class DbClientSys {
     }
 
     /** DELETE */
-    public delete(query:Knex.QueryBuilder|Knex.Raw) {
+    public delete(query:Knex.QueryBuilder|Knex.Raw): Promise<number[]> {
         return new Promise((resolve, reject) => {
 
             // Парсинг запроса
@@ -1089,7 +1089,7 @@ export class DbClientSys {
 
             this.querySys.fActionOk((dataOut: any) => {
 
-                console.log('[dataOut]:',dataOut);
+                // console.log('[dataOut]:',dataOut);
                 // this.iSendComplete++;
                 resolve(dataOut)
             });
@@ -1113,7 +1113,7 @@ export class DbClientSys {
     /** UPDATE IN
      * deleteIn('item.item_id', [22,33])
      */
-     public deleteIn(sTableKey:string, whereIn:number[]|string[]){
+     public deleteIn(sTableKey:string, whereIn:number[]|string[]):Promise<number[]>{
         return new Promise((resolve, reject) => {
 
             const asTableKey = sTableKey.split('.');
