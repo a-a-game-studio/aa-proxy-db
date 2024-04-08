@@ -602,7 +602,7 @@ export class DbClientSys {
 
         // console.log('>>>SELECT:', ' БД по IP',adb.length, ' БД доступные',adbAll.length)
         
-        let out:T = null;
+        let out:T[] = null;
         let okExe = true;
         let vError = null; // Ошибка заполняется если при первом запросе она произошла
 
