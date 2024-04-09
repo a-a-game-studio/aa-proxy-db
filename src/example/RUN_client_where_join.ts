@@ -98,44 +98,6 @@ async function run(){
         );
     }
 
-    { // UPDATE с JOIN
-        const sRandCat = aItemCat[mRandomInteger(0, aItemCat.length - 1)];
-        const sRandColor = aItemColor[mRandomInteger(0, aItemColor.length - 1)]
-        const sRandSetting = aItemSetting[mRandomInteger(0, aItemSetting.length - 1)]
-
-        const sName = ['[',']', 'Обновленный JOIN товар', '[',']', sRandCat,sRandColor,sRandSetting,'[',']'].join(' ');
-
-        const updateStatus = await mqClientSys.updateJoin({
-            name:sName, 
-            price:1000
-        }, db({i:'item'})
-            .rightJoin({o:'order'}, 'o.item_id', 'i.id')
-            .whereIn('o.id', aidOrder.slice(20,40))
-            .select({id:'i.id'})
-        );
-
-        console.log('[run:update_join]:',':',updateStatus);
-    }
-
-    { // DELETE с JOIN
-        const sRandCat = aItemCat[mRandomInteger(0, aItemCat.length - 1)];
-        const sRandColor = aItemColor[mRandomInteger(0, aItemColor.length - 1)]
-        const sRandSetting = aItemSetting[mRandomInteger(0, aItemSetting.length - 1)]
-
-        const sName = ['[',']', 'Обновленный JOIN товар', '[',']', sRandCat,sRandColor,sRandSetting,'[',']'].join(' ');
-
-        const deleteStatus = await mqClientSys.deleteJoin(db({i:'item'})
-            .rightJoin({o:'order'}, 'o.item_id', 'i.id')
-            .whereIn('o.id', aidOrder.slice(10,20))
-            .select({id:'i.id'})
-        );
-
-        console.log('[run:delete_join]:',':',deleteStatus);
-    }
-    
-
-    
-
     // // ====================================
     
     // const deleteSttatus = await mqClientSys.delete(db('test')
