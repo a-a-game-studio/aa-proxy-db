@@ -4,7 +4,7 @@ import { QuerySys } from "@a-a-game-studio/aa-front";
 import { v4 as uuidv4 } from 'uuid';
 
 import ip from 'ip'
-import { QueryContextI, MsgT, QueryStatusI } from "../interface/CommonI";
+import { QueryContextI, MsgT, QueryStatusI, QueryContextOptionI } from "../interface/CommonI";
 
 import knex, { Knex } from "knex";
 import _, { cond } from "lodash";
@@ -734,7 +734,7 @@ export class DbClientSys {
     }
 
     /** INSERT */
-    public async insert<T>(table:string, dataIn:T|T[],onConflict?:'ignore'|'merge'): Promise<T[]>{
+    public async insert<T>(table:string, dataIn:T|T[], option?:QueryContextOptionI): Promise<T[]>{
         const aDatePrepare = ((<any>dataIn)?.length ? dataIn : [dataIn]) as T[];
 
         await this.fillID(table, aDatePrepare)
@@ -750,6 +750,7 @@ export class DbClientSys {
                 table:table,
                 type:MsgT.insert,
                 data:aDatePrepare,
+                option:option,
                 time:Date.now()
             }
 

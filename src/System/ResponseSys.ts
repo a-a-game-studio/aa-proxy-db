@@ -1,6 +1,7 @@
 import { ErrorSys } from "@a-a-game-studio/aa-components";
 import { AAContext } from "@a-a-game-studio/aa-server";
 
+import * as conf from '../Config/MainConfig';
 
 
 
@@ -33,7 +34,6 @@ import { AAContext } from "@a-a-game-studio/aa-server";
         // console.log('TEST>>>',this.ctx.body.errors);
         if(this.ctx.err.isOk()){
             try {
-            
                 this.ctx.ws.send(JSON.stringify({
                     ok: true,
                     e: false,
@@ -53,6 +53,20 @@ import { AAContext } from "@a-a-game-studio/aa-server";
                 
             }
         } else {
+            this.ctx.err.error(this.ctx?.body?.type, 'Ошибка операции - '+this.ctx?.body?.ip+'/'+this.ctx?.body?.app);
+            if(conf.common.env == 'dev'){
+                console.log(
+                    '\n==================================\n',
+                    this.ctx?.body?.type, '[Ошибка операции]: '+this.ctx?.body?.ip+'/'+this.ctx?.body?.app, 
+                    '\n[query]: ',this.ctx?.body?.query,
+                    '\n[data]:',this.ctx?.body?.data,
+                    '\n==================================\n',
+                );
+            } else {
+                console.log(
+                    this.ctx?.body?.type, '[Ошибка операции]: '+this.ctx?.body?.ip+'/'+this.ctx?.body?.app, 
+                );
+            }
             this.ctx.ws.send(JSON.stringify({
                 ok: false,
                 e: true,

@@ -34,37 +34,36 @@ export class DbTableC {
     /** инициализация таблицы */
     async faInit(sTable:string){
         this.table = sTable;
-        this.statusMaster = (await dbMaster.raw(`SHOW TABLE STATUS LIKE :table;`,{
-            // db:conf.cfDbMaster.connection.database,
-            table:sTable
-        }))[0][0]
 
-        // const lastid = (await dbMaster.raw(`SELECT LAST_INSERT_ID() as id`))[0][0]?.id;
-
-        const idAutoMaster = this.statusMaster ? this.statusMaster['Auto_Increment'] || 0 : 0;
-        // const idLastInsertMaster = this.statusMaster ? (await dbMaster.raw(`SELECT LAST_INSERT_ID() as id`))[0][0]?.id || 0 : 0;
-        const idMaxMaster = this.statusMaster ? (await dbMaster(sTable).max({id:'id'}))[0]?.id || 0 : 0;
-
-        this.statusProxy = (await dbProxy('table').where('table',sTable).select())[0];
-
-        if(!this.statusProxy){
-            await dbProxy('table').where('table',sTable).insert({
+        try {
+            this.statusMaster = (await dbMaster.raw(`SHOW TABLE STATUS LIKE :table;`,{
+                // db:conf.cfDbMaster.connection.database,
                 table:sTable
-            }).onConflict().ignore()
+            }))[0][0]
+
+            const idAutoMaster = this.statusMaster ? this.statusMaster['Auto_Increment'] || 0 : 0;
+            const idMaxMaster = this.statusMaster ? (await dbMaster(sTable).max({id:'id'}))[0]?.id || 0 : 0;
+
+            this.statusProxy = (await dbProxy('table').where('table',sTable).select())[0];
+
+            if(!this.statusProxy){
+                await dbProxy('table').where('table',sTable).insert({
+                    table:sTable
+                }).onConflict().ignore()
+            }
+            const idAutoProxy = this.statusProxy?.table_id || 0;
+            this.idSchema = this.statusProxy?.schema_id || 0;
+
+            this.id = idAutoMaster 
+            // this.id = this.id < idLastInsertMaster ? idLastInsertMaster : this.id;
+            this.id = this.id < idMaxMaster ? idMaxMaster : this.id;
+            this.id = this.id < idAutoProxy ? idAutoProxy : this.id;
+
+            // console.log('=====',this.id );
+
+        } catch(e){
+            console.log('>>>INIT_TABLE>>>',e)
         }
-        const idAutoProxy = this.statusProxy?.table_id || 0;
-        this.idSchema = this.statusProxy?.schema_id || 0;
-
-        this.id = idAutoMaster 
-        // this.id = this.id < idLastInsertMaster ? idLastInsertMaster : this.id;
-        this.id = this.id < idMaxMaster ? idMaxMaster : this.id;
-        this.id = this.id < idAutoProxy ? idAutoProxy : this.id;
-
-        console.log('=====',this.id );
-
-        // TODO так-же нужно получать автоинкремент из proxy DB на случай если нет свежей БД master
-
-        // this.id = this.status['Auto_Increment'] || 0;
     }
 
     getLastID(){
@@ -201,7 +200,7 @@ export class DbServerSys {
         const idSchema = (await dbProxy('schema').insert({
             table:msg.table,
             data:msg.query
-        }))[0]
+        }))[0];
 
         this.idSchema = idSchema;
         vTableC.idSchema = idSchema;
@@ -223,9 +222,7 @@ export class DbServerSys {
             aPromiseQuery = [];
         }
         
-
         return idSchema;
-
     }
 
     /** Получить из очереди */
@@ -343,7 +340,6 @@ export class DbServerSys {
                     resolve(out);
 
                 } catch (e){
-                    
                     console.log('---9> fExeQuery IN DB END ERROR >>>','<<<',iLocalNumDb,'>>>', e);
 
                     const vConnect = adb[i].client.config.connection;
@@ -412,6 +408,7 @@ export class DbServerSys {
             await Promise.all(aPromiseQuery);
             // console.log('---13> fExeQuery паралельное окончание выполнение запроса');
 
+            // Если ошибка произошла не на всех БД(а только на части) - соответственно проблема в БД - запускается механизм отделения БД
             if(asDbError.length && asDbError.length != iCntDbExe){
 
                 // console.log('---14> fExeQuery что то пошло не так начало отсоединение БД');
@@ -438,6 +435,13 @@ export class DbServerSys {
         } catch(e){
             console.log('количество ДБ в строю:',adb.length);
         }
+
+        // Если ошибка произошла на всех БД - проблема не в базе а в запросе, потому генерится ошибка запроса
+        if(asDbError.length && asDbError.length == iCntDbExe && msg.errors['sql_error']){
+            // this.ctx.err
+            throw new Error(msg.errors['sql_error']);
+        }
+        
     }
     
     /** Поместить значение в очередь */
@@ -449,10 +453,19 @@ export class DbServerSys {
 
         const vTableC = this.ixTable[msg.table];
 
-        const sQuery = gQuery(msg.table).insert(msg.data).toString()
+        // Формирование запроса вставки
+        let vQueryBuilder = gQuery(msg.table).insert(msg.data);
+        if(msg?.option?.merge.length){
+            vQueryBuilder.onConflict(msg?.option.onConflict).merge(msg.option.merge)
+        }
+        if(msg?.option?.mergeIgnore){
+            vQueryBuilder.onConflict(msg?.option.onConflict).ignore()
+        }
+        let sQuery = vQueryBuilder.toString()
+        
 
         if(conf.option.replication){
-            vTableC.aQueryInsertLog.push(gQuery(msg.table).insert(msg.data).onConflict().merge().toString())
+            vTableC.aQueryInsertLog.push(vQueryBuilder.onConflict().merge().toString())
         }
 
         await this.fExeQuery(msg, sQuery);

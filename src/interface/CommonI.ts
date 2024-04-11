@@ -15,6 +15,13 @@ export enum MsgT {
     common = '/common', // Получить сообщение
 }
 
+/** Опции запросов */
+export interface QueryContextOptionI {
+    onConflict?:string[] // insert | update
+    merge?:string[] // Список колонок // insert | update
+    mergeIgnore?:boolean // Список колонок // insert | update
+}
+
 export interface QueryContextI {
     // n?:string; // Номер сообщения (когда оно уже зарегистрированно)
     uid?:string; // Уникальный идентификатор сообщения
@@ -26,6 +33,7 @@ export interface QueryContextI {
 	query?: string; // запрос/условие
     data?:any; // Данные
     time?:number; // Время отправки для механизмов очистки
+    option?:QueryContextOptionI; // Опции запросов
     errors?:Record<string,string>;
 }
 

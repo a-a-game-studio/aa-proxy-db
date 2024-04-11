@@ -129,7 +129,7 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
  */
  router.ws(MsgT.schema, async (ctx: AAContext) => {
 
-    console.log('schema>>>',ctx.body)
+    // console.log('schema>>>',ctx.body)
     // const data = await gDbServerSys.schema(ctx.body);
     const ctrl = new Ctrl(ctx);
     const data = await ctrl.faAction(async () => gDbServerSys.schema(ctx.body));
