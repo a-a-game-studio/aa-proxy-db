@@ -3,7 +3,7 @@ import ip from 'ip'
 import { dbMaster, dbProxy, adb, gixDb, adbError, adbWait, ixDbWaitTime } from './DBConnect';
 import { v4 as uuidv4 } from 'uuid';
 import { mFormatDateTime } from '../Helper/DateTimeH';
-import _, { now, NumericDictionaryIterateeCustom } from 'lodash';
+import _ from 'lodash';
 import { QueryContextI, QueryStatusI } from '../interface/CommonI';
 import  knex, { Knex } from 'knex';
 import { setInterval } from 'timers';
@@ -540,23 +540,31 @@ export class DbServerSys {
 
         const vTableC = this.ixTable[msg.table];
 
-        console.log('---1>', msg.query);
+        // console.log('---1>', msg.query);
         let aid = [];
         try { 
             aid = JSON.parse(msg.query) 
         } catch(e) {
             console.log('---ERROR>', 'Не удалось распарсить данные')
         };
-        console.log('---2>',aid)
+        // console.log('---2>',aid)
 
         
         if(aid.length){
             let sQuery = '';
-            
-            sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).toString();
+
+            if(msg?.option?.updateRaw){
+                for (const kUpdate in msg?.option?.updateRaw) {
+                    const sUpdate = msg?.option?.updateRaw[kUpdate];
+                    
+                    msg.data[kUpdate] = gQuery.raw(sUpdate);
+                }
+            }
+            const vBuilderQuery = gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data)
+            sQuery = vBuilderQuery.toString();
             
             if(conf.option.replication){
-                vTableC.aQueryUpdateLog.push(gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).onConflict().merge().toString())
+                vTableC.aQueryUpdateLog.push(vBuilderQuery.onConflict().merge().toString())
             }
 
             await this.fExeQuery(msg, sQuery);

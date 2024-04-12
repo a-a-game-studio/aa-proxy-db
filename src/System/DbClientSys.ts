@@ -812,14 +812,13 @@ export class DbClientSys {
             this.querySys.fSend(MsgT.replace, vMsg);
             this.iInsert++;
 
-            // console.log('replace init')
         });
     }
 
     /** UPDATE IN
      * updateIn('item.item_id', [22,33], {name:'new_name'})
      */
-    public updateIn(sTableKey:string, whereIn:number[]|string[], dataIn:any): Promise<number[]>{
+    public updateIn(sTableKey:string, whereIn:number[]|string[], dataIn:any, option?:QueryContextOptionI): Promise<number[]>{
         return new Promise((resolve, reject) => {
 
             const asTableKey = sTableKey.split('.');
@@ -854,6 +853,7 @@ export class DbClientSys {
                 key_in:sWhereKey,
                 query: sQuery,
                 data:dataIn,
+                option:option,
                 time:Date.now()
             }
 
