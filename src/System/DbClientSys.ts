@@ -881,7 +881,7 @@ export class DbClientSys {
     }
 
     /** UPDATE */
-    public update(dataIn:any, query:Knex.QueryBuilder|Knex.Raw): Promise<number[]>{
+    public update(dataIn:any, query:Knex.QueryBuilder|Knex.Raw, option?:QueryContextOptionI): Promise<number[]>{
         return new Promise((resolve, reject) => {
 
             // Парсинг запроса
@@ -929,6 +929,7 @@ export class DbClientSys {
                 key_in:sWhereKey,
                 query:sSqlNew,
                 data:dataIn,
+                option:option,
                 time:Date.now()
             }
 
@@ -960,7 +961,7 @@ export class DbClientSys {
      * updateQuery('test',  {text:'update_primary_key'}, db('test').whereIn('id',[33,11,44]).pluck('id'))
      * updateQuery('test.num', {text:'update_where_in'}, db('test').whereIn('id',[33,11,44]).pluck('num'))
      */
-    public updateQuery(sTableKey:string, dataIn:any, query:Knex.QueryBuilder|Knex.Raw): Promise<number[]>{
+    public updateQuery(sTableKey:string, dataIn:any, query:Knex.QueryBuilder|Knex.Raw, option?:QueryContextOptionI): Promise<number[]>{
         const asTableKey = sTableKey.split('.');
         const sTable = asTableKey[0];
         const sWhereKey =  asTableKey[1] || 'id';
@@ -1006,6 +1007,7 @@ export class DbClientSys {
                 key_in:sWhereKey,
                 query: sQuery,
                 data:dataIn,
+                option:option,
                 time:Date.now()
             }
 
