@@ -515,10 +515,18 @@ export class DbServerSys {
 
         
         if(aid.length){
-            const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).toString();
+            if(msg?.option?.updateRaw){
+                for (const kUpdate in msg?.option?.updateRaw) {
+                    const sUpdate = msg?.option?.updateRaw[kUpdate];
+                    
+                    msg.data[kUpdate] = gQuery.raw(sUpdate);
+                }
+            }
+            const vBuilderQuery = gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data);
+            const sQuery = vBuilderQuery.toString();
 
             if(conf.option.replication){
-                vTableC.aQueryUpdateLog.push(gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data).onConflict().merge().toString())
+                vTableC.aQueryUpdateLog.push(vBuilderQuery.clone().onConflict().merge().toString())
             }
 
             await this.fExeQuery(msg, sQuery);
@@ -564,7 +572,7 @@ export class DbServerSys {
             sQuery = vBuilderQuery.toString();
             
             if(conf.option.replication){
-                vTableC.aQueryUpdateLog.push(vBuilderQuery.onConflict().merge().toString())
+                vTableC.aQueryUpdateLog.push(vBuilderQuery.clone().onConflict().merge().toString())
             }
 
             await this.fExeQuery(msg, sQuery);
