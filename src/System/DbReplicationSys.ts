@@ -18,7 +18,7 @@ export class DbReplicationSys {
                 console.log('<<<RECONECT БД ПЕРЕВЕДЕНА В ОЖИДАНИЕ>>>', vConnect.host+':'+vConnect.port+':'+vConnect.database)
                 
                 ixDbWaitTime[vConnect.host+':'+vConnect.port+':'+vConnect.database] = new Date().valueOf();
-                adbWait.push(adbError[i]);
+                adb.push(adbError[i]);
                 adbError.splice(i, 1);
                 
             } catch(e){
