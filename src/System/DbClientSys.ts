@@ -83,69 +83,14 @@ export class DbClientSys {
             env: conf.env ? conf.env : 'prod'
         };
 
-        if(!Object.keys(this.adb).length){
-            // Соединение
-            const vMsg:QueryContextI = {
-                uid:uuidv4(),
-                app:this.conf.nameApp,
-                table:'',
-                ip:ip.address(),
-                type:MsgT.connect,
-                time:Date.now()
-            }
-
-            this.querySys.fInit();
-            this.querySys.fActionOk((data: any) => {
-
-                console.log('data.adb>>>',data.adb);
-                console.log('data.adbAll>>>',data.adbAll);
-                if(Object.keys(data.adb).length){
-                    for (let [k,db] of Object.entries(data.adb)) {
-
-                        this.adb[k] = knex(db);
-                    }
-
-                } else if(Object.keys(data.adbAll).length){
-                    for (let [k,db] of Object.entries(data.adbAll)) {
-                        
-                        //adb.push(knex(db))
-                        this.adb[k] = knex(db);
-                    }
-                }
-
-                if(Object.keys(data.adbAll).length){
-                    for (let [k,db] of Object.entries(data.adbAll)) {
-                        
-                        this.adbAll[k] = knex(db);
-                        this.adbAllClaster[k] = knex(db);
-                        // adbAll.push(knex(db))
-                        // adbAllClaster.push(knex(db))
-                    }
-                }
-
-                
-
-                if(Object.keys(this.adb).length){
-                    this.bInitDbConnect = true;
-
-                    console.log('Соединение на чтение успешно установленно');
-                } else {
-                    console.log('Соединения на чтение отсутствуют');
-                }
-            });   
-
-            this.querySys.fActionErr((err:any) => {
-                this.iSendErr++;
-                console.error('ERROR>>>',err);
-                this.bInitDbConnect = false;
-            });
-            this.querySys.fSend(MsgT.connect, vMsg);
-        }
+        
 
 
         /** Интервал записи данных в бд */
         this.intervalDbStatus = setInterval(async () => {
-            this.status();
+            if(this.bInitDbConnect){
+                this.status();
+            }
         },60*1000)
 
     }
@@ -217,11 +162,86 @@ export class DbClientSys {
         
     }
 
-    /** Заполнить инкрементный ID */
-    public connect(){
-        return new Promise((resolve, reject) => {
+    /** Проверка/ожидание соединения */
+    public async checkConnect(sAction:string){
+        if(!this.bInitDbConnect){
+            while(!this.bInitDbConnect){
+                this.connect();
+                console.log('Пытаемся соединится с БД для чтения - действие: '+sAction);
+                await mWait(1000);
+                
+            }
+        }
+    }
 
-        })
+    /** Заполнить инкрементный ID */
+    public async connect(){
+        if(!this.conf) return;
+        if(this.bInitDbConnect) { console.log('Соединение уже установленно'); return; };
+        if(this.bInitDbProcess) { console.log('Соединение в процессe...'); return; };
+
+        this.bInitDbProcess = true;
+
+        if(!Object.keys(this.adb).length){
+            // Соединение
+            const vMsg:QueryContextI = {
+                uid:uuidv4(),
+                app:this.conf.nameApp,
+                table:'',
+                ip:ip.address(),
+                type:MsgT.connect,
+                time:Date.now()
+            }
+
+            this.querySys.fInit();
+            this.querySys.fActionOk((data: any) => {
+
+                console.log('data.adb>>>',data.adb);
+                console.log('data.adbAll>>>',data.adbAll);
+                if(Object.keys(data.adb).length){
+                    for (let [k,db] of Object.entries(data.adb)) {
+
+                        this.adb[k] = knex(db);
+                    }
+
+                } else if(Object.keys(data.adbAll).length){
+                    for (let [k,db] of Object.entries(data.adbAll)) {
+                        
+                        //adb.push(knex(db))
+                        this.adb[k] = knex(db);
+                    }
+                }
+
+                if(Object.keys(data.adbAll).length){
+                    for (let [k,db] of Object.entries(data.adbAll)) {
+                        
+                        this.adbAll[k] = knex(db);
+                        this.adbAllClaster[k] = knex(db);
+                        // adbAll.push(knex(db))
+                        // adbAllClaster.push(knex(db))
+                    }
+                }
+
+                
+
+                if(Object.keys(this.adb).length){
+                    this.bInitDbConnect = true;
+                    
+                    console.log('Соединение на чтение успешно установленно');
+                } else {
+                    console.log('Соединения на чтение отсутствуют');
+                }
+                this.bInitDbProcess = false;
+            });   
+
+            this.querySys.fActionErr((err:any) => {
+                this.iSendErr++;
+                console.error('ERROR>>>',err);
+                this.bInitDbConnect = false;
+                this.bInitDbProcess = false;
+            });
+            this.querySys.fSend(MsgT.connect, vMsg);
+        }
     }
 
 
@@ -232,7 +252,8 @@ export class DbClientSys {
         const sTable = asTable[0];
         const idTable =  asTable[1] || 'id';
        
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
+            await this.checkConnect('fillId');
 
             this.querySys.fInit();
 
@@ -323,8 +344,7 @@ export class DbClientSys {
      * @returns id выполненного запроса миграции
      */
     public schema(table:string, query:Knex.SchemaBuilder):Promise<number>{
-        return new Promise((resolve, reject) => {
-
+        return new Promise(async (resolve, reject) => {
             // Парсинг запроса
             const sql = query.toQuery();
 
@@ -340,6 +360,8 @@ export class DbClientSys {
                     '/^(alter)|(create)|(drop)|(truncate)/'
                 ))
             }
+
+            await this.checkConnect('schema');
 
             
             this.querySys.fInit();
@@ -391,12 +413,7 @@ export class DbClientSys {
             ))
         }
         
-        if(!this.bInitDbConnect){
-            while(!this.bInitDbConnect){
-                console.log('Пытаемся соединится с БД для чтения')
-                await mWait(1000);
-            }
-        }
+        await this.checkConnect('fillId');
 
         // Случайно отдаем одну базу данных из пула
         
@@ -739,7 +756,7 @@ export class DbClientSys {
 
         await this.fillID(table, aDatePrepare)
 
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
             this.querySys.fInit();
 
@@ -780,7 +797,9 @@ export class DbClientSys {
     public async replace(table:string, dataIn:any|any[]){
         const aDatePrepare = dataIn.length ? dataIn : [dataIn];
 
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
+
+            await this.checkConnect('replace');
 
             this.querySys.fInit();
 
@@ -819,7 +838,7 @@ export class DbClientSys {
      * updateIn('item.item_id', [22,33], {name:'new_name'})
      */
     public updateIn(sTableKey:string, whereIn:number[]|string[], dataIn:any, option?:QueryContextOptionI): Promise<number[]>{
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
             const asTableKey = sTableKey.split('.');
             const sTable = asTableKey[0];
@@ -841,6 +860,8 @@ export class DbClientSys {
                     'Не удалось данные провести серелизацию'
                 ))
             }
+
+            await this.checkConnect('updateIn');
 
             this.querySys.fInit();
 
@@ -882,7 +903,7 @@ export class DbClientSys {
 
     /** UPDATE */
     public update(dataIn:any, query:Knex.QueryBuilder|Knex.Raw, option?:QueryContextOptionI): Promise<number[]>{
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
             // Парсинг запроса
             const sql = query.toQuery();
@@ -917,6 +938,8 @@ export class DbClientSys {
                     '/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/'
                 ))
             }
+
+            await this.checkConnect('update');
 
             this.querySys.fInit();
 
@@ -996,6 +1019,8 @@ export class DbClientSys {
                 ))
             }
 
+            await this.checkConnect('updateQuery');
+
             this.querySys.fInit();
 
             const vMsg:QueryContextI = {
@@ -1034,7 +1059,7 @@ export class DbClientSys {
 
     /** DELETE */
     public delete(query:Knex.QueryBuilder|Knex.Raw): Promise<number[]> {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
             // Парсинг запроса
             const sql = query.toQuery();
@@ -1065,6 +1090,8 @@ export class DbClientSys {
                     '/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/'
                 ))
             }
+
+            await this.checkConnect('delete');
 
             this.querySys.fInit();
 
@@ -1110,7 +1137,7 @@ export class DbClientSys {
         const sTable = asTableKey[0];
         const sWhereKey =  asTableKey[1] || 'id';
 
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
             if(!sTable && !sWhereKey && whereIn.length !== 0){
                 reject(new Error(
@@ -1126,6 +1153,8 @@ export class DbClientSys {
                     'Не удалось данные провести серелизацию deleteIn'
                 ))
             }
+
+            await this.checkConnect('deleteIn');
 
             this.querySys.fInit();
 
@@ -1202,6 +1231,8 @@ export class DbClientSys {
                     '/^select.+from.+where/'
                 ))
             }
+
+            await this.checkConnect('deleteQuery');
 
             this.querySys.fInit();
 
