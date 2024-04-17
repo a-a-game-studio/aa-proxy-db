@@ -15,7 +15,7 @@ export const common = {
 export const option = {
     replication:true, // Сохранять ли логи запросов, делать ли репликацию БД
     log:true, // Включено ли логирование по данным
-    mergeOnConflict:true // Поддерживает ли БД при update и insert при дупликации строк их совмещение
+    mergeOnConflict:true, // Поддерживает ли БД при update и insert при дупликации строк их совмещение
     timeoutQuery:60000 // timeout выполнения запроса на уровне балансировщика
 }
 
