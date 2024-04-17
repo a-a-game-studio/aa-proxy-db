@@ -91,7 +91,15 @@ import * as conf from '../Config/MainConfig';
         let out = null;
         if(this.ctx.err.isOk()){
             try {
-                out = await cbAction();
+                const data = await Promise.race([
+                    cbAction(),
+                    new Promise((resolve, reject) => setTimeout(() => {
+                        this.ctx.err.error('timeout', 'Превышено время ожидания выполения');
+                        reject(new Error("request timed out"))
+                    }, conf.option.timeoutQuery)),
+                ]);
+                
+                out = data;
             } catch (e) {
                 this.ctx.err.errorEx(e, 'fatal_error', 'Ошибка сервера');
                 // this.resp.status(500)
