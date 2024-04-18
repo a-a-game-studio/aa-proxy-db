@@ -11,11 +11,6 @@ import _, { cond } from "lodash";
 import { mRandomInteger } from "../Helper/NumberH";
 import { mWait } from "../Helper/WaitH";
 
-
-
-
-
-
 /** DbClientSys */
 export class DbClientSys {
 
@@ -82,16 +77,6 @@ export class DbClientSys {
             ...conf,
             env: conf.env ? conf.env : 'prod'
         };
-
-        
-
-
-        /** Интервал записи данных в бд */
-        this.intervalDbStatus = setInterval(async () => {
-            if(this.bInitDbConnect){
-                this.status();
-            }
-        },60*1000)
 
     }
 
@@ -222,10 +207,15 @@ export class DbClientSys {
                     }
                 }
 
-                
-
                 if(Object.keys(this.adb).length){
                     this.bInitDbConnect = true;
+
+                    /** Интервал записи данных в бд */
+                    this.intervalDbStatus = setInterval(async () => {
+                        if(this.bInitDbConnect){
+                            this.status();
+                        }
+                    },60*1000)
                     
                     console.log('Соединение на чтение успешно установленно');
                 } else {
