@@ -31,6 +31,12 @@ export class DbTableC {
     public aQueryUpdateLog:string[] = [];
     public aQueryDeleteLog:string[] = [];
 
+    public columnSpecial = {
+        primary:'id',
+        created_at:'',
+        updated_at:''
+    }
+
     /** инициализация таблицы */
     async faInit(sTable:string){
         this.table = sTable;
@@ -51,6 +57,10 @@ export class DbTableC {
                     table:sTable
                 }).onConflict().ignore()
             }
+
+            // Синхронизировать специальные колонки
+            await this.syncSchemaSpecialColumn();
+
             const idAutoProxy = this.statusProxy?.table_id || 0;
             this.idSchema = this.statusProxy?.schema_id || 0;
 
@@ -78,6 +88,58 @@ export class DbTableC {
         }
         return aid;
     }
+
+
+    async syncSchemaSpecialColumn(){
+        const sql = `
+            SELECT 
+            COLUMN_NAME,
+                col.COLUMN_KEY,
+                if(col.COLUMN_KEY = 'PRI', COLUMN_KEY, '') as 'primary',
+                if(col.COLUMN_DEFAULT = 'current_timestamp()' AND col.EXTRA = '', col.COLUMN_NAME, '') AS created_at,
+                if(col.COLUMN_DEFAULT = 'current_timestamp()' AND col.EXTRA = 'on update current_timestamp()', col.COLUMN_NAME, '') AS updated_at,
+                DATA_TYPE, 
+                COLUMN_DEFAULT,
+                col.EXTRA
+            FROM information_schema.COLUMNS col
+            WHERE 
+            TABLE_NAME=:table
+            GROUP BY COLUMN_NAME
+            ORDER BY ORDINAL_POSITION
+        `;
+
+        const aColumn = (await dbMaster.raw(sql, {
+            table:this.table
+        }));
+
+        let ifSync = false;
+        for (let i = 0; i < aColumn.length; i++) {
+            const vColumn = aColumn[i];
+            if( vColumn['created_at'] && this.columnSpecial.created_at != vColumn['created_at']){
+                this.columnSpecial.created_at = vColumn['created_at'];
+                ifSync = true;
+            }
+
+            if( vColumn['updated_at'] && this.columnSpecial.created_at != vColumn['updated_at']){
+                this.columnSpecial.updated_at = vColumn['updated_at'];
+                ifSync = true;
+            }
+
+            if( vColumn['primary'] && this.columnSpecial.primary != vColumn['primary']){
+                this.columnSpecial.primary = vColumn['primary'];
+                ifSync = true;
+            }
+        }
+
+        if(ifSync){
+            await dbProxy('table').where('table', this.table).update({
+                'col_primary':this.columnSpecial.primary,
+                'col_created_at':this.columnSpecial.created_at,
+                'col_updated_at':this.columnSpecial.updated_at
+            });
+        }
+        
+    }
 }
 
 
@@ -89,6 +151,7 @@ export class DbServerSys {
     private idQuery = 0; // Текущий максимальный id запроса TODO переделать на отдельный инкрементор для балансировки
     private bInit = false;
     private ixTable:Record<string, DbTableC> = {};
+    private ixPrimaryKey:Record<string, string> = {}; // <table,columnkey>
 
     private runDb:boolean[] = [];
 
@@ -170,7 +233,8 @@ export class DbServerSys {
 
         const out = { 
             adb: adbRead,
-            adbAll: adbAll
+            adbAll: adbAll,
+            ixPrimaryKey:this.ixPrimaryKey
         }
         return out;
     }
@@ -183,7 +247,6 @@ export class DbServerSys {
         }
 
         const vTableC = this.ixTable[msg.table];
-
 
         return vTableC.getNewID(msg.data.cnt);
     }
@@ -453,6 +516,22 @@ export class DbServerSys {
 
         const vTableC = this.ixTable[msg.table];
 
+        const sColCreatedAt = vTableC.columnSpecial.created_at;
+        const sColUpdatedAt = vTableC.columnSpecial.updated_at;
+        if(conf.option.replication && (sColCreatedAt || sColUpdatedAt)){
+            for (let i = 0; i < msg.data.length; i++) {
+                const vData = msg.data[i];
+                
+                if(sColCreatedAt && !vData[sColCreatedAt]){
+                    vData[sColCreatedAt] = mFormatDateTime();
+                }
+
+                if(sColUpdatedAt && !vData[sColUpdatedAt]){
+                    vData[sColUpdatedAt] = mFormatDateTime();
+                }
+            }
+        }
+
         // Формирование запроса вставки
         let vQueryBuilder = gQuery(msg.table).insert(msg.data);
         if(msg?.option?.merge.length){
@@ -487,6 +566,22 @@ export class DbServerSys {
 
         const vTableC = this.ixTable[msg.table];
 
+        const sColCreatedAt = vTableC.columnSpecial.created_at;
+        const sColUpdatedAt = vTableC.columnSpecial.updated_at;
+        if(conf.option.replication && (sColCreatedAt || sColUpdatedAt)){
+            for (let i = 0; i < msg.data.length; i++) {
+                const vData = msg.data[i];
+                
+                if(sColCreatedAt && !vData[sColCreatedAt]){
+                    vData[sColCreatedAt] = mFormatDateTime();
+                }
+
+                if(sColUpdatedAt && !vData[sColUpdatedAt]){
+                    vData[sColUpdatedAt] = mFormatDateTime();
+                }
+            }
+        }
+
         const sQuery = gQuery(msg.table).insert(msg.data).toString()?.replace(/^insert/i, 'replace')
         if(conf.option.replication){
             vTableC.aQueryInsertLog.push(sQuery)
@@ -510,6 +605,17 @@ export class DbServerSys {
         }
 
         const vTableC = this.ixTable[msg.table];
+
+        const sColUpdatedAt = vTableC.columnSpecial.updated_at;
+        if(conf.option.replication && sColUpdatedAt){
+            for (let i = 0; i < msg.data.length; i++) {
+                const vData = msg.data[i];
+
+                if(!vData[sColUpdatedAt]){
+                    vData[sColUpdatedAt] = mFormatDateTime();
+                }
+            }
+        }
 
         const aid = await this.fGetIDForDataChange(msg);
 
@@ -547,6 +653,17 @@ export class DbServerSys {
         }
 
         const vTableC = this.ixTable[msg.table];
+
+        const sColUpdatedAt = vTableC.columnSpecial.updated_at;
+        if(conf.option.replication && sColUpdatedAt){
+            for (let i = 0; i < msg.data.length; i++) {
+                const vData = msg.data[i];
+
+                if(!vData[sColUpdatedAt]){
+                    vData[sColUpdatedAt] = mFormatDateTime();
+                }
+            }
+        }
 
         // console.log('---1>', msg.query);
         let aid = [];
@@ -670,6 +787,15 @@ export class DbServerSys {
 
                     table.integer('schema_id')
                         .comment('schema_id');
+
+                    table.string('col_primary', 100)
+                        .comment('Первичный ключ');
+
+                    table.string('col_created_at', 100)
+                        .comment('колонка - дата создания строки');
+
+                    table.string('col_updated_at', 100)
+                        .comment('колонка - дата обновления строки');
 
                     table.dateTime('created_at', null)
                         .notNullable()
@@ -868,6 +994,47 @@ export class DbServerSys {
                 }
             }
 
+            console.log('>>>Синхронизация primary_key<<<');
+            if(dbMaster.client.config.connection.database && conf.option.replication){
+                const sqlPrimaryKey = `
+                    SELECT GROUP_CONCAT(COLUMN_NAME) as COLUMN_NAME, TABLE_NAME
+                    FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                    WHERE
+                    TABLE_SCHEMA = '${dbMaster.client.config.connection.database}'
+                    AND CONSTRAINT_NAME='PRIMARY'
+                    GROUP BY TABLE_NAME;
+                `;
+
+                const aPrimaryKey:{COLUMN_NAME:string, TABLE_NAME:string}[] = (await dbMaster.raw(sqlPrimaryKey))[0];
+                const ixPrimaryKey = _.keyBy(aPrimaryKey, 'TABLE_NAME');
+
+                const aProxyPrimaryKey:{col_primary:string, table:string}[] = await dbProxy('table').select('col_primary', 'table');
+                const ixProxyPrimaryKey = _.keyBy(aProxyPrimaryKey, 'table');
+
+                for (const kTable in ixPrimaryKey) {
+                    if(kTable == '__replication__') continue; // игнорируем тех таблицу репликации
+
+                    const vRowMaster = ixPrimaryKey[kTable]
+                    const vRowProxy = ixProxyPrimaryKey[kTable];
+                    const ifSingleKey = vRowMaster.COLUMN_NAME?.split(',')?.length == 1;
+                    if(ifSingleKey){
+                        this.ixPrimaryKey[kTable] = vRowMaster.COLUMN_NAME;
+                    }
+
+                    if(vRowProxy && vRowProxy.col_primary != vRowMaster.COLUMN_NAME && ifSingleKey){
+                        await dbProxy('table').where('table', kTable).update({
+                            col_primary:vRowMaster.COLUMN_NAME
+                        });
+                    } else if(!vRowProxy && ifSingleKey){
+                        await dbProxy('table').insert({
+                            table:kTable,
+                            col_primary:vRowMaster['COLUMN_NAME']
+                        }).onConflict().merge(['col_primary']);
+                    } else {
+                        console.log('>>>ERROR>>> Пропущен мультиключь при синхронизации primary:',vRowMaster.COLUMN_NAME)
+                    }
+                }
+            }
             
             console.log('this.idSchema',this.idSchema);
 
