@@ -9,7 +9,7 @@ export class DbReplicationSys {
     /** Проверить и переподключить БД если присходила ошибка */
     public async dbReconnectToAvailable(){
         
-        for (let i = 0; i < adbError.length; i++) {
+        for(const i in adbError){
             const dbError = adbError[i];
             try {
                 await dbError.raw('SHOW TABLES;')
@@ -18,8 +18,8 @@ export class DbReplicationSys {
                 console.log('<<<RECONECT БД ПЕРЕВЕДЕНА В ОЖИДАНИЕ>>>', vConnect.host+':'+vConnect.port+':'+vConnect.database)
                 
                 ixDbWaitTime[vConnect.host+':'+vConnect.port+':'+vConnect.database] = new Date().valueOf();
-                adb.push(adbError[i]);
-                adbError.splice(i, 1);
+                adb[i] = adbError[i];
+                delete adbError[i];
                 
             } catch(e){
                 const vConnect = adbError[i].client.config.connection;
@@ -36,7 +36,7 @@ export class DbReplicationSys {
             console.log('>>>dbCheckReplication>>>','OK:', adb.length, 'WAIT:',adbWait.length,'ERROR:',adbError.length);
         }
 
-        for (let i = 0; i < adbError.length; i++) {
+        for(const i in adbError){
             const dbError = adbError[i];
             const idMaxSchema = (await dbProxy('query')
                 .max({id:'schema_id'}))[0]?.id || 0;
@@ -56,8 +56,8 @@ export class DbReplicationSys {
                 console.log('<<<БД ПЕРЕВЕДЕНА В ОЖИДАНИЕ>>>')
                 const vConnect = adbError[i].client.config.connection;
                 ixDbWaitTime[vConnect.host+':'+vConnect.port+':'+vConnect.database] = new Date().valueOf();
-                adbWait.push(adbError[i]);
-                adbError.splice(i, 1);
+                adbWait[i] = adbError[i];
+                delete adbError[i];
             }
         }
 
@@ -65,9 +65,8 @@ export class DbReplicationSys {
 
     /** Сохранить информацию по очереди */
     public async dbReplication(){
-        const adb:Knex[] = [...adbError,...adbWait];
-        
-        for (let i = 0; i < adb.length; i++) {
+        const adb:Record<string, Knex> = {...adbError,...adbWait};
+        for(const i in adb){
             // const vCfDb = adb[i];
 
             // if( vCfDb.connection.database != 'test_proxy_master1'){

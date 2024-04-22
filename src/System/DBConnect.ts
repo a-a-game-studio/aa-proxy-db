@@ -6,9 +6,9 @@ export const dbProxy = knex(cfDbProxy);
 
 export const dbMaster = knex(cfDbMaster);
 
-export const adb:Knex[] = [];
-export const adbError:Knex[] = [];
-export const adbWait:Knex[] = [];
+export const adb:Record<string, Knex> = {};
+export const adbError:Record<string, Knex> = {};
+export const adbWait:Record<string, Knex> = {};
 export const ixDbWaitTime:Record<string, number> = {};
 
 
@@ -20,7 +20,7 @@ for (const [kCfDb, vCfDb] of Object.entries(aCfDb)) {
     
     // const vCfDb = aCfDb[keyDb];
     const vDb = knex(vCfDb);
-    adb.push(vDb);
+    adb[kCfDb] = vDb;
 
     const sKeyDb = [vCfDb.connection.host, vCfDb.connection.port, vCfDb.connection.database].join(':')
     gixDb[sKeyDb] = vDb;

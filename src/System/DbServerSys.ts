@@ -153,7 +153,7 @@ export class DbServerSys {
     private ixTable:Record<string, DbTableC> = {};
     private ixPrimaryKey:Record<string, string> = {}; // <table,columnkey>
 
-    private runDb:boolean[] = [];
+    // private runDb:boolean[] = [];
 
     private ixStatusError:Record<string,{
         text:string,
@@ -185,15 +185,15 @@ export class DbServerSys {
         const adbConnect:string[] = [];
         const adbConnectWait:string[] = [];
         const adbConnectError:string[] = [];
-        for (let i = 0; i < adb.length; i++) {
+        for (const i in adb) {
             const vConnect = adb[i].client.config.connection;
             adbConnect.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
         }
-        for (let i = 0; i < adbWait.length; i++) {
+        for (const i in adbWait) {
             const vConnect = adbWait[i].client.config.connection;
             adbConnectWait.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
         }
-        for (let i = 0; i < adbError.length; i++) {
+        for (const i in adbError) {
             const vConnect = adbError[i].client.config.connection;
             adbConnectError.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
         }
@@ -202,9 +202,9 @@ export class DbServerSys {
             adb:adbConnect,
             adbWait:adbConnectWait,
             adbError:adbConnectError,
-            adbCount:adb.length,
-            adbWaitCount:adbWait.length,
-            adbErrorCount:adbError.length
+            adbCount:_.size(adb),
+            adbWaitCount:_.size(adbWait),
+            adbErrorCount:_.size(adbError)
         };
     }
 
@@ -274,7 +274,7 @@ export class DbServerSys {
             const sQuery = aQuery[c];
 
             let aPromiseQuery:Promise<Knex>[] = [];
-            for (let i = 0; i < adb.length; i++) {
+            for (const i in adb) {
                 const db = adb[i];
 
                 aPromiseQuery.push(db.raw(sQuery))
@@ -288,20 +288,6 @@ export class DbServerSys {
         return idSchema;
     }
 
-    /** Получить из очереди */
-    public async select(msg:QueryContextI){
-
-        // const vTableC = this.ixTable[msg.table];
-
-        // Случайно отдаем одну базу данных из пула
-        const iRand = mRandomInteger(0, adb.length - 1)
-        const db = adb[iRand];
-        const out = (await db.raw(msg.query))[0];
-
-        return out
-        
-    }
-
     /** получить коннект для изменения данных update|delete */
     private async fGetIDForDataChange(msg:QueryContextI): Promise<number[]>{
 
@@ -310,12 +296,14 @@ export class DbServerSys {
         let aid = []
         let okExe = true;
         let vError = null; // Ошибка заполняется если при первом запросе она произошла
+        const akDb = Object.keys(adb)
+        const iRand = mRandomInteger(0, akDb.length - 1);
         try { // из случайной БД своего контура
 
-            if(adb?.length > 0){
+            
+            if(akDb.length > 0){
 
-                const iRand = mRandomInteger(0, adb.length - 1);
-                const dbSelect = adb[iRand];
+                const dbSelect = adb[akDb[iRand]];
 
                 // const vConnect = dbSelect.client.config.connection;
                 // console.log('SELECT RAND DB >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
@@ -336,14 +324,12 @@ export class DbServerSys {
             vError = e;
         }
 
-        if(!okExe && adb?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД своего контура
+        if(!okExe && akDb?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД своего контура
             console.log('SELECT ERROR - БД ALL:', ' БД по ALL',adb.length)
-            for (let i = 0; i < adb.length; i++) {
+            for (const i in adb) {
                 
                 try {
-                    const iRand = mRandomInteger(0, adb.length - 1)
-                    const dbSelect = adb[iRand];
-
+                    const dbSelect = adb[i];
                     
                     const a = (await dbSelect.raw(msg.query))[0];
 
@@ -382,13 +368,13 @@ export class DbServerSys {
 
         // console.log('---7> fExeQuery БД количество = ', adb.length);
 
-        const iCntDbExe = adb.length;
+        const iCntDbExe = _.size(adb);
         const asDbError:string[] = [];
 
         // console.log('SQL>>>',sQuery)
 
         const aPromiseQuery:Promise<Knex>[] = [];
-        for (let i = 0; i < adb.length; i++) {
+        for (const i in adb) {
             const db = adb[i];
             aPromiseQuery.push(new Promise(async (resolve, reject) => {
                 const iLocalNumDb = i;
@@ -421,8 +407,7 @@ export class DbServerSys {
 
         // console.log('---10> fExeQuery Before adbWait block wait count = ',adbWait.length);
 
-        
-        for (let i = 0; i < adbWait.length; i++) {
+        for (const i in adbWait) {
             const db = adbWait[i];
             aPromiseQuery.push(new Promise(async (resolve, reject) => {
                 const iLocalNumDb = i;
@@ -438,8 +423,8 @@ export class DbServerSys {
                     console.log(new Date().valueOf())
                     if(new Date().valueOf() - ixDbWaitTime[vConnect.host+':'+vConnect.port+':'+vConnect.database] > 2000){
                         console.log('>>>WAIT DB EXE', adbWait.length, adbError.length);
-                        adb.push(adbWait[iLocalNumDb]);
-                        adbWait.splice(iLocalNumDb, 1);
+                        adb[iLocalNumDb] = adbWait[iLocalNumDb];
+                        delete adbWait[iLocalNumDb];
 
                         
                         this.fSetErrorStatus('append_db', 'Присоеденена проблемных БД');
@@ -458,8 +443,8 @@ export class DbServerSys {
                     const vConnect = adbWait[i].client.config.connection;
                     // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
 
-                    adbError.push(adbWait[iLocalNumDb]);
-                    adbWait.splice(iLocalNumDb, 1);
+                    adbError[iLocalNumDb] = adbWait[iLocalNumDb];
+                    delete adbWait[iLocalNumDb];
                     resolve(e);
                 }
                 
@@ -476,7 +461,7 @@ export class DbServerSys {
 
                 // console.log('---14> fExeQuery что то пошло не так начало отсоединение БД');
                 const ixErrorDb = _.keyBy(asDbError);
-                for (let i = 0; i < adb.length; i++) {
+                for(const i in adb){
                     const db = adb[i];
                     const vConnect = db.client.config.connection;
                     const sDbConnect = vConnect.host+':'+vConnect.port+':'+vConnect.database;
@@ -489,8 +474,8 @@ export class DbServerSys {
 
                         );
                         
-                        adbError.push(adb[i]);
-                        adb.splice(i, 1);
+                        adbError[i] = adb[i];
+                        delete adb[i];
                     }
                 }
 
@@ -840,7 +825,7 @@ export class DbServerSys {
 
             // Базы данных в репликации
             if(conf.option.replication){
-                for (let i = 0; i < adb.length; i++) {
+                for(const i in adb){
                     const vDbReplication = adb[i];
                     console.log('>>>Проверка/Создание таблицы aCfDb.__replication__', vDbReplication.client.config.connection)
                     const bExistReplication = await vDbReplication.schema.hasTable('__replication__');
@@ -965,7 +950,7 @@ export class DbServerSys {
             // Фиксация проблемных БД
             let asErrorDB:string[] = [];
             if(conf.option.replication){
-                for (let i = 0; i < adb.length; i++) {
+                for(const i in adb){
                     const db = adb[i];
                     const idQueryRep = (await db('__replication__').max({id:'id'}))[0]?.id || 0;
 
@@ -974,17 +959,17 @@ export class DbServerSys {
                         asErrorDB.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
                     }
 
-                    this.runDb[i] = this.idQuery == idQueryRep;
+                    // this.runDb[i] = this.idQuery == idQueryRep;
                 }
 
                 // Отключение проблемных БД
                 for (let i = 0; i < asErrorDB.length; i++) {
                     const sErrorDB = asErrorDB[i];
-                    for (let j = 0; j < adb.length; j++) {
+                    for(const j in adb){
                         const vConnect = adb[j].client.config.connection;
                         if(sErrorDB == vConnect.host+':'+vConnect.port+':'+vConnect.database){
-                            adbError.push(adb[j]);
-                            adb.splice(j, 1);
+                            adbError[j] = adb[j];
+                            delete adb[j];
                             console.log(
                                 '<<<ERROR_INIT Отсоеденена проблемная БД>>> - '+vConnect.host+':'+vConnect.port+':'+vConnect.database
                             );
@@ -1132,7 +1117,7 @@ export class DbServerSys {
             }
 
             const aPromiseQuery:Promise<any>[] = [];
-            for (let i = 0; i < adb.length; i++) {
+            for(const i in adb){
                 const db = adb[i];
 
                 aPromiseQuery.push(db('__replication__').insert(aPacket).onConflict().merge());

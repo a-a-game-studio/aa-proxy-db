@@ -56,8 +56,6 @@ const intervalDb = setInterval(async () => {
 
 
 // =============================================================
-// var remoteSocket = new net.Socket();
-let bConnect = false;
 
 const app = new AAServer();
 // if (config.common.env === 'dev' || config.common.env === 'test') {
@@ -133,19 +131,6 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
     // const data = await gDbServerSys.schema(ctx.body);
     const ctrl = new Ctrl(ctx);
     const data = await ctrl.faAction(async () => gDbServerSys.schema(ctx.body));
-
-    return ctrl.faSend(data);
-});
-
-/**
- * SELECT
- */
- router.ws(MsgT.select, async (ctx: AAContext) => {
-
-    // console.log('select>>>',ctx.body)
-
-    const ctrl = new Ctrl(ctx);
-    const data = await ctrl.faAction(async () => gDbServerSys.select(ctx.body));
 
     return ctrl.faSend(data);
 });
