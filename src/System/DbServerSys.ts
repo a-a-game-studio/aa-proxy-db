@@ -2,7 +2,7 @@
 import ip from 'ip'
 import { dbMaster, dbProxy, adb, gixDb, adbError, adbWait, ixDbWaitTime } from './DBConnect';
 import { v4 as uuidv4 } from 'uuid';
-import { mFormatDateTime } from '../Helper/DateTimeH';
+import { mFormatDate, mFormatDateTime } from '../Helper/DateTimeH';
 import _ from 'lodash';
 import { QueryContextI, QueryStatusI } from '../interface/CommonI';
 import  knex, { Knex } from 'knex';
@@ -10,6 +10,7 @@ import { setInterval } from 'timers';
 import { mRandomInteger } from '../Helper/NumberH';
 import { DbLogSys } from './DbLogSys';
 import * as conf from '../Config/MainConfig';
+import dayjs from 'dayjs';
 
 
 
@@ -152,6 +153,7 @@ export class DbServerSys {
     private bInit = false;
     private ixTable:Record<string, DbTableC> = {};
     private ixPrimaryKey:Record<string, string> = {}; // <table,columnkey>
+    private ixAppInfoSync:Record<string, boolean> = {};
 
     // private runDb:boolean[] = [];
 
@@ -170,6 +172,67 @@ export class DbServerSys {
     /** Получения данных по соединениям */
     public async status(msg:QueryContextI): Promise<QueryStatusI>{
         const iCurrTime = new Date().valueOf();
+        const sDate = mFormatDate(iCurrTime);
+
+        try {
+            let bInsertInfo = false;
+            if(!this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDate]){
+                const resp = await dbProxy('info').where({
+                    app_ip:msg.ip,
+                    app_name:msg.app,
+                    app_date:sDate,
+                }).pluck('id');
+
+                if(resp.length){
+                    // Запись в кеш и очистка старого кеша за предыдущий день
+                    this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDate] = true;
+                    const sDatePrev = mFormatDate(dayjs().subtract(1, 'day'));
+                    delete this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDatePrev];
+                } else {
+                    bInsertInfo = true; // Если записи нет требуется новая запись
+                }
+            }
+
+            if(bInsertInfo){
+                await dbProxy('info').insert({
+                    app_ip:msg.ip,
+                    app_name:msg.app,
+                    app_date:sDate,
+                    cnt_insert:msg.data.cnt_insert,
+                    cnt_update:msg.data.cnt_update,
+                    cnt_delete:msg.data.cnt_delete,
+                    cnt_select:msg.data.cnt_select,
+                    cnt_sync:msg.data.cnt_sync,
+                }).onConflict().merge({
+                    cnt_insert:msg.data.cnt_insert,
+                    cnt_update:msg.data.cnt_update,
+                    cnt_delete:msg.data.cnt_delete,
+                    cnt_select:msg.data.cnt_select,
+                    cnt_sync:msg.data.cnt_sync
+                });
+
+                // Запись в кеш и очистка старого кеша за предыдущий день
+                this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDate] = true;
+                const sDatePrev = mFormatDate(dayjs().subtract(1, 'day'));
+                delete this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDatePrev];
+            } else { // Если запись существует
+                await dbProxy('info').where({
+                    app_ip:msg.ip,
+                    app_name:msg.app,
+                    app_date:sDate
+                }).update({
+                    cnt_insert:msg.data.cnt_insert,
+                    cnt_update:msg.data.cnt_update,
+                    cnt_delete:msg.data.cnt_delete,
+                    cnt_select:msg.data.cnt_select,
+                    cnt_sync:msg.data.cnt_sync
+                });
+            }
+        } catch (e) {
+            console.log('ERROR_SYNC_APP_INFO>>>', 'Ошибка синхронизации информации по приложению', e);
+        }
+
+        
         for (const k in this.ixStatusError) {
            
             const vStatusError = this.ixStatusError[k];
@@ -977,6 +1040,55 @@ export class DbServerSys {
                         }
                     }
                 }
+            }
+
+            console.log('>>>Проверка/Создание таблицы cfDbProxy.info')
+            const bExistInfo = await dbProxy.schema.hasTable('info');
+            if(!bExistInfo){
+                await dbProxy.schema.createTable('info', (table:any) => {
+
+                    table.increments('id')
+                        .comment('ID');
+
+                    table.string('app_ip', 20)
+                        .comment('Таблица');
+
+                    table.string('app_name', 100)
+                        .comment('Таблица');
+
+                    table.date('app_date')
+                        .comment('Дата - День');
+                    
+                    table.integer('cnt_sync')
+                        .defaultTo(0)
+                        .comment('Количество синхронизаций');
+
+                    table.integer('cnt_insert')
+                        .comment('Количество запросов на запись');
+
+                    table.integer('cnt_update')
+                        .comment('Количество запросов на обновление');
+
+                    table.integer('cnt_delete')
+                        .comment('Количество запросов на удаление');
+
+                    table.integer('cnt_select')
+                        .comment('Количество запросов на чтение');
+
+                    table.dateTime('created_at')
+                        .notNullable()
+                        .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
+                        .comment('Время создания записи');
+
+                    table.dateTime('updated_at')
+                        .notNullable()
+                        .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+                        .comment('Время обновления записи');
+
+                    table.unique(['app_ip', 'app_name', 'app_date'], { indexName:'app_ip_name_date'} )
+                    table.comment('Таблица отслеживания активности приложений');
+
+                });
             }
 
             console.log('>>>Синхронизация primary_key<<<');

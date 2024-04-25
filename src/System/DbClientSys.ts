@@ -45,7 +45,7 @@ export class DbClientSys {
     private iInsert = 0;
     private iUpdate = 0;
     private iDelete = 0;
-    private iReplace = 0;
+    private iStatus = 0;
     
 
     // Работа с буфером
@@ -87,6 +87,7 @@ export class DbClientSys {
     public status():any{
        
         return new Promise((resolve, reject) => {
+            this.iStatus++;
 
             this.querySys.fInit();
 
@@ -98,7 +99,13 @@ export class DbClientSys {
                 ip:ip.address(),
                 table:null,
                 type:MsgT.status,
-                data:null,
+                data:{
+                    cnt_insert:this.iInsert,
+                    cnt_update:this.iUpdate,
+                    cnt_delete:this.iDelete,
+                    cnt_select:this.iSelect,
+                    cnt_sync:this.iStatus
+                },
                 time:Date.now()
             }
 
@@ -384,7 +391,6 @@ export class DbClientSys {
                 reject(err)
             });
             this.querySys.fSend(MsgT.schema, vMsg);
-            this.iSelect++;
         });
     }
 
@@ -536,8 +542,6 @@ export class DbClientSys {
         if(!okExe){ // Если так и не удалос выполнить запрос выбросить ошибку
             throw vError;
         }
-        
-        this.iSelect++;
 
         return out; 
     }
@@ -1121,7 +1125,7 @@ export class DbClientSys {
             });
 
             this.querySys.fSend(MsgT.delete, vMsg);
-            this.iUpdate++;
+            this.iDelete++;
         });
     }
 
