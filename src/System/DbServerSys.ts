@@ -388,7 +388,7 @@ export class DbServerSys {
         }
 
         if(!okExe && akDb?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД своего контура
-            console.log('SELECT ERROR - БД ALL:', ' БД по ALL',adb.length)
+            console.log('SELECT ERROR - БД ALL:', ' БД по ALL',_.size(adb))
             for (const i in adb) {
                 
                 try {
@@ -424,12 +424,11 @@ export class DbServerSys {
 
         // console.log('---6> fExeQuery начало');
 
-        if(!adb.length){ // В случае если отключились все БД
+        if(!_.size(adb)){ // В случае если отключились все БД
             msg.errors['no_work_db'] = 'Нет доступных БД';
             throw new Error('no_work_db')
         }
 
-        // console.log('---7> fExeQuery БД количество = ', adb.length);
 
         const iCntDbExe = _.size(adb);
         const asDbError:string[] = [];
@@ -468,7 +467,7 @@ export class DbServerSys {
             }))
         }
 
-        // console.log('---10> fExeQuery Before adbWait block wait count = ',adbWait.length);
+        // console.log('---10> fExeQuery Before adbWait block wait count = ',_.size(adbWait));
 
         for (const i in adbWait) {
             const db = adbWait[i];
@@ -485,7 +484,7 @@ export class DbServerSys {
                     console.log(vConnect.host+':'+vConnect.port+':'+vConnect.database)
                     console.log(new Date().valueOf())
                     if(new Date().valueOf() - ixDbWaitTime[vConnect.host+':'+vConnect.port+':'+vConnect.database] > 2000){
-                        console.log('>>>WAIT DB EXE', adbWait.length, adbError.length);
+                        console.log('>>>WAIT DB EXE', _.size(adbWait), _.size(adbError));
                         adb[iLocalNumDb] = adbWait[iLocalNumDb];
                         delete adbWait[iLocalNumDb];
 
@@ -544,7 +543,7 @@ export class DbServerSys {
 
             }
         } catch(e){
-            console.log('количество ДБ в строю:',adb.length);
+            console.log('количество ДБ в строю:',_.size(adb));
         }
 
         // Если ошибка произошла на всех БД - проблема не в базе а в запросе, потому генерится ошибка запроса
@@ -1122,13 +1121,16 @@ export class DbServerSys {
                         await dbProxy('table').where('table', kTable).update({
                             col_primary:vRowMaster.COLUMN_NAME
                         });
+                        
                     } else if(!vRowProxy && ifSingleKey){
                         await dbProxy('table').insert({
                             table:kTable,
                             col_primary:vRowMaster['COLUMN_NAME']
                         }).onConflict().merge(['col_primary']);
                     } else {
-                        console.log('>>>ERROR>>> Пропущен мультиключь при синхронизации primary:',vRowMaster.COLUMN_NAME)
+                        if(!ifSingleKey){
+                            console.log('>>>ERROR>>> Пропущен мультиключь при синхронизации primary:',vRowMaster.COLUMN_NAME)
+                        }
                     }
                 }
             }
