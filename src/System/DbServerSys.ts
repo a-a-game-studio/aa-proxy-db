@@ -225,7 +225,8 @@ export class DbServerSys {
                     cnt_update:msg.data.cnt_update,
                     cnt_delete:msg.data.cnt_delete,
                     cnt_select:msg.data.cnt_select,
-                    cnt_sync:msg.data.cnt_sync
+                    cnt_sync:msg.data.cnt_sync,
+                    updated_at:mFormatDateTime()
                 });
             }
         } catch (e) {
@@ -273,7 +274,7 @@ export class DbServerSys {
 
     /** Получения данных по соединениям */
     public async connect(msg:QueryContextI){
-        
+        const sDate = mFormatDate();
         const adbRead = [];
         const adbAll = [];
 
@@ -292,6 +293,51 @@ export class DbServerSys {
             db.connection.password = cfgReadFromAllIp.password;
 
             adbAll.push(db);
+        }
+
+        try {
+            let bInsertInfo = false;
+            if(!this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDate]){
+                const resp = await dbProxy('info').where({
+                    app_ip:msg.ip,
+                    app_name:msg.app,
+                    app_date:sDate,
+                }).pluck('id');
+
+                if(resp.length){
+                    // Запись в кеш и очистка старого кеша за предыдущий день
+                    this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDate] = true;
+                    const sDatePrev = mFormatDate(dayjs().subtract(1, 'day'));
+                    delete this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDatePrev];
+                } else {
+                    bInsertInfo = true; // Если записи нет требуется новая запись
+                }
+            }
+
+            if(bInsertInfo){
+                await dbProxy('info').insert({
+                    app_ip:msg.ip,
+                    app_name:msg.app,
+                    app_date:sDate,
+                    cnt_connect:1
+                }).onConflict().ignore();
+
+                // Запись в кеш и очистка старого кеша за предыдущий день
+                this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDate] = true;
+                const sDatePrev = mFormatDate(dayjs().subtract(1, 'day'));
+                delete this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDatePrev];
+            } else { // Если запись существует
+                await dbProxy('info').where({
+                    app_ip:msg.ip,
+                    app_name:msg.app,
+                    app_date:sDate
+                }).update({
+                    created_at:mFormatDateTime(),
+                    cnt_connect:dbProxy.raw('cnt_connect + 1')
+                });
+            }
+        } catch (e) {
+            console.log('ERROR_CONNECT_APP_INFO>>>', 'Ошибка синхронизации информации по приложению', e);
         }
 
         const out = { 
@@ -1057,6 +1103,10 @@ export class DbServerSys {
 
                     table.date('app_date')
                         .comment('Дата - День');
+
+                    table.integer('cnt_connect')
+                        .defaultTo(0)
+                        .comment('Количество соединений');
                     
                     table.integer('cnt_sync')
                         .defaultTo(0)

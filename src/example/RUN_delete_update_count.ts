@@ -80,6 +80,8 @@ async function run(){
     console.log('aidUpdateIn:', aidUpdateIn)
     console.log('aidUpdateInCount:', aidUpdateIn.length)
 
+    
+
     // Получить количество удаленных сообщений by QUERY
     const aidUpdateQuery:number[] = await mqClientSys.update({text:'update_in'}, db('test')
         .whereIn('id', aidMsg.splice(0,4))
@@ -88,7 +90,12 @@ async function run(){
     console.log('aidUpdateQuery:', aidUpdateQuery);
     console.log('aidUpdateQueryCount:', aidUpdateQuery.length);
 
+    
+    await mqClientSys.status();
+
     await mWait(2000);
+
+    
 
     console.log('=========================');
     console.log('END');
