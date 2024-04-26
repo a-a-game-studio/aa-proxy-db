@@ -14,7 +14,7 @@ import { DbClientSys } from "../System/DbClientSys";
 // CORE API
 const mqClientSys = new DbClientSys({
     baseURL: `ws://pass12@${conf.common.host}:${conf.common.port}`,
-    nameApp: 'test_client'
+    nameApp: 'RUN_delete_update_count'
 })
 
 /** Тип строки для теста/примера */
