@@ -162,7 +162,7 @@ export class DbClientSys {
         if(!this.bInitDbConnect){
             while(!this.bInitDbConnect){
                 this.connect();
-                console.log('Пытаемся соединится с БД для чтения - действие: '+sAction);
+                console.log('Пытаемся соединится с БД для чтения - действие: '+sAction, this.conf);
                 await mWait(1000);
                 
             }
