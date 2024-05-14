@@ -198,17 +198,17 @@ export class DbServerSys {
                     app_ip:msg.ip,
                     app_name:msg.app,
                     app_date:sDate,
-                    cnt_insert:msg.data.cnt_insert,
-                    cnt_update:msg.data.cnt_update,
-                    cnt_delete:msg.data.cnt_delete,
-                    cnt_select:msg.data.cnt_select,
-                    cnt_sync:msg.data.cnt_sync,
+                    cnt_insert:msg.data?.cnt_insert || 0,
+                    cnt_update:msg.data?.cnt_update || 0,
+                    cnt_delete:msg.data?.cnt_delete || 0,
+                    cnt_select:msg.data?.cnt_select || 0,
+                    cnt_sync:msg.data?.cnt_sync,
                 }).onConflict().merge({
-                    cnt_insert:msg.data.cnt_insert,
-                    cnt_update:msg.data.cnt_update,
-                    cnt_delete:msg.data.cnt_delete,
-                    cnt_select:msg.data.cnt_select,
-                    cnt_sync:msg.data.cnt_sync
+                    cnt_insert:msg.data?.cnt_insert || 0,
+                    cnt_update:msg.data?.cnt_update || 0,
+                    cnt_delete:msg.data?.cnt_delete || 0,
+                    cnt_select:msg.data?.cnt_select || 0,
+                    cnt_sync:msg.data?.cnt_sync || 0
                 });
 
                 // Запись в кеш и очистка старого кеша за предыдущий день
@@ -221,11 +221,11 @@ export class DbServerSys {
                     app_name:msg.app,
                     app_date:sDate
                 }).update({
-                    cnt_insert:msg.data.cnt_insert,
-                    cnt_update:msg.data.cnt_update,
-                    cnt_delete:msg.data.cnt_delete,
-                    cnt_select:msg.data.cnt_select,
-                    cnt_sync:msg.data.cnt_sync,
+                    cnt_insert:msg.data?.cnt_insert || 0,
+                    cnt_update:msg.data?.cnt_update || 0,
+                    cnt_delete:msg.data?.cnt_delete || 0,
+                    cnt_select:msg.data?.cnt_select || 0,
+                    cnt_sync:msg.data?.cnt_sync || 0,
                     updated_at:mFormatDateTime()
                 });
             }
