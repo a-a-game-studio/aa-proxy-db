@@ -415,7 +415,7 @@ export class DbClientSys {
             ))
         }
         
-        await this.checkConnect('fillId');
+        await this.checkConnect('common');
 
         // Случайно отдаем одну базу данных из пула
         
@@ -608,12 +608,7 @@ export class DbClientSys {
             ))
         }
 
-        if(!this.bInitDbConnect){
-            while(!this.bInitDbConnect){
-                console.log('Пытаемся соединится с БД для чтения')
-                await mWait(1000);
-            }
-        }
+        await this.checkConnect('schema');
 
         // Случайно отдаем одну базу данных из пула
         
