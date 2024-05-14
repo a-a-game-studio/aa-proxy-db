@@ -21,20 +21,6 @@ export class DbLogSys {
     
     private idSchema = 0;
     private bInit = false;
-
-    /** Получить из очереди */
-    public async select(msg:QueryContextI){
-
-        // const vTableC = this.ixTable[msg.table];
-
-        // Случайно отдаем одну базу данных из пула
-        const iRand = mRandomInteger(0, adb.length - 1)
-        const db = adb[iRand];
-        const out = (await db.raw(msg.query))[0];
-
-        return out
-        
-    }
     
     /** Поместить значение в очередь */
     public async insert(msg:QueryContextI){

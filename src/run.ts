@@ -11,6 +11,7 @@ import { ErrorSys } from '@a-a-game-studio/aa-components';
 import { DbReplicationSys } from './System/DbReplicationSys';
 import { adb, adbError, adbWait } from './System/DBConnect';
 import { mFormatDateTime } from './Helper/DateTimeH';
+import _ from 'lodash';
 
 let cntConnect = 0;
 
@@ -45,7 +46,7 @@ const intervalDb = setInterval(async () => {
     
     
     if(parseInt(String(Date.now() / 1000)) % 30 == 0){ // Каждые 30 секунд
-        console.log('>>>INTERVAL DB EXE', adb.length, adbWait.length, adbError.length, mFormatDateTime())   
+        console.log('>>>INTERVAL DB EXE', _.size(adb), _.size(adbWait), _.size(adbError), mFormatDateTime())   
 
         // В случае если БД отключена проверяем наличие БД и включаем ее обратно
         if(!conf.option.replication){
@@ -56,8 +57,6 @@ const intervalDb = setInterval(async () => {
 
 
 // =============================================================
-// var remoteSocket = new net.Socket();
-let bConnect = false;
 
 const app = new AAServer();
 // if (config.common.env === 'dev' || config.common.env === 'test') {
@@ -133,19 +132,6 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
     // const data = await gDbServerSys.schema(ctx.body);
     const ctrl = new Ctrl(ctx);
     const data = await ctrl.faAction(async () => gDbServerSys.schema(ctx.body));
-
-    return ctrl.faSend(data);
-});
-
-/**
- * SELECT
- */
- router.ws(MsgT.select, async (ctx: AAContext) => {
-
-    // console.log('select>>>',ctx.body)
-
-    const ctrl = new Ctrl(ctx);
-    const data = await ctrl.faAction(async () => gDbServerSys.select(ctx.body));
 
     return ctrl.faSend(data);
 });

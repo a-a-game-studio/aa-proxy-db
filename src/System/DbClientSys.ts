@@ -45,13 +45,16 @@ export class DbClientSys {
     private iInsert = 0;
     private iUpdate = 0;
     private iDelete = 0;
-    private iReplace = 0;
+    private iStatus = 0;
     
 
     // Работа с буфером
     iLastTimeSend = Date.now();
     ixSendBuffer:Record<string, QueryContextI[]> = {};
     iSendBufferCount = 0;
+
+    /** Наименование первичных ключей в таблице */
+    private ixTablePrimaryKey:Record<string, string> = {};
 
     // Установка количество рабочик в воркере
     // iWorkerMax = 0;
@@ -84,6 +87,7 @@ export class DbClientSys {
     public status():any{
        
         return new Promise((resolve, reject) => {
+            this.iStatus++;
 
             this.querySys.fInit();
 
@@ -95,7 +99,13 @@ export class DbClientSys {
                 ip:ip.address(),
                 table:null,
                 type:MsgT.status,
-                data:null,
+                data:{
+                    cnt_insert:this.iInsert,
+                    cnt_update:this.iUpdate,
+                    cnt_delete:this.iDelete,
+                    cnt_select:this.iSelect,
+                    cnt_sync:this.iStatus
+                },
                 time:Date.now()
             }
 
@@ -183,6 +193,9 @@ export class DbClientSys {
 
                 console.log('data.adb>>>',data.adb);
                 console.log('data.adbAll>>>',data.adbAll);
+                console.log('data.ixPrimaryKey',data.ixPrimaryKey)
+                this.ixTablePrimaryKey = data.ixPrimaryKey;
+                
                 if(Object.keys(data.adb).length){
                     for (let [k,db] of Object.entries(data.adb)) {
 
@@ -240,7 +253,7 @@ export class DbClientSys {
 
         const asTable = sTableIn.split('.');
         const sTable = asTable[0];
-        const idTable =  asTable[1] || 'id';
+        const idTable =  asTable[1] || this.ixTablePrimaryKey[sTable] || 'id';
        
         return new Promise(async (resolve, reject) => {
             await this.checkConnect('fillId');
@@ -378,7 +391,6 @@ export class DbClientSys {
                 reject(err)
             });
             this.querySys.fSend(MsgT.schema, vMsg);
-            this.iSelect++;
         });
     }
 
@@ -530,8 +542,6 @@ export class DbClientSys {
         if(!okExe){ // Если так и не удалос выполнить запрос выбросить ошибку
             throw vError;
         }
-        
-        this.iSelect++;
 
         return out; 
     }
@@ -832,7 +842,7 @@ export class DbClientSys {
 
             const asTableKey = sTableKey.split('.');
             const sTable = asTableKey[0];
-            const sWhereKey =  asTableKey[1] || 'id';
+            const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
 
             // console.log(whereIn);
 
@@ -977,7 +987,7 @@ export class DbClientSys {
     public updateQuery(sTableKey:string, dataIn:any, query:Knex.QueryBuilder|Knex.Raw, option?:QueryContextOptionI): Promise<number[]>{
         const asTableKey = sTableKey.split('.');
         const sTable = asTableKey[0];
-        const sWhereKey =  asTableKey[1] || 'id';
+        const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
 
         return new Promise(async (resolve, reject) => {
 
@@ -1115,7 +1125,7 @@ export class DbClientSys {
             });
 
             this.querySys.fSend(MsgT.delete, vMsg);
-            this.iUpdate++;
+            this.iDelete++;
         });
     }
 
@@ -1125,7 +1135,7 @@ export class DbClientSys {
      public deleteIn(sTableKey:string, whereIn:number[]|string[]):Promise<number[]>{
         const asTableKey = sTableKey.split('.');
         const sTable = asTableKey[0];
-        const sWhereKey =  asTableKey[1] || 'id';
+        const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
 
         return new Promise(async (resolve, reject) => {
 
@@ -1190,7 +1200,7 @@ export class DbClientSys {
     public deleteQuery(sTableKey:string, query:Knex.QueryBuilder|Knex.Raw):Promise<number[]> {
         const asTableKey = sTableKey.split('.');
         const sTable = asTableKey[0];
-        const sWhereKey =  asTableKey[1] || 'id';
+        const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
 
         return new Promise(async (resolve, reject) => {
 

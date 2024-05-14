@@ -2,7 +2,7 @@
 import ip from 'ip'
 import { dbMaster, dbProxy, adb, gixDb, adbError, adbWait, ixDbWaitTime } from './DBConnect';
 import { v4 as uuidv4 } from 'uuid';
-import { mFormatDateTime } from '../Helper/DateTimeH';
+import { mFormatDate, mFormatDateTime } from '../Helper/DateTimeH';
 import _ from 'lodash';
 import { QueryContextI, QueryStatusI } from '../interface/CommonI';
 import  knex, { Knex } from 'knex';
@@ -10,6 +10,7 @@ import { setInterval } from 'timers';
 import { mRandomInteger } from '../Helper/NumberH';
 import { DbLogSys } from './DbLogSys';
 import * as conf from '../Config/MainConfig';
+import dayjs from 'dayjs';
 
 
 
@@ -31,6 +32,12 @@ export class DbTableC {
     public aQueryUpdateLog:string[] = [];
     public aQueryDeleteLog:string[] = [];
 
+    public columnSpecial = {
+        primary:'id',
+        created_at:'',
+        updated_at:''
+    }
+
     /** инициализация таблицы */
     async faInit(sTable:string){
         this.table = sTable;
@@ -51,6 +58,10 @@ export class DbTableC {
                     table:sTable
                 }).onConflict().ignore()
             }
+
+            // Синхронизировать специальные колонки
+            await this.syncSchemaSpecialColumn();
+
             const idAutoProxy = this.statusProxy?.table_id || 0;
             this.idSchema = this.statusProxy?.schema_id || 0;
 
@@ -78,6 +89,58 @@ export class DbTableC {
         }
         return aid;
     }
+
+
+    async syncSchemaSpecialColumn(){
+        const sql = `
+            SELECT 
+            COLUMN_NAME,
+                col.COLUMN_KEY,
+                if(col.COLUMN_KEY = 'PRI', COLUMN_KEY, '') as 'primary',
+                if(col.COLUMN_DEFAULT = 'current_timestamp()' AND col.EXTRA = '', col.COLUMN_NAME, '') AS created_at,
+                if(col.COLUMN_DEFAULT = 'current_timestamp()' AND col.EXTRA = 'on update current_timestamp()', col.COLUMN_NAME, '') AS updated_at,
+                DATA_TYPE, 
+                COLUMN_DEFAULT,
+                col.EXTRA
+            FROM information_schema.COLUMNS col
+            WHERE 
+            TABLE_NAME=:table
+            GROUP BY COLUMN_NAME
+            ORDER BY ORDINAL_POSITION
+        `;
+
+        const aColumn = (await dbMaster.raw(sql, {
+            table:this.table
+        }));
+
+        let ifSync = false;
+        for (let i = 0; i < aColumn.length; i++) {
+            const vColumn = aColumn[i];
+            if( vColumn['created_at'] && this.columnSpecial.created_at != vColumn['created_at']){
+                this.columnSpecial.created_at = vColumn['created_at'];
+                ifSync = true;
+            }
+
+            if( vColumn['updated_at'] && this.columnSpecial.created_at != vColumn['updated_at']){
+                this.columnSpecial.updated_at = vColumn['updated_at'];
+                ifSync = true;
+            }
+
+            if( vColumn['primary'] && this.columnSpecial.primary != vColumn['primary']){
+                this.columnSpecial.primary = vColumn['primary'];
+                ifSync = true;
+            }
+        }
+
+        if(ifSync){
+            await dbProxy('table').where('table', this.table).update({
+                'col_primary':this.columnSpecial.primary,
+                'col_created_at':this.columnSpecial.created_at,
+                'col_updated_at':this.columnSpecial.updated_at
+            });
+        }
+        
+    }
 }
 
 
@@ -89,8 +152,10 @@ export class DbServerSys {
     private idQuery = 0; // Текущий максимальный id запроса TODO переделать на отдельный инкрементор для балансировки
     private bInit = false;
     private ixTable:Record<string, DbTableC> = {};
+    private ixPrimaryKey:Record<string, string> = {}; // <table,columnkey>
+    private ixAppInfoSync:Record<string, boolean> = {};
 
-    private runDb:boolean[] = [];
+    // private runDb:boolean[] = [];
 
     private ixStatusError:Record<string,{
         text:string,
@@ -107,6 +172,68 @@ export class DbServerSys {
     /** Получения данных по соединениям */
     public async status(msg:QueryContextI): Promise<QueryStatusI>{
         const iCurrTime = new Date().valueOf();
+        const sDate = mFormatDate(iCurrTime);
+
+        try {
+            let bInsertInfo = false;
+            if(!this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDate]){
+                const resp = await dbProxy('info').where({
+                    app_ip:msg.ip,
+                    app_name:msg.app,
+                    app_date:sDate,
+                }).pluck('id');
+
+                if(resp.length){
+                    // Запись в кеш и очистка старого кеша за предыдущий день
+                    this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDate] = true;
+                    const sDatePrev = mFormatDate(dayjs().subtract(1, 'day'));
+                    delete this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDatePrev];
+                } else {
+                    bInsertInfo = true; // Если записи нет требуется новая запись
+                }
+            }
+
+            if(bInsertInfo){
+                await dbProxy('info').insert({
+                    app_ip:msg.ip,
+                    app_name:msg.app,
+                    app_date:sDate,
+                    cnt_insert:msg.data.cnt_insert,
+                    cnt_update:msg.data.cnt_update,
+                    cnt_delete:msg.data.cnt_delete,
+                    cnt_select:msg.data.cnt_select,
+                    cnt_sync:msg.data.cnt_sync,
+                }).onConflict().merge({
+                    cnt_insert:msg.data.cnt_insert,
+                    cnt_update:msg.data.cnt_update,
+                    cnt_delete:msg.data.cnt_delete,
+                    cnt_select:msg.data.cnt_select,
+                    cnt_sync:msg.data.cnt_sync
+                });
+
+                // Запись в кеш и очистка старого кеша за предыдущий день
+                this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDate] = true;
+                const sDatePrev = mFormatDate(dayjs().subtract(1, 'day'));
+                delete this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDatePrev];
+            } else { // Если запись существует
+                await dbProxy('info').where({
+                    app_ip:msg.ip,
+                    app_name:msg.app,
+                    app_date:sDate
+                }).update({
+                    cnt_insert:msg.data.cnt_insert,
+                    cnt_update:msg.data.cnt_update,
+                    cnt_delete:msg.data.cnt_delete,
+                    cnt_select:msg.data.cnt_select,
+                    cnt_sync:msg.data.cnt_sync,
+                    updated_at:mFormatDateTime()
+                });
+            }
+        } catch (e) {
+            console.log('ERROR_SYNC_APP_INFO>>>', 'Ошибка синхронизации информации по приложению', e);
+        }
+
+        
         for (const k in this.ixStatusError) {
            
             const vStatusError = this.ixStatusError[k];
@@ -122,15 +249,15 @@ export class DbServerSys {
         const adbConnect:string[] = [];
         const adbConnectWait:string[] = [];
         const adbConnectError:string[] = [];
-        for (let i = 0; i < adb.length; i++) {
+        for (const i in adb) {
             const vConnect = adb[i].client.config.connection;
             adbConnect.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
         }
-        for (let i = 0; i < adbWait.length; i++) {
+        for (const i in adbWait) {
             const vConnect = adbWait[i].client.config.connection;
             adbConnectWait.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
         }
-        for (let i = 0; i < adbError.length; i++) {
+        for (const i in adbError) {
             const vConnect = adbError[i].client.config.connection;
             adbConnectError.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
         }
@@ -139,15 +266,15 @@ export class DbServerSys {
             adb:adbConnect,
             adbWait:adbConnectWait,
             adbError:adbConnectError,
-            adbCount:adb.length,
-            adbWaitCount:adbWait.length,
-            adbErrorCount:adbError.length
+            adbCount:_.size(adb),
+            adbWaitCount:_.size(adbWait),
+            adbErrorCount:_.size(adbError)
         };
     }
 
     /** Получения данных по соединениям */
     public async connect(msg:QueryContextI){
-        
+        const sDate = mFormatDate();
         const adbRead = [];
         const adbAll = [];
 
@@ -168,9 +295,55 @@ export class DbServerSys {
             adbAll.push(db);
         }
 
+        try {
+            let bInsertInfo = false;
+            if(!this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDate]){
+                const resp = await dbProxy('info').where({
+                    app_ip:msg.ip,
+                    app_name:msg.app,
+                    app_date:sDate,
+                }).pluck('id');
+
+                if(resp.length){
+                    // Запись в кеш и очистка старого кеша за предыдущий день
+                    this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDate] = true;
+                    const sDatePrev = mFormatDate(dayjs().subtract(1, 'day'));
+                    delete this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDatePrev];
+                } else {
+                    bInsertInfo = true; // Если записи нет требуется новая запись
+                }
+            }
+
+            if(bInsertInfo){
+                await dbProxy('info').insert({
+                    app_ip:msg.ip,
+                    app_name:msg.app,
+                    app_date:sDate,
+                    cnt_connect:1
+                }).onConflict().ignore();
+
+                // Запись в кеш и очистка старого кеша за предыдущий день
+                this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDate] = true;
+                const sDatePrev = mFormatDate(dayjs().subtract(1, 'day'));
+                delete this.ixAppInfoSync[msg.ip+'_'+msg.app+'_'+sDatePrev];
+            } else { // Если запись существует
+                await dbProxy('info').where({
+                    app_ip:msg.ip,
+                    app_name:msg.app,
+                    app_date:sDate
+                }).update({
+                    created_at:mFormatDateTime(),
+                    cnt_connect:dbProxy.raw('cnt_connect + 1')
+                });
+            }
+        } catch (e) {
+            console.log('ERROR_CONNECT_APP_INFO>>>', 'Ошибка синхронизации информации по приложению', e);
+        }
+
         const out = { 
             adb: adbRead,
-            adbAll: adbAll
+            adbAll: adbAll,
+            ixPrimaryKey:this.ixPrimaryKey
         }
         return out;
     }
@@ -183,7 +356,6 @@ export class DbServerSys {
         }
 
         const vTableC = this.ixTable[msg.table];
-
 
         return vTableC.getNewID(msg.data.cnt);
     }
@@ -211,7 +383,7 @@ export class DbServerSys {
             const sQuery = aQuery[c];
 
             let aPromiseQuery:Promise<Knex>[] = [];
-            for (let i = 0; i < adb.length; i++) {
+            for (const i in adb) {
                 const db = adb[i];
 
                 aPromiseQuery.push(db.raw(sQuery))
@@ -225,20 +397,6 @@ export class DbServerSys {
         return idSchema;
     }
 
-    /** Получить из очереди */
-    public async select(msg:QueryContextI){
-
-        // const vTableC = this.ixTable[msg.table];
-
-        // Случайно отдаем одну базу данных из пула
-        const iRand = mRandomInteger(0, adb.length - 1)
-        const db = adb[iRand];
-        const out = (await db.raw(msg.query))[0];
-
-        return out
-        
-    }
-
     /** получить коннект для изменения данных update|delete */
     private async fGetIDForDataChange(msg:QueryContextI): Promise<number[]>{
 
@@ -247,12 +405,14 @@ export class DbServerSys {
         let aid = []
         let okExe = true;
         let vError = null; // Ошибка заполняется если при первом запросе она произошла
+        const akDb = Object.keys(adb)
+        const iRand = mRandomInteger(0, akDb.length - 1);
         try { // из случайной БД своего контура
 
-            if(adb?.length > 0){
+            
+            if(akDb.length > 0){
 
-                const iRand = mRandomInteger(0, adb.length - 1);
-                const dbSelect = adb[iRand];
+                const dbSelect = adb[akDb[iRand]];
 
                 // const vConnect = dbSelect.client.config.connection;
                 // console.log('SELECT RAND DB >>> '+':'+vConnect.host+':'+vConnect.port+':'+vConnect.database);
@@ -273,14 +433,12 @@ export class DbServerSys {
             vError = e;
         }
 
-        if(!okExe && adb?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД своего контура
-            console.log('SELECT ERROR - БД ALL:', ' БД по ALL',adb.length)
-            for (let i = 0; i < adb.length; i++) {
+        if(!okExe && akDb?.length > 0){ // В случае ошибки, последовательно попытаться выполнить запрос из оставшихся БД своего контура
+            console.log('SELECT ERROR - БД ALL:', ' БД по ALL',_.size(adb))
+            for (const i in adb) {
                 
                 try {
-                    const iRand = mRandomInteger(0, adb.length - 1)
-                    const dbSelect = adb[iRand];
-
+                    const dbSelect = adb[i];
                     
                     const a = (await dbSelect.raw(msg.query))[0];
 
@@ -312,20 +470,19 @@ export class DbServerSys {
 
         // console.log('---6> fExeQuery начало');
 
-        if(!adb.length){ // В случае если отключились все БД
+        if(!_.size(adb)){ // В случае если отключились все БД
             msg.errors['no_work_db'] = 'Нет доступных БД';
             throw new Error('no_work_db')
         }
 
-        // console.log('---7> fExeQuery БД количество = ', adb.length);
 
-        const iCntDbExe = adb.length;
+        const iCntDbExe = _.size(adb);
         const asDbError:string[] = [];
 
         // console.log('SQL>>>',sQuery)
 
         const aPromiseQuery:Promise<Knex>[] = [];
-        for (let i = 0; i < adb.length; i++) {
+        for (const i in adb) {
             const db = adb[i];
             aPromiseQuery.push(new Promise(async (resolve, reject) => {
                 const iLocalNumDb = i;
@@ -356,10 +513,9 @@ export class DbServerSys {
             }))
         }
 
-        // console.log('---10> fExeQuery Before adbWait block wait count = ',adbWait.length);
+        // console.log('---10> fExeQuery Before adbWait block wait count = ',_.size(adbWait));
 
-        
-        for (let i = 0; i < adbWait.length; i++) {
+        for (const i in adbWait) {
             const db = adbWait[i];
             aPromiseQuery.push(new Promise(async (resolve, reject) => {
                 const iLocalNumDb = i;
@@ -374,9 +530,9 @@ export class DbServerSys {
                     console.log(vConnect.host+':'+vConnect.port+':'+vConnect.database)
                     console.log(new Date().valueOf())
                     if(new Date().valueOf() - ixDbWaitTime[vConnect.host+':'+vConnect.port+':'+vConnect.database] > 2000){
-                        console.log('>>>WAIT DB EXE', adbWait.length, adbError.length);
-                        adb.push(adbWait[iLocalNumDb]);
-                        adbWait.splice(iLocalNumDb, 1);
+                        console.log('>>>WAIT DB EXE', _.size(adbWait), _.size(adbError));
+                        adb[iLocalNumDb] = adbWait[iLocalNumDb];
+                        delete adbWait[iLocalNumDb];
 
                         
                         this.fSetErrorStatus('append_db', 'Присоеденена проблемных БД');
@@ -395,8 +551,8 @@ export class DbServerSys {
                     const vConnect = adbWait[i].client.config.connection;
                     // console.log('ERROR>>>', vConnect.host, vConnect.port, vConnect.database);
 
-                    adbError.push(adbWait[iLocalNumDb]);
-                    adbWait.splice(iLocalNumDb, 1);
+                    adbError[iLocalNumDb] = adbWait[iLocalNumDb];
+                    delete adbWait[iLocalNumDb];
                     resolve(e);
                 }
                 
@@ -413,7 +569,7 @@ export class DbServerSys {
 
                 // console.log('---14> fExeQuery что то пошло не так начало отсоединение БД');
                 const ixErrorDb = _.keyBy(asDbError);
-                for (let i = 0; i < adb.length; i++) {
+                for(const i in adb){
                     const db = adb[i];
                     const vConnect = db.client.config.connection;
                     const sDbConnect = vConnect.host+':'+vConnect.port+':'+vConnect.database;
@@ -426,14 +582,14 @@ export class DbServerSys {
 
                         );
                         
-                        adbError.push(adb[i]);
-                        adb.splice(i, 1);
+                        adbError[i] = adb[i];
+                        delete adb[i];
                     }
                 }
 
             }
         } catch(e){
-            console.log('количество ДБ в строю:',adb.length);
+            console.log('количество ДБ в строю:',_.size(adb));
         }
 
         // Если ошибка произошла на всех БД - проблема не в базе а в запросе, потому генерится ошибка запроса
@@ -452,6 +608,22 @@ export class DbServerSys {
         }
 
         const vTableC = this.ixTable[msg.table];
+
+        const sColCreatedAt = vTableC.columnSpecial.created_at;
+        const sColUpdatedAt = vTableC.columnSpecial.updated_at;
+        if(conf.option.replication && (sColCreatedAt || sColUpdatedAt)){
+            for (let i = 0; i < msg.data.length; i++) {
+                const vData = msg.data[i];
+                
+                if(sColCreatedAt && !vData[sColCreatedAt]){
+                    vData[sColCreatedAt] = mFormatDateTime();
+                }
+
+                if(sColUpdatedAt && !vData[sColUpdatedAt]){
+                    vData[sColUpdatedAt] = mFormatDateTime();
+                }
+            }
+        }
 
         // Формирование запроса вставки
         let vQueryBuilder = gQuery(msg.table).insert(msg.data);
@@ -487,6 +659,22 @@ export class DbServerSys {
 
         const vTableC = this.ixTable[msg.table];
 
+        const sColCreatedAt = vTableC.columnSpecial.created_at;
+        const sColUpdatedAt = vTableC.columnSpecial.updated_at;
+        if(conf.option.replication && (sColCreatedAt || sColUpdatedAt)){
+            for (let i = 0; i < msg.data.length; i++) {
+                const vData = msg.data[i];
+                
+                if(sColCreatedAt && !vData[sColCreatedAt]){
+                    vData[sColCreatedAt] = mFormatDateTime();
+                }
+
+                if(sColUpdatedAt && !vData[sColUpdatedAt]){
+                    vData[sColUpdatedAt] = mFormatDateTime();
+                }
+            }
+        }
+
         const sQuery = gQuery(msg.table).insert(msg.data).toString()?.replace(/^insert/i, 'replace')
         if(conf.option.replication){
             vTableC.aQueryInsertLog.push(sQuery)
@@ -510,6 +698,17 @@ export class DbServerSys {
         }
 
         const vTableC = this.ixTable[msg.table];
+
+        const sColUpdatedAt = vTableC.columnSpecial.updated_at;
+        if(conf.option.replication && sColUpdatedAt){
+            for (let i = 0; i < msg.data.length; i++) {
+                const vData = msg.data[i];
+
+                if(!vData[sColUpdatedAt]){
+                    vData[sColUpdatedAt] = mFormatDateTime();
+                }
+            }
+        }
 
         const aid = await this.fGetIDForDataChange(msg);
 
@@ -547,6 +746,17 @@ export class DbServerSys {
         }
 
         const vTableC = this.ixTable[msg.table];
+
+        const sColUpdatedAt = vTableC.columnSpecial.updated_at;
+        if(conf.option.replication && sColUpdatedAt){
+            for (let i = 0; i < msg.data.length; i++) {
+                const vData = msg.data[i];
+
+                if(!vData[sColUpdatedAt]){
+                    vData[sColUpdatedAt] = mFormatDateTime();
+                }
+            }
+        }
 
         // console.log('---1>', msg.query);
         let aid = [];
@@ -671,6 +881,15 @@ export class DbServerSys {
                     table.integer('schema_id')
                         .comment('schema_id');
 
+                    table.string('col_primary', 100)
+                        .comment('Первичный ключ');
+
+                    table.string('col_created_at', 100)
+                        .comment('колонка - дата создания строки');
+
+                    table.string('col_updated_at', 100)
+                        .comment('колонка - дата обновления строки');
+
                     table.dateTime('created_at', null)
                         .notNullable()
                         .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
@@ -714,7 +933,7 @@ export class DbServerSys {
 
             // Базы данных в репликации
             if(conf.option.replication){
-                for (let i = 0; i < adb.length; i++) {
+                for(const i in adb){
                     const vDbReplication = adb[i];
                     console.log('>>>Проверка/Создание таблицы aCfDb.__replication__', vDbReplication.client.config.connection)
                     const bExistReplication = await vDbReplication.schema.hasTable('__replication__');
@@ -839,7 +1058,7 @@ export class DbServerSys {
             // Фиксация проблемных БД
             let asErrorDB:string[] = [];
             if(conf.option.replication){
-                for (let i = 0; i < adb.length; i++) {
+                for(const i in adb){
                     const db = adb[i];
                     const idQueryRep = (await db('__replication__').max({id:'id'}))[0]?.id || 0;
 
@@ -848,17 +1067,17 @@ export class DbServerSys {
                         asErrorDB.push(vConnect.host+':'+vConnect.port+':'+vConnect.database);
                     }
 
-                    this.runDb[i] = this.idQuery == idQueryRep;
+                    // this.runDb[i] = this.idQuery == idQueryRep;
                 }
 
                 // Отключение проблемных БД
                 for (let i = 0; i < asErrorDB.length; i++) {
                     const sErrorDB = asErrorDB[i];
-                    for (let j = 0; j < adb.length; j++) {
+                    for(const j in adb){
                         const vConnect = adb[j].client.config.connection;
                         if(sErrorDB == vConnect.host+':'+vConnect.port+':'+vConnect.database){
-                            adbError.push(adb[j]);
-                            adb.splice(j, 1);
+                            adbError[j] = adb[j];
+                            delete adb[j];
                             console.log(
                                 '<<<ERROR_INIT Отсоеденена проблемная БД>>> - '+vConnect.host+':'+vConnect.port+':'+vConnect.database
                             );
@@ -868,6 +1087,103 @@ export class DbServerSys {
                 }
             }
 
+            console.log('>>>Проверка/Создание таблицы cfDbProxy.info')
+            const bExistInfo = await dbProxy.schema.hasTable('info');
+            if(!bExistInfo){
+                await dbProxy.schema.createTable('info', (table:any) => {
+
+                    table.increments('id')
+                        .comment('ID');
+
+                    table.string('app_ip', 20)
+                        .comment('Таблица');
+
+                    table.string('app_name', 100)
+                        .comment('Таблица');
+
+                    table.date('app_date')
+                        .comment('Дата - День');
+
+                    table.integer('cnt_connect')
+                        .defaultTo(0)
+                        .comment('Количество соединений');
+                    
+                    table.integer('cnt_sync')
+                        .defaultTo(0)
+                        .comment('Количество синхронизаций');
+
+                    table.integer('cnt_insert')
+                        .comment('Количество запросов на запись');
+
+                    table.integer('cnt_update')
+                        .comment('Количество запросов на обновление');
+
+                    table.integer('cnt_delete')
+                        .comment('Количество запросов на удаление');
+
+                    table.integer('cnt_select')
+                        .comment('Количество запросов на чтение');
+
+                    table.dateTime('created_at')
+                        .notNullable()
+                        .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP'))
+                        .comment('Время создания записи');
+
+                    table.dateTime('updated_at')
+                        .notNullable()
+                        .defaultTo(dbProxy.raw('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+                        .comment('Время обновления записи');
+
+                    table.unique(['app_ip', 'app_name', 'app_date'], { indexName:'app_ip_name_date'} )
+                    table.comment('Таблица отслеживания активности приложений');
+
+                });
+            }
+
+            console.log('>>>Синхронизация primary_key<<<');
+            if(dbMaster.client.config.connection.database && conf.option.replication){
+                const sqlPrimaryKey = `
+                    SELECT GROUP_CONCAT(COLUMN_NAME) as COLUMN_NAME, TABLE_NAME
+                    FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                    WHERE
+                    TABLE_SCHEMA = '${dbMaster.client.config.connection.database}'
+                    AND CONSTRAINT_NAME='PRIMARY'
+                    GROUP BY TABLE_NAME;
+                `;
+
+                const aPrimaryKey:{COLUMN_NAME:string, TABLE_NAME:string}[] = (await dbMaster.raw(sqlPrimaryKey))[0];
+                const ixPrimaryKey = _.keyBy(aPrimaryKey, 'TABLE_NAME');
+
+                const aProxyPrimaryKey:{col_primary:string, table:string}[] = await dbProxy('table').select('col_primary', 'table');
+                const ixProxyPrimaryKey = _.keyBy(aProxyPrimaryKey, 'table');
+
+                for (const kTable in ixPrimaryKey) {
+                    if(kTable == '__replication__') continue; // игнорируем тех таблицу репликации
+
+                    const vRowMaster = ixPrimaryKey[kTable]
+                    const vRowProxy = ixProxyPrimaryKey[kTable];
+                    const ifSingleKey = vRowMaster.COLUMN_NAME?.split(',')?.length == 1;
+                    if(ifSingleKey){
+                        this.ixPrimaryKey[kTable] = vRowMaster.COLUMN_NAME;
+                    }
+
+                    if(vRowProxy && vRowProxy.col_primary != vRowMaster.COLUMN_NAME && ifSingleKey){
+                        await dbProxy('table').where('table', kTable).update({
+                            col_primary:vRowMaster.COLUMN_NAME
+                        });
+                        
+                    } else if(!vRowProxy && ifSingleKey){
+                        await dbProxy('table').insert({
+                            table:kTable,
+                            col_primary:vRowMaster['COLUMN_NAME']
+                        }).onConflict().merge(['col_primary']);
+                    } else {
+                        if(!ifSingleKey){
+                            console.log('>>>ERROR>>> Пропущен мультиключь при синхронизации primary:',vRowMaster.COLUMN_NAME)
+                        }
+                    }
+                }
+            }
             
             console.log('this.idSchema',this.idSchema);
 
@@ -965,7 +1281,7 @@ export class DbServerSys {
             }
 
             const aPromiseQuery:Promise<any>[] = [];
-            for (let i = 0; i < adb.length; i++) {
+            for(const i in adb){
                 const db = adb[i];
 
                 aPromiseQuery.push(db('__replication__').insert(aPacket).onConflict().merge());

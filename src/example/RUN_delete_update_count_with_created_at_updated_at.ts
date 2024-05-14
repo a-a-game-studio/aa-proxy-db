@@ -14,7 +14,7 @@ import { DbClientSys } from "../System/DbClientSys";
 // CORE API
 const mqClientSys = new DbClientSys({
     baseURL: `ws://pass12@${conf.common.host}:${conf.common.port}`,
-    nameApp: 'RUN_delete_update_count'
+    nameApp: 'test_client'
 })
 
 /** Тип строки для теста/примера */
@@ -36,6 +36,12 @@ async function run(){
 
         table.integer('num')
             .comment('Текст сообщения');
+
+        table.dateTime('created_at')
+            .comment('Дата изменения записи');
+
+        table.dateTime('updated_at')
+            .comment('Дата изменения записи');
     }));
     console.log('[run:idSchemaTest]:',':',idSchemaTest);
 
@@ -80,8 +86,6 @@ async function run(){
     console.log('aidUpdateIn:', aidUpdateIn)
     console.log('aidUpdateInCount:', aidUpdateIn.length)
 
-    
-
     // Получить количество удаленных сообщений by QUERY
     const aidUpdateQuery:number[] = await mqClientSys.update({text:'update_in'}, db('test')
         .whereIn('id', aidMsg.splice(0,4))
@@ -90,12 +94,7 @@ async function run(){
     console.log('aidUpdateQuery:', aidUpdateQuery);
     console.log('aidUpdateQueryCount:', aidUpdateQuery.length);
 
-    
-    await mqClientSys.status();
-
     await mWait(2000);
-
-    
 
     console.log('=========================');
     console.log('END');
