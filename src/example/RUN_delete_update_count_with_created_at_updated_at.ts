@@ -38,9 +38,13 @@ async function run(){
             .comment('Текст сообщения');
 
         table.dateTime('created_at')
+            .notNullable()
+            .defaultTo(db.raw('CURRENT_TIMESTAMP'))
             .comment('Дата изменения записи');
 
         table.dateTime('updated_at')
+            .notNullable()
+            .defaultTo(db.raw('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
             .comment('Дата изменения записи');
     }));
     console.log('[run:idSchemaTest]:',':',idSchemaTest);

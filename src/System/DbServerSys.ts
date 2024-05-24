@@ -57,6 +57,10 @@ export class DbTableC {
                 await dbProxy('table').where('table',sTable).insert({
                     table:sTable
                 }).onConflict().ignore()
+            } else {
+                this.columnSpecial.primary = this.statusProxy['col_primary'];
+                this.columnSpecial.created_at = this.statusProxy['col_created_at'];
+                this.columnSpecial.updated_at = this.statusProxy['col_updated_at'];
             }
 
             // Синхронизировать специальные колонки
@@ -111,17 +115,19 @@ export class DbTableC {
 
         const aColumn = (await dbMaster.raw(sql, {
             table:this.table
-        }));
+        }))[0];
 
         let ifSync = false;
         for (let i = 0; i < aColumn.length; i++) {
             const vColumn = aColumn[i];
+            
             if( vColumn['created_at'] && this.columnSpecial.created_at != vColumn['created_at']){
+
                 this.columnSpecial.created_at = vColumn['created_at'];
                 ifSync = true;
             }
 
-            if( vColumn['updated_at'] && this.columnSpecial.created_at != vColumn['updated_at']){
+            if( vColumn['updated_at'] && this.columnSpecial.updated_at != vColumn['updated_at']){
                 this.columnSpecial.updated_at = vColumn['updated_at'];
                 ifSync = true;
             }
