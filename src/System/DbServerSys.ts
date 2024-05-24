@@ -706,13 +706,11 @@ export class DbServerSys {
         const vTableC = this.ixTable[msg.table];
 
         const sColUpdatedAt = vTableC.columnSpecial.updated_at;
+        // console.log('sColUpdatedAt>>>', sColUpdatedAt);
         if(conf.option.replication && sColUpdatedAt){
-            for (let i = 0; i < msg.data.length; i++) {
-                const vData = msg.data[i];
-
-                if(!vData[sColUpdatedAt]){
-                    vData[sColUpdatedAt] = mFormatDateTime();
-                }
+                
+            if(!msg.data[sColUpdatedAt]){
+                msg.data[sColUpdatedAt] = mFormatDateTime();
             }
         }
 
@@ -754,13 +752,11 @@ export class DbServerSys {
         const vTableC = this.ixTable[msg.table];
 
         const sColUpdatedAt = vTableC.columnSpecial.updated_at;
+        
         if(conf.option.replication && sColUpdatedAt){
-            for (let i = 0; i < msg.data.length; i++) {
-                const vData = msg.data[i];
-
-                if(!vData[sColUpdatedAt]){
-                    vData[sColUpdatedAt] = mFormatDateTime();
-                }
+                
+            if(!msg.data[sColUpdatedAt]){
+                msg.data[sColUpdatedAt] = mFormatDateTime();
             }
         }
 
