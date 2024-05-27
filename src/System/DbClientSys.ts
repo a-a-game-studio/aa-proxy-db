@@ -194,7 +194,7 @@ export class DbClientSys {
                 console.log('data.adb>>>',data.adb);
                 console.log('data.adbAll>>>',data.adbAll);
                 console.log('data.ixPrimaryKey',data.ixPrimaryKey)
-                this.ixTablePrimaryKey = data.ixPrimaryKey;
+                this.ixTablePrimaryKey = data.ixPrimaryKey || {};
                 
                 if(Object.keys(data.adb).length){
                     for (let [k,db] of Object.entries(data.adb)) {
