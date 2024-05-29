@@ -641,12 +641,11 @@ export class DbServerSys {
         }
         let sQuery = vQueryBuilder.toString()
         
+        await this.fExeQuery(msg, sQuery);
 
         if(conf.option.replication){
             vTableC.aQueryInsertLog.push(vQueryBuilder.onConflict().merge().toString())
         }
-
-        await this.fExeQuery(msg, sQuery);
         
         if(conf.option.log){
             await gDbLogSys.insert(msg);
@@ -682,11 +681,12 @@ export class DbServerSys {
         }
 
         const sQuery = gQuery(msg.table).insert(msg.data).toString()?.replace(/^insert/i, 'replace')
+        
+        await this.fExeQuery(msg, sQuery);
+
         if(conf.option.replication){
             vTableC.aQueryInsertLog.push(sQuery)
         }
-
-        await this.fExeQuery(msg, sQuery);
         
         if(conf.option.log){
             await gDbLogSys.insert(msg);
@@ -728,11 +728,11 @@ export class DbServerSys {
             const vBuilderQuery = gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data);
             const sQuery = vBuilderQuery.toString();
 
+            await this.fExeQuery(msg, sQuery);
+
             if(conf.option.replication){
                 vTableC.aQueryUpdateLog.push(vBuilderQuery.clone().onConflict().merge().toString())
             }
-
-            await this.fExeQuery(msg, sQuery);
 
             if(conf.option.log){
                 await gDbLogSys.update(aid, msg);
@@ -782,12 +782,12 @@ export class DbServerSys {
             }
             const vBuilderQuery = gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data)
             sQuery = vBuilderQuery.toString();
-            
+
+            await this.fExeQuery(msg, sQuery);
+
             if(conf.option.replication){
                 vTableC.aQueryUpdateLog.push(vBuilderQuery.clone().onConflict().merge().toString())
             }
-
-            await this.fExeQuery(msg, sQuery);
 
             if(conf.option.log){
                 await gDbLogSys.update(aid,msg);
@@ -813,12 +813,11 @@ export class DbServerSys {
 
             const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).delete().toString();
 
+            await this.fExeQuery(msg, sQuery);
+
             if(conf.option.replication){
                 vTableC.aQueryDeleteLog.push(sQuery)
             }
-
-
-            await this.fExeQuery(msg, sQuery);
         }
 
         return aid;
@@ -848,12 +847,11 @@ export class DbServerSys {
 
             const sQuery = gQuery(msg.table).whereIn(msg.key_in, aid).delete().toString();
 
+            await this.fExeQuery(msg, sQuery);
+
             if(conf.option.replication){
                 vTableC.aQueryDeleteLog.push(sQuery)
             }
-
-            
-            await this.fExeQuery(msg, sQuery);
         }
 
         return aid;
