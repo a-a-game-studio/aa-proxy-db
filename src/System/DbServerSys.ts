@@ -100,7 +100,7 @@ export class DbTableC {
             SELECT 
             COLUMN_NAME,
                 col.COLUMN_KEY,
-                if(col.COLUMN_KEY = 'PRI', COLUMN_KEY, '') as 'primary',
+                if(col.COLUMN_KEY = 'PRI', COLUMN_NAME, '') as 'primary',
                 if(col.COLUMN_DEFAULT = 'current_timestamp()' AND col.EXTRA = '', col.COLUMN_NAME, '') AS created_at,
                 if(col.COLUMN_DEFAULT = 'current_timestamp()' AND col.EXTRA = 'on update current_timestamp()', col.COLUMN_NAME, '') AS updated_at,
                 DATA_TYPE, 
