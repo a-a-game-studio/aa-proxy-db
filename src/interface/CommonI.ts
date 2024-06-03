@@ -17,7 +17,6 @@ export enum MsgT {
 
 /** Опции запросов */
 export interface QueryContextOptionI {
-    onConflict?:string[]; // insert | update
     merge?:string[]; // Список колонок // insert | update
     mergeIgnore?:boolean; // Список колонок // insert | update
     updateRaw?:Record<string,string>; // update // increment|update от вычисления num = num + id + 5

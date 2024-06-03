@@ -7,7 +7,7 @@ import ip from 'ip'
 import { QueryContextI, MsgT, QueryStatusI, QueryContextOptionI } from "../interface/CommonI";
 
 import knex, { Knex } from "knex";
-import _, { cond } from "lodash";
+import _ from "lodash";
 import { mRandomInteger } from "../Helper/NumberH";
 import { mWait } from "../Helper/WaitH";
 
@@ -544,6 +544,119 @@ export class DbClientSys {
         }
 
         return out; 
+    }
+
+    /** 
+     * UPDATE QUERY
+     * updateQuery('test',  {text:'update_primary_key'}, db('test').whereIn('id',[33,11,44]).pluck('id'))
+     * updateQuery('test.num', {text:'update_where_in'}, db('test').whereIn('id',[33,11,44]).pluck('num'))
+     */
+    public async dbExe(query:Knex.QueryBuilder|Knex.Raw): Promise<any[]>{
+
+        console.log('Query>>>',(<any>query));
+
+        let out:any[] = null;
+        if((<any>query)._method){
+            const vQueryIn = (<any>query);
+
+            if(vQueryIn._method == 'select'){
+                out = await this.select(query);
+            }
+            if(vQueryIn._method == 'insert'){
+                if(vQueryIn._single.onConflict){
+                    
+                    let option:QueryContextOptionI = {}
+                    if(vQueryIn._single.merge){
+                        let option = {merge:['*']};
+                        if(vQueryIn._single.merge.updates?.length){
+                            option.merge = vQueryIn._single.merge.updates
+                        } else {
+                            option.merge = [vQueryIn._single.merge.updates];
+                        }
+                    }
+                    if(vQueryIn._single.ignore){
+                        option.mergeIgnore = true;
+                    }
+                    
+                    
+                    out = await this.insert(vQueryIn._single.table, vQueryIn._single.insert, option)
+                } else {
+                    out = await this.insert(vQueryIn._single.table, vQueryIn._single.insert)
+                }
+                
+            }
+            if(vQueryIn._method == 'del'){
+                
+                if(vQueryIn._statements.length == 1 && !vQueryIn._single.limit){
+                    if(vQueryIn._statements[0].type == 'whereIn'){
+                        out = await this.deleteIn(vQueryIn._single.table+'.'+vQueryIn._statements[0].column, vQueryIn._statements[0].value);
+                    } else if(vQueryIn._statements[0].type == 'whereBasic' && vQueryIn._statements[0].operator == '='){
+                        out = await this.deleteIn(vQueryIn._single.table+'.'+vQueryIn._statements[0].column, vQueryIn._statements[0].value);
+                    } else {
+                        console.log('ERROR>>> PORXY dbExe DEL НЕ нашел решения', vQueryIn)
+                    }
+                } else {
+                    vQueryIn._method = 'select'
+                    vQueryIn.pluck(this.ixTablePrimaryKey[vQueryIn._single.table] || 'id')
+                    out = await this.deleteQuery(vQueryIn._single.table, vQueryIn)
+                }
+                
+            }
+            if(vQueryIn._method == 'update'){
+                const option:QueryContextOptionI = {};
+                if(vQueryIn._single.onConflict){
+                    
+                    if(vQueryIn._single.merge){
+                        option.merge = ['*'];
+                        if(vQueryIn._single.merge.updates?.length){
+                            option.merge = vQueryIn._single.merge.updates
+                        } else {
+                            option.merge = [vQueryIn._single.merge.updates];
+                        }
+                    }
+                    if(vQueryIn._single.ignore){
+                        option.mergeIgnore = true;
+                    }
+                }
+                if(vQueryIn._single.counter){
+                    option.updateRaw = {};
+                    // counter
+                    for (const key in vQueryIn._single.counter) {
+                        option.updateRaw[key] = `${key} + ${vQueryIn._single.counter[key]}`;
+                    }
+
+                    console.log('update.option>>>', option);
+                }
+                if(vQueryIn._statements.length == 1 && !vQueryIn._single.limit){
+                    if(vQueryIn._statements[0].type == 'whereIn'){
+                        out = await this.updateIn(
+                            vQueryIn._single.table+'.'+vQueryIn._statements[0].column, 
+                            vQueryIn._statements[0].value,
+                            vQueryIn._single.update || {},
+                            option
+                        );
+                    } else if(vQueryIn._statements[0].type == 'whereBasic' && vQueryIn._statements[0].operator == '='){
+                        out = await this.updateIn(
+                            vQueryIn._single.table+'.'+vQueryIn._statements[0].column, 
+                            vQueryIn._statements[0].value,
+                            vQueryIn._single.update || {},
+                            option
+                        );
+                    } else {
+                        console.log('ERROR>>> PORXY dbExe UPDATE НЕ нашел решения', vQueryIn)
+                    }
+                } else {
+                    vQueryIn._method = 'select'
+                    vQueryIn.pluck(this.ixTablePrimaryKey[vQueryIn._single.table] || 'id')
+                    out = await this.updateQuery(vQueryIn.single.table, vQueryIn._single.update, vQueryIn, option)
+                }
+                
+            }
+
+        }
+
+        return out;
+
     }
 
     /** Выполнить запрос на случайной БД для чтения */

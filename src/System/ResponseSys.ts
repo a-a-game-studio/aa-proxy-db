@@ -102,6 +102,7 @@ import * as conf from '../Config/MainConfig';
                 out = data;
             } catch (e) {
                 this.ctx.err.errorEx(e, 'fatal_error', 'Ошибка сервера');
+                console.log('>>>ERROR>>>', e);
                 // this.resp.status(500)
             }  
         } else {

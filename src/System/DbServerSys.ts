@@ -633,11 +633,15 @@ export class DbServerSys {
 
         // Формирование запроса вставки
         let vQueryBuilder = gQuery(msg.table).insert(msg.data);
-        if(msg?.option?.merge.length){
-            vQueryBuilder.onConflict(msg?.option.onConflict).merge(msg.option.merge)
+        if(msg?.option?.merge?.length){
+            if(msg?.option?.merge[0] == '*'){
+                vQueryBuilder.onConflict().merge()
+            } else {
+                vQueryBuilder.onConflict().merge(msg.option.merge)
+            }
         }
         if(msg?.option?.mergeIgnore){
-            vQueryBuilder.onConflict(msg?.option.onConflict).ignore()
+            vQueryBuilder.onConflict().ignore()
         }
         let sQuery = vQueryBuilder.toString()
         
@@ -725,7 +729,20 @@ export class DbServerSys {
                     msg.data[kUpdate] = gQuery.raw(sUpdate);
                 }
             }
+            
             const vBuilderQuery = gQuery(msg.table).whereIn(msg.key_in, aid).update(msg.data);
+
+            if(msg?.option?.merge?.length){
+                if(msg?.option?.merge[0] == '*'){
+                    vBuilderQuery.onConflict().merge(msg.option.merge)
+                } else {
+                    vBuilderQuery.onConflict().merge()
+                }
+            }
+            if(msg?.option?.mergeIgnore){
+                vBuilderQuery.onConflict().ignore()
+            }
+
             const sQuery = vBuilderQuery.toString();
 
             await this.fExeQuery(msg, sQuery);
