@@ -547,7 +547,7 @@ export class DbClientSys {
     }
 
     /** 
-     * UPDATE QUERY
+     * dbExe QUERY
      * updateQuery('test',  {text:'update_primary_key'}, db('test').whereIn('id',[33,11,44]).pluck('id'))
      * updateQuery('test.num', {text:'update_where_in'}, db('test').whereIn('id',[33,11,44]).pluck('num'))
      */
@@ -625,7 +625,6 @@ export class DbClientSys {
                         option.updateRaw[key] = `${key} + ${vQueryIn._single.counter[key]}`;
                     }
 
-                    console.log('update.option>>>', option);
                 }
                 if(vQueryIn._statements.length == 1 && !vQueryIn._single.limit){
                     if(vQueryIn._statements[0].type == 'whereIn'){
