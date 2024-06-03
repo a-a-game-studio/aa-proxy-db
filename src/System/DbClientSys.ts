@@ -553,7 +553,7 @@ export class DbClientSys {
      */
     public async dbExe(query:Knex.QueryBuilder|Knex.Raw): Promise<any[]>{
 
-        console.log('Query>>>',(<any>query));
+        // console.log('Query>>>',(<any>query));
 
         let out:any[] = null;
         if((<any>query)._method){
