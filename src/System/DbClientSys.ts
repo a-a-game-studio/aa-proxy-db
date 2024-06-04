@@ -456,11 +456,11 @@ export class DbClientSys {
     /** 
      * exe QUERY
      */
-    public async exe(query:Knex.QueryBuilder|Knex.Raw): Promise<any[]>{
+    public async exe<T = any>(query:Knex.QueryBuilder|Knex.Raw): Promise<T>{
 
         // console.log('Query>>>',(<any>query));
 
-        let out:any[] = null;
+        let out = null;
         if((<any>query)._method){
             const vQueryIn = (<any>query);
 
