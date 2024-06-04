@@ -403,6 +403,40 @@ export class DbServerSys {
         return idSchema;
     }
 
+    /** Поместить значение в очередь */
+    public async raw(msg:QueryContextI){
+
+        if(!this.ixTable[msg.table]){
+            this.ixTable[msg.table] = new DbTableC();
+            await this.ixTable[msg.table].faInit(msg.table);
+        }
+
+        const vTableC = this.ixTable[msg.table];
+        
+        await this.fExeQuery(msg, msg.query);
+
+        if(conf.option.replication){
+            const sQueryStart = msg.query.substr(0, 50).toLowerCase().trim().replace(/`/g,'');
+            if(sQueryStart.match(/^(insert)/)){
+                vTableC.aQueryInsertLog.push(msg.query);
+            } else if (sQueryStart.match(/^(update)/)){
+                vTableC.aQueryUpdateLog.push(msg.query);
+            } else if(sQueryStart.match(/^(delete)/)){
+                vTableC.aQueryDeleteLog.push(msg.query);
+            } else if(sQueryStart.match(/^(create table)|(drop table)|(truncate table)/)){
+                const idSchema = (await dbProxy('schema').insert({
+                    table:msg.table,
+                    data:msg.query
+                }))[0];
+            } else {
+                console.log('WARNING>>>Не удалось распознать команду')
+            }
+        }
+
+        process.stdout.write('.')
+
+    } 
+
     /** получить коннект для изменения данных update|delete */
     private async fGetIDForDataChange(msg:QueryContextI): Promise<number[]>{
 

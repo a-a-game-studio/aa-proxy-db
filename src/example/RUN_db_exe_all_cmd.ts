@@ -50,7 +50,7 @@ async function run(){
         }
     }
     
-    const row = await dbProxy.dbExe(db('test').insert(aMsg));
+    const row = await dbProxy.exe(db('test').insert(aMsg));
 
     const aidMsg = aMsg.map(el => el.id);
 
@@ -65,12 +65,12 @@ async function run(){
         }
     }
     
-    const row2 = await dbProxy.dbExe(db('test').insert(aMsg2).onConflict().ignore());
+    const row2 = await dbProxy.exe(db('test').insert(aMsg2).onConflict().ignore());
 
     // ========================
     // SELECT
     // ========================
-    const selectIn = await dbProxy.dbExe(db('test')
+    const selectIn = await dbProxy.exe(db('test')
         .whereIn('id', aidMsg.splice(0,3))
         .limit(2)
     );
@@ -81,14 +81,14 @@ async function run(){
     // ========================
     
     // Удаление через запрос по primary key
-    const aidDeleteQueryPrimaryKey:number[] = await dbProxy.dbExe(db('test')
+    const aidDeleteQueryPrimaryKey:number[] = await dbProxy.exe(db('test')
         .where('id', aidMsg.splice(0,3)[0])
         .limit(2)
         .delete());
     console.log('aidDeleteQueryPrimaryKey:', aidDeleteQueryPrimaryKey)
 
     // даление через запрос по выбранному ключу
-    const aidDeleteQuery:number[] = await dbProxy.dbExe(db('test')
+    const aidDeleteQuery:number[] = await dbProxy.exe(db('test')
         .where({'num': 25, 'id':3})
         .del());
     console.log('aidDeleteQuery:', aidDeleteQuery)
@@ -98,12 +98,12 @@ async function run(){
     // // ========================
    
     // Обновить через запрос по primary key
-    const aidUpdateQueryPrimaryKey:number[] = await dbProxy.dbExe(db('test')
+    const aidUpdateQueryPrimaryKey:number[] = await dbProxy.exe(db('test')
         .whereIn('id',aidMsg.splice(0,2))
         .update({text:'update_primary_key'}));
     console.log('aidUpdateQueryPrimaryKey:', aidUpdateQueryPrimaryKey)
 
-    const aidUpdateQueryIncrement:number[] = await dbProxy.dbExe(db('test')
+    const aidUpdateQueryIncrement:number[] = await dbProxy.exe(db('test')
         .whereIn('id',aidMsg.splice(0,2))
         .decrement('num',500));
     console.log('aidUpdateQueryIncrement:', aidUpdateQueryIncrement)

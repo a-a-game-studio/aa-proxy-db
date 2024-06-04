@@ -12,7 +12,7 @@ export enum MsgT {
     delete = '/delete', // Получить сообщение
     delete_in = '/delete-in', // Получить сообщение
     schema = '/schema', // Получить сообщение
-    common = '/common', // Получить сообщение
+    raw = '/raw', // Получить сообщение
 }
 
 /** Опции запросов */

@@ -137,6 +137,17 @@ router.ws(MsgT.id, async (ctx: AAContext) => {
 });
 
 /**
+ * Уход сообщений
+ */
+router.ws(MsgT.raw, async (ctx: AAContext) => {
+
+    const ctrl = new Ctrl(ctx);
+    const data = await ctrl.faAction(async () => gDbServerSys.raw(ctx.body));
+
+    return ctrl.faSend(data);
+});
+
+/**
  * INSERT
  */
  router.ws(MsgT.insert, async (ctx: AAContext) => {
