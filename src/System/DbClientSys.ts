@@ -458,7 +458,7 @@ export class DbClientSys {
      */
     public async exe<T = any>(query:Knex.QueryBuilder|Knex.Raw): Promise<T>{
 
-        // console.log('Query>>>',(<any>query));
+        
 
         let out = null;
         if((<any>query)._method){
@@ -505,6 +505,8 @@ export class DbClientSys {
                 }
                 
             } else if(vQueryIn._method == 'update'){
+
+                console.log('QueryUpdate>>>',(<any>query));
                 const option:QueryContextOptionI = {};
                 if(vQueryIn._single.onConflict){
                     
