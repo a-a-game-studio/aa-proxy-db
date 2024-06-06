@@ -464,7 +464,7 @@ export class DbClientSys {
         if((<any>query)._method){
             const vQueryIn = (<any>query);
 
-            if(vQueryIn._method == 'select'){
+            if(['select', 'first', 'pluck'].includes(vQueryIn._method)){
                 out = await this.select(query);
             } else if(vQueryIn._method == 'insert'){
                 if(vQueryIn._single.onConflict){
