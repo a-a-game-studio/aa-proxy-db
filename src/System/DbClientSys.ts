@@ -585,7 +585,7 @@ export class DbClientSys {
             ))
         }
 
-        await this.checkConnect('schema');
+        await this.checkConnect('select');
 
         // Случайно отдаем одну базу данных из пула
         
