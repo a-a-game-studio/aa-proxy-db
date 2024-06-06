@@ -506,7 +506,7 @@ export class DbClientSys {
                 
             } else if(vQueryIn._method == 'update'){
 
-                console.log('QueryUpdate>>>',(<any>query));
+                // console.log('QueryUpdate>>>',(<any>query));
                 const option:QueryContextOptionI = {};
                 if(vQueryIn._single.onConflict){
                     
@@ -551,7 +551,7 @@ export class DbClientSys {
                 } else {
                     vQueryIn._method = 'select'
                     vQueryIn.pluck(this.ixTablePrimaryKey[vQueryIn._single.table] || 'id')
-                    out = await this.updateQuery(vQueryIn.single.table, vQueryIn._single.update, vQueryIn, option)
+                    out = await this.updateQuery(vQueryIn._single.table, vQueryIn._single.update, vQueryIn, option)
                 }
                 
             } else {
