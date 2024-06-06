@@ -398,21 +398,21 @@ export class DbClientSys {
     /** 
      * exeRaw QUERY небезапасный запрос
      */
-    public async exeRaw(query:Knex.Raw, ): Promise<any[]>{
+    public async exeRaw(query:Knex.Raw): Promise<any[]>{
         await this.checkConnect('raw');
 
         const sql = query.toQuery();
 
         const sQueryStart = sql.substr(0, 50).toLowerCase().trim().replace(/`/g,'');
 
-        const aMatchSelect = sQueryStart.match(/^(select)|(show)/);
+        const aMatchSelect = sQueryStart.match(/^(select)|(show)|(call suggest)/);
 
         let out = null;
         if(aMatchSelect){
             out = await this.select(query);
         } else {
-            
-            out = await (new Promise(async (resolve, reject) => {    
+            console.log('exeRaw-WARNING>>>', sql)
+            out = await (new Promise(async (resolve, reject) => {
                 
                 this.querySys.fInit();
 
@@ -466,8 +466,7 @@ export class DbClientSys {
 
             if(vQueryIn._method == 'select'){
                 out = await this.select(query);
-            }
-            if(vQueryIn._method == 'insert'){
+            } else if(vQueryIn._method == 'insert'){
                 if(vQueryIn._single.onConflict){
                     
                     let option:QueryContextOptionI = {}
@@ -482,15 +481,14 @@ export class DbClientSys {
                     if(vQueryIn._single.ignore){
                         option.mergeIgnore = true;
                     }
-                    
-                    
+
+                    option.insertId = true;
                     out = await this.insert(vQueryIn._single.table, vQueryIn._single.insert, option)
                 } else {
-                    out = await this.insert(vQueryIn._single.table, vQueryIn._single.insert)
+                    out = await this.insert(vQueryIn._single.table, vQueryIn._single.insert, {insertId:true})
                 }
                 
-            }
-            if(vQueryIn._method == 'del'){
+            } else if(vQueryIn._method == 'del'){
                 
                 if(vQueryIn._statements.length == 1 && !vQueryIn._single.limit){
                     if(vQueryIn._statements[0].type == 'whereIn'){
@@ -506,8 +504,7 @@ export class DbClientSys {
                     out = await this.deleteQuery(vQueryIn._single.table, vQueryIn)
                 }
                 
-            }
-            if(vQueryIn._method == 'update'){
+            } else if(vQueryIn._method == 'update'){
                 const option:QueryContextOptionI = {};
                 if(vQueryIn._single.onConflict){
                     
@@ -547,7 +544,7 @@ export class DbClientSys {
                             option
                         );
                     } else {
-                        console.log('ERROR>>> PORXY dbExe UPDATE НЕ нашел решения', vQueryIn)
+                        console.log('ERROR>>> PROXY dbExe UPDATE НЕ нашел решения', vQueryIn);
                     }
                 } else {
                     vQueryIn._method = 'select'
@@ -555,10 +552,12 @@ export class DbClientSys {
                     out = await this.updateQuery(vQueryIn.single.table, vQueryIn._single.update, vQueryIn, option)
                 }
                 
+            } else {
+                console.log('knex builder>>> PROXY dbExe НЕ нашел решения', vQueryIn)
             }
 
         } else { // RAW QUERY
-            out = await this.select(query);
+            out = await this.exeRaw(<Knex.Raw>query);
         }
 
         return out;
@@ -577,7 +576,7 @@ export class DbClientSys {
 
         // console.log(sQueryStart);
 
-        const aMatch = sQueryStart.match(/^(select)|(call suggest)/);
+        const aMatch = sQueryStart.match(/^(select)|(show)|(call suggest)/);
 
         if(!aMatch){
             throw (new Error(
@@ -745,10 +744,18 @@ export class DbClientSys {
             }
 
             this.querySys.fActionOk((dataOut: any) => {
-                if(dataOut){
-                    // console.log('insert end', dataOut)
+                // if(dataOut){
+                //     // console.log('insert end', dataOut)
+                // }
+                if(option?.insertId){ // Возвращаем исключительно идентификаторы
+                    const asTable = table.split('.');
+                    const sTable = asTable[0];
+                    const idTable =  asTable[1] || this.ixTablePrimaryKey[sTable] || 'id';
+                    resolve(aDatePrepare.map(el => (<any>el)[idTable]));
+                } else {
+                    resolve(aDatePrepare);
                 }
-                resolve(aDatePrepare)
+                
             });
             this.querySys.fActionErr((err:any) => {
                 console.error('ERROR INSERT CLIENT>>>', err);

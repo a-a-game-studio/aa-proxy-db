@@ -20,6 +20,7 @@ export interface QueryContextOptionI {
     merge?:string[]; // Список колонок // insert | update
     mergeIgnore?:boolean; // Список колонок // insert | update
     updateRaw?:Record<string,string>; // update // increment|update от вычисления num = num + id + 5
+    insertId?:true; // Вернуть исключительно id в место выполнения запроса
 }
 
 export interface QueryContextI {
