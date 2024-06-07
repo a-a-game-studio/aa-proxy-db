@@ -458,7 +458,7 @@ export class DbClientSys {
      */
     public async exe<T = any>(query:Knex.QueryBuilder|Knex.Raw): Promise<T>{
 
-        
+        // console.log('Query>>>',(<any>query));
 
         let out = null;
         if((<any>query)._method){
@@ -471,11 +471,9 @@ export class DbClientSys {
                     
                     let option:QueryContextOptionI = {}
                     if(vQueryIn._single.merge){
-                        let option = {merge:['*']};
+                        option = {merge:['*']};
                         if(vQueryIn._single.merge.updates?.length){
                             option.merge = vQueryIn._single.merge.updates
-                        } else {
-                            option.merge = [vQueryIn._single.merge.updates];
                         }
                     }
                     if(vQueryIn._single.ignore){
