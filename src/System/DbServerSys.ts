@@ -48,9 +48,6 @@ export class DbTableC {
                 table:sTable
             }))[0][0]
 
-            const idAutoMaster = this.statusMaster ? this.statusMaster['Auto_Increment'] || 0 : 0;
-            const idMaxMaster = this.statusMaster ? (await dbMaster(sTable).max({id:'id'}))[0]?.id || 0 : 0;
-
             this.statusProxy = (await dbProxy('table').where('table',sTable).select())[0];
 
             if(!this.statusProxy){
@@ -62,6 +59,11 @@ export class DbTableC {
                 this.columnSpecial.created_at = this.statusProxy['col_created_at'];
                 this.columnSpecial.updated_at = this.statusProxy['col_updated_at'];
             }
+
+            const idAutoMaster = this.statusMaster ? this.statusMaster['Auto_Increment'] || 0 : 0;
+            const idMaxMaster = this.statusMaster ? (await dbMaster(sTable).max({id:this.columnSpecial.primary || 'id'}))[0]?.id || 0 : 0;
+
+            
 
             // Синхронизировать специальные колонки
             await this.syncSchemaSpecialColumn();
