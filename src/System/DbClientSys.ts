@@ -464,6 +464,13 @@ export class DbClientSys {
         if((<any>query)._method){
             const vQueryIn = (<any>query);
 
+            let sTable = '';
+            if(vQueryIn._single.table.length){
+                sTable = vQueryIn._single.table;
+            } else {
+                sTable = String(Object.values(vQueryIn._single.table)[0]);
+            }
+
             if(['select', 'first', 'pluck'].includes(vQueryIn._method)){
                 out = await this.select(query);
             } else if(vQueryIn._method == 'insert'){
@@ -481,25 +488,25 @@ export class DbClientSys {
                     }
 
                     option.insertId = true;
-                    out = await this.insert(vQueryIn._single.table, vQueryIn._single.insert, option)
+                    out = await this.insert(sTable, vQueryIn._single.insert, option)
                 } else {
-                    out = await this.insert(vQueryIn._single.table, vQueryIn._single.insert, {insertId:true})
+                    out = await this.insert(sTable, vQueryIn._single.insert, {insertId:true})
                 }
                 
             } else if(vQueryIn._method == 'del'){
                 
                 if(vQueryIn._statements.length == 1 && !vQueryIn._single.limit){
                     if(vQueryIn._statements[0].type == 'whereIn'){
-                        out = await this.deleteIn(vQueryIn._single.table+'.'+vQueryIn._statements[0].column, vQueryIn._statements[0].value);
+                        out = await this.deleteIn(sTable+'.'+vQueryIn._statements[0].column, vQueryIn._statements[0].value);
                     } else if(vQueryIn._statements[0].type == 'whereBasic' && vQueryIn._statements[0].operator == '='){
-                        out = await this.deleteIn(vQueryIn._single.table+'.'+vQueryIn._statements[0].column, vQueryIn._statements[0].value);
+                        out = await this.deleteIn(sTable+'.'+vQueryIn._statements[0].column, vQueryIn._statements[0].value);
                     } else {
                         console.log('ERROR>>> PORXY dbExe DEL НЕ нашел решения', vQueryIn)
                     }
                 } else {
                     vQueryIn._method = 'select'
-                    vQueryIn.pluck(this.ixTablePrimaryKey[vQueryIn._single.table] || 'id')
-                    out = await this.deleteQuery(vQueryIn._single.table, vQueryIn)
+                    vQueryIn.pluck(this.ixTablePrimaryKey[sTable] || 'id')
+                    out = await this.deleteQuery(sTable, vQueryIn)
                 }
                 
             } else if(vQueryIn._method == 'update'){
@@ -531,14 +538,14 @@ export class DbClientSys {
                 if(vQueryIn._statements.length == 1 && !vQueryIn._single.limit){
                     if(vQueryIn._statements[0].type == 'whereIn'){
                         out = await this.updateIn(
-                            vQueryIn._single.table+'.'+vQueryIn._statements[0].column, 
+                            sTable+'.'+vQueryIn._statements[0].column, 
                             vQueryIn._statements[0].value,
                             vQueryIn._single.update || {},
                             option
                         );
                     } else if(vQueryIn._statements[0].type == 'whereBasic' && vQueryIn._statements[0].operator == '='){
                         out = await this.updateIn(
-                            vQueryIn._single.table+'.'+vQueryIn._statements[0].column, 
+                            sTable+'.'+vQueryIn._statements[0].column, 
                             vQueryIn._statements[0].value,
                             vQueryIn._single.update || {},
                             option
@@ -548,8 +555,8 @@ export class DbClientSys {
                     }
                 } else {
                     vQueryIn._method = 'select'
-                    vQueryIn.pluck(this.ixTablePrimaryKey[vQueryIn._single.table] || 'id')
-                    out = await this.updateQuery(vQueryIn._single.table, vQueryIn._single.update, vQueryIn, option)
+                    vQueryIn.pluck(this.ixTablePrimaryKey[sTable] || 'id')
+                    out = await this.updateQuery(sTable, vQueryIn._single.update, vQueryIn, option)
                 }
                 
             } else {
