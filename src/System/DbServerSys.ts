@@ -60,6 +60,7 @@ export class DbTableC {
                 this.columnSpecial.updated_at = this.statusProxy['col_updated_at'];
             }
 
+            console.log('this.columnSpecial.primary>>>',this.columnSpecial.primary);
             const idAutoMaster = this.statusMaster ? this.statusMaster['Auto_Increment'] || 0 : 0;
             const idMaxMaster = this.statusMaster ? (await dbMaster(sTable).max({id:this.columnSpecial.primary || 'id'}))[0]?.id || 0 : 0;
 
