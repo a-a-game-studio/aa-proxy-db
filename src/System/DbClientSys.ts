@@ -367,7 +367,7 @@ export class DbClientSys {
 
             await this.checkConnect('schema');
 
-            
+
             this.querySys.fInit();
 
             const vMsg:QueryContextI = {
@@ -453,6 +453,20 @@ export class DbClientSys {
 
     }
 
+    /** Получить случайную БД для чтения */
+    public db(){
+        const akAdb = Object.keys(this.adb);
+        let out:Knex = null;
+        if(akAdb?.length > 0){
+            const iRand = akAdb[mRandomInteger(0, akAdb.length - 1)]
+            out = this.adb[iRand];
+        } else {
+            console.log('ERROR БД недоступна>>>', this.conf);
+            throw new Error('БД недоступна - '+this.conf?.nameApp+' - БД по IP'+this.adb?.length+' БД доступные - '+this.adbAll?.length);
+        }
+        return out;
+    }   
+
     /** 
      * exe QUERY
      */
@@ -505,7 +519,7 @@ export class DbClientSys {
                     }
                 } else {
                     vQueryIn._method = 'select'
-                    vQueryIn.pluck(this.ixTablePrimaryKey[sTable] || 'id')
+                    vQueryIn.pluck(sTable+'.'+this.ixTablePrimaryKey[sTable] || sTable+'.'+'id')
                     out = await this.deleteQuery(sTable, vQueryIn)
                 }
                 
@@ -555,14 +569,14 @@ export class DbClientSys {
                     }
                 } else {
                     vQueryIn._method = 'select'
-                    vQueryIn.pluck(this.ixTablePrimaryKey[sTable] || 'id')
+                    vQueryIn.pluck(sTable+'.'+this.ixTablePrimaryKey[sTable] || sTable+'.'+'id')
                     out = await this.updateQuery(sTable, vQueryIn._single.update, vQueryIn, option)
                 }
                 
             } else {
                 console.log('knex builder>>> PROXY dbExe НЕ нашел решения', vQueryIn)
             }
-
+            
         } else { // RAW QUERY
             out = await this.exeRaw(<Knex.Raw>query);
         }
