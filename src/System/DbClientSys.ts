@@ -481,12 +481,15 @@ export class DbClientSys {
 
             let sTable = ''; // наименование основной таблицы
             let sAliasTable = ''; // Псевдоним основной таблицы
-            if(vQueryIn._single.table.length){
-                sTable = vQueryIn._single.table;
-            } else {
-                sTable = String(Object.values(vQueryIn._single.table)[0]);
-                sAliasTable = String(Object.keys(vQueryIn._single.table)[0]);
+            if(['insert', 'del', 'update'].includes(vQueryIn._method)){
+                if(vQueryIn._single.table.length){
+                    sTable = vQueryIn._single.table;
+                } else {
+                    sTable = String(Object.values(vQueryIn._single.table)[0]);
+                    sAliasTable = String(Object.keys(vQueryIn._single.table)[0]);
+                }
             }
+            
 
             if(['select', 'first', 'pluck'].includes(vQueryIn._method)){
                 out = await this.select(query);
