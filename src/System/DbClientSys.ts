@@ -454,7 +454,8 @@ export class DbClientSys {
     }
 
     /** Получить случайную БД для чтения */
-    public db(){
+    public get db(){
+
         const akAdb = Object.keys(this.adb);
         let out:Knex = null;
         if(akAdb?.length > 0){
