@@ -479,11 +479,13 @@ export class DbClientSys {
         if((<any>query)._method){
             const vQueryIn = (<any>query);
 
-            let sTable = '';
+            let sTable = ''; // наименование основной таблицы
+            let sAliasTable = ''; // Псевдоним основной таблицы
             if(vQueryIn._single.table.length){
                 sTable = vQueryIn._single.table;
             } else {
                 sTable = String(Object.values(vQueryIn._single.table)[0]);
+                sAliasTable = String(Object.keys(vQueryIn._single.table)[0]);
             }
 
             if(['select', 'first', 'pluck'].includes(vQueryIn._method)){
@@ -520,7 +522,7 @@ export class DbClientSys {
                     }
                 } else {
                     vQueryIn._method = 'select'
-                    vQueryIn.pluck(sTable+'.'+this.ixTablePrimaryKey[sTable] || sTable+'.'+'id')
+                    vQueryIn.pluck((sAliasTable || sTable)+'.'+this.ixTablePrimaryKey[sTable] || (sAliasTable || sTable)+'.'+'id')
                     out = await this.deleteQuery(sTable, vQueryIn)
                 }
                 
@@ -570,7 +572,7 @@ export class DbClientSys {
                     }
                 } else {
                     vQueryIn._method = 'select'
-                    vQueryIn.pluck(sTable+'.'+this.ixTablePrimaryKey[sTable] || sTable+'.'+'id')
+                    vQueryIn.pluck((sAliasTable || sTable)+'.'+this.ixTablePrimaryKey[sTable] || (sAliasTable || sTable)+'.'+'id')
                     out = await this.updateQuery(sTable, vQueryIn._single.update, vQueryIn, option)
                 }
                 
