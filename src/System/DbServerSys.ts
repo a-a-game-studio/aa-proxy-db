@@ -404,7 +404,7 @@ export class DbServerSys {
         }
 
         try {
-            await vTableC.syncSchemaSpecialColumn(); 
+            await vTableC.faInit(msg.table); 
         } catch(e){
             console.log('ERROR schema>>> попытка синхрнизации с специальных колонок провалилась', conf.common.nameApp);
         }
