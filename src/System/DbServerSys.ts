@@ -402,6 +402,12 @@ export class DbServerSys {
             await Promise.all(aPromiseQuery);
             aPromiseQuery = [];
         }
+
+        try {
+            await vTableC.syncSchemaSpecialColumn(); 
+        } catch(e){
+            console.log('ERROR schema>>> попытка синхрнизации с специальных колонок провалилась', conf.common.nameApp);
+        }
         
         return idSchema;
     }
