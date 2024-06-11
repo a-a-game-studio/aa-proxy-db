@@ -409,7 +409,10 @@ export class DbServerSys {
             console.log('ERROR schema>>> попытка синхрнизации с специальных колонок провалилась', conf.common.nameApp);
         }
         
-        return idSchema;
+        return {
+            schema_id:idSchema,
+            primary:vTableC.columnSpecial.primary
+        };
     }
 
     /** Поместить значение в очередь */

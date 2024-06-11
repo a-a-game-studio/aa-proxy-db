@@ -382,8 +382,10 @@ export class DbClientSys {
 
             this.querySys.fActionOk((data: any) => {
 
-                // console.log('[id_in]:',data);
-                // this.iSendComplete++;
+                if(this.ixTablePrimaryKey[table] != data.primary){
+                    this.ixTablePrimaryKey[table] = data.primary
+                }
+
                 resolve(data)
             });
             this.querySys.fActionErr((err:any) => {
