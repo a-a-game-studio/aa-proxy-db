@@ -72,7 +72,7 @@ export class DbTableC {
             const idAutoProxy = this.statusProxy?.table_id || 0;
             this.idSchema = this.statusProxy?.schema_id || 0;
 
-            this.id = idAutoMaster 
+            this.id = this.id < idAutoMaster ? idAutoMaster : this.id;
             // this.id = this.id < idLastInsertMaster ? idLastInsertMaster : this.id;
             this.id = this.id < idMaxMaster ? idMaxMaster : this.id;
             this.id = this.id < idAutoProxy ? idAutoProxy : this.id;
