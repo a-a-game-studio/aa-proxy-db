@@ -521,7 +521,7 @@ export class DbClientSys {
                     if(vQueryIn._statements[0].type == 'whereIn'){
                         out = await this.deleteIn(sTable+'.'+vQueryIn._statements[0].column, vQueryIn._statements[0].value);
                     } else if(vQueryIn._statements[0].type == 'whereBasic' && vQueryIn._statements[0].operator == '='){
-                        out = await this.deleteIn(sTable+'.'+vQueryIn._statements[0].column, vQueryIn._statements[0].value);
+                        out = await this.deleteIn(sTable+'.'+vQueryIn._statements[0].column, [vQueryIn._statements[0].value]);
                     } else {
                         console.log('ERROR>>> PORXY dbExe DEL НЕ нашел решения', vQueryIn)
                     }
