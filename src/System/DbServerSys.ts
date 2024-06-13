@@ -701,8 +701,6 @@ export class DbServerSys {
             await gDbLogSys.insert(msg);
         }
 
-        process.stdout.write('.')
-
     }
 
     /** Поместить значение в очередь */
@@ -742,7 +740,6 @@ export class DbServerSys {
             await gDbLogSys.insert(msg);
         }
 
-        process.stdout.write('.')
 
     }
 
