@@ -568,7 +568,7 @@ export class DbClientSys {
                     } else if(vQueryIn._statements[0].type == 'whereBasic' && vQueryIn._statements[0].operator == '='){
                         out = await this.updateIn(
                             sTable+'.'+vQueryIn._statements[0].column, 
-                            vQueryIn._statements[0].value,
+                            [vQueryIn._statements[0].value],
                             vQueryIn._single.update || {},
                             option
                         );
