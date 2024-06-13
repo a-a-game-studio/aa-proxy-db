@@ -108,6 +108,11 @@ async function run(){
         .decrement('num',500));
     console.log('aidUpdateQueryIncrement:', aidUpdateQueryIncrement)
 
+    console.log(await dbProxy.exe(db({t:'test'})
+        .where('num', '>', 5)
+        .whereIn('id', aidMsg.splice(0,2))
+        .andWhereNot('num', 3)
+        .increment('num', 1)))
 
     await mWait(2000);
 

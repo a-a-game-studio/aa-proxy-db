@@ -578,7 +578,7 @@ export class DbClientSys {
                 } else {
                     vQueryIn._method = 'select'
                     vQueryIn.pluck((sAliasTable || sTable)+'.'+this.ixTablePrimaryKey[sTable] || (sAliasTable || sTable)+'.'+'id')
-                    out = await this.updateQuery(sTable, vQueryIn._single.update, vQueryIn, option)
+                    out = await this.updateQuery(sTable, vQueryIn._single.update || {}, vQueryIn, option)
                 }
                 
             } else {
