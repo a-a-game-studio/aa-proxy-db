@@ -131,7 +131,7 @@ export class DbReplicationSys {
             // МаxInsertQuery
             //================================================
 
-            console.log('>>>dbReplication2_INSERT>>>', 'sync')
+            // console.log('>>>dbReplication2_INSERT>>>', 'sync')
 
             const idMaxInsertQuery = (await dbProxy('query')
                 .where({
@@ -204,7 +204,7 @@ export class DbReplicationSys {
             // МаxDeleteQuery
             //================================================
 
-            console.log('>>>dbReplication3_DELETE>>>', 'sync')
+            // console.log('>>>dbReplication3_DELETE>>>', 'sync')
 
             const idMaxDeleteQuery = (await dbProxy('query')
                 .where({
@@ -235,7 +235,7 @@ export class DbReplicationSys {
                 // idMaxQueryInsert = _.max(aQueryInsert.map(el => el.id));
                 // idMinQueryInsert = _.max(aQueryInsert.map(el => el.id));
 
-                console.log('>>>dbReplication4_DELETE>>>', 'aQueryDelete', aQueryDelete.length)
+                console.log('>>>dbReplication5_DELETE>>>', 'aQueryDelete', aQueryDelete.length)
 
                 cntQuery+=aQueryDelete.length;
                 
@@ -269,7 +269,7 @@ export class DbReplicationSys {
             // МаxUpdateQuery
             //================================================
 
-            console.log('>>>dbReplication5_UPDATE>>>', 'sync')
+            // console.log('>>>dbReplication6_UPDATE>>>', 'sync')
 
             const idMaxUpdateQuery = (await dbProxy('query')
                 .where({
@@ -300,7 +300,7 @@ export class DbReplicationSys {
                 // idMaxQueryInsert = _.max(aQueryInsert.map(el => el.id));
                 // idMinQueryInsert = _.max(aQueryInsert.map(el => el.id));
 
-                console.log('>>>dbReplication6_DELETE>>>', 'aQueryUpdate', aQueryUpdate.length)
+                console.log('>>>dbReplication7_UPDATE>>>', 'aQueryUpdate', aQueryUpdate.length)
 
                 cntQuery+=aQueryUpdate.length;
                 
