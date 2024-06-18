@@ -413,7 +413,7 @@ export class DbClientSys {
         if(aMatchSelect){
             out = await this.select(query);
         } else {
-            console.log('exeRaw-WARNING>>>', sql)
+            // console.log('exeRaw-WARNING>>>', sql)
             out = await (new Promise(async (resolve, reject) => {
                 
                 this.querySys.fInit();
@@ -527,7 +527,8 @@ export class DbClientSys {
                     }
                 } else {
                     vQueryIn._method = 'select'
-                    vQueryIn.pluck((sAliasTable || sTable)+'.'+this.ixTablePrimaryKey[sTable] || (sAliasTable || sTable)+'.'+'id')
+                    const sPluckColumn = this.ixTablePrimaryKey[sTable] || 'id';
+                    vQueryIn.pluck(sAliasTable ? sAliasTable+'.'+sPluckColumn : sPluckColumn)
                     out = await this.deleteQuery(sTable, vQueryIn)
                 }
                 
@@ -577,7 +578,8 @@ export class DbClientSys {
                     }
                 } else {
                     vQueryIn._method = 'select'
-                    vQueryIn.pluck((sAliasTable || sTable)+'.'+this.ixTablePrimaryKey[sTable] || (sAliasTable || sTable)+'.'+'id')
+                    const sPluckColumn = this.ixTablePrimaryKey[sTable] || 'id';
+                    vQueryIn.pluck(sAliasTable ? sAliasTable+'.'+sPluckColumn : sPluckColumn)
                     out = await this.updateQuery(sTable, vQueryIn._single.update || {}, vQueryIn, option)
                 }
                 
