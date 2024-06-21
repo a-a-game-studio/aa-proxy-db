@@ -11,6 +11,7 @@ import { mRandomInteger } from '../Helper/NumberH';
 import { DbLogSys } from './DbLogSys';
 import * as conf from '../Config/MainConfig';
 import dayjs from 'dayjs';
+import { DbQueryLogSys } from './DbQueryLogSys';
 
 
 
@@ -156,13 +157,20 @@ export class DbTableC {
 /** Система очередей */
 export class DbServerSys {
     
-    private idSchema = 0;
+    public idSchema = 0;
     private idLog = 0; // id лога для вставки TODO переделать на отдельный инкрементор для балансировки
     private idQuery = 0; // Текущий максимальный id запроса TODO переделать на отдельный инкрементор для балансировки
     private bInit = false;
     private ixTable:Record<string, DbTableC> = {};
     private ixPrimaryKey:Record<string, string> = {}; // <table,columnkey>
     private ixAppInfoSync:Record<string, boolean> = {};
+
+    private dbQueryLogSys:DbQueryLogSys = null;
+
+    /** construct */
+    constructor(){
+        this.dbQueryLogSys = new DbQueryLogSys(this);
+    }
 
     // private runDb:boolean[] = [];
 
@@ -430,16 +438,22 @@ export class DbServerSys {
         if(conf.option.replication){
             const sQueryStart = msg.query.substr(0, 50).toLowerCase().trim().replace(/`/g,'');
             if(sQueryStart.match(/^(insert)/)){
-                vTableC.aQueryInsertLog.push(msg.query);
+                // vTableC.aQueryInsertLog.push(msg.query);
+                this.dbQueryLogSys.writeInsert(msg.table, msg.query);
             } else if (sQueryStart.match(/^(update)/)){
-                vTableC.aQueryUpdateLog.push(msg.query);
+                // vTableC.aQueryUpdateLog.push(msg.query);
+                this.dbQueryLogSys.writeUpdate(msg.table, msg.query);
             } else if(sQueryStart.match(/^(delete)/)){
-                vTableC.aQueryDeleteLog.push(msg.query);
+                // vTableC.aQueryDeleteLog.push(msg.query);
+                this.dbQueryLogSys.writeDelete(msg.table, msg.query);
             } else if(sQueryStart.match(/^(create table)|(drop table)|(truncate table)/)){
                 const idSchema = (await dbProxy('schema').insert({
                     table:msg.table,
                     data:msg.query
                 }))[0];
+                this.idSchema = idSchema;
+
+                this.dbQueryLogSys.writeSchema(msg.table, msg.query);
             } else {
                 console.log('WARNING>>>Не удалось распознать команду')
             }
@@ -694,7 +708,8 @@ export class DbServerSys {
         await this.fExeQuery(msg, sQuery);
 
         if(conf.option.replication){
-            vTableC.aQueryInsertLog.push(vQueryBuilder.onConflict().merge().toString())
+            this.dbQueryLogSys.writeInsert(msg.table, vQueryBuilder.onConflict().merge().toString());
+            // vTableC.aQueryInsertLog.push(vQueryBuilder.onConflict().merge().toString())
         }
         
         if(conf.option.log){
@@ -733,7 +748,8 @@ export class DbServerSys {
         await this.fExeQuery(msg, sQuery);
 
         if(conf.option.replication){
-            vTableC.aQueryInsertLog.push(sQuery)
+            this.dbQueryLogSys.writeInsert(msg.table, sQuery);
+            // vTableC.aQueryInsertLog.push(sQuery)
         }
         
         if(conf.option.log){
@@ -791,7 +807,8 @@ export class DbServerSys {
             await this.fExeQuery(msg, sQuery);
 
             if(conf.option.replication){
-                vTableC.aQueryUpdateLog.push(vBuilderQuery.clone().onConflict().merge().toString())
+                this.dbQueryLogSys.writeUpdate(msg.table, vBuilderQuery.clone().onConflict().merge().toString());
+                // vTableC.aQueryUpdateLog.push(vBuilderQuery.clone().onConflict().merge().toString())
             }
 
             if(conf.option.log){
@@ -846,7 +863,8 @@ export class DbServerSys {
             await this.fExeQuery(msg, sQuery);
 
             if(conf.option.replication){
-                vTableC.aQueryUpdateLog.push(vBuilderQuery.clone().onConflict().merge().toString())
+                this.dbQueryLogSys.writeUpdate(msg.table, vBuilderQuery.clone().onConflict().merge().toString());
+                // vTableC.aQueryUpdateLog.push(vBuilderQuery.clone().onConflict().merge().toString())
             }
 
             if(conf.option.log){
@@ -876,7 +894,8 @@ export class DbServerSys {
             await this.fExeQuery(msg, sQuery);
 
             if(conf.option.replication){
-                vTableC.aQueryDeleteLog.push(sQuery)
+                this.dbQueryLogSys.writeDelete(msg.table, sQuery);
+                // vTableC.aQueryDeleteLog.push(sQuery)
             }
         }
 
@@ -910,7 +929,8 @@ export class DbServerSys {
             await this.fExeQuery(msg, sQuery);
 
             if(conf.option.replication){
-                vTableC.aQueryDeleteLog.push(sQuery)
+                this.dbQueryLogSys.writeDelete(msg.table, sQuery);
+                // vTableC.aQueryDeleteLog.push(sQuery)
             }
         }
 
@@ -1259,95 +1279,10 @@ export class DbServerSys {
     }
 
 
-    /** Сохранить информацию по очереди */
+    /** Сохранить информацию по таблицам */
     public async dbSave(){
 
-        const aDbLog:any[] = []; // Данные для сохранения
-
         const akTable = Object.keys(this.ixTable);
-        for (let i = 0; i < akTable.length; i++) {
-            const kTable = akTable[i];
-            const vDbTableC = this.ixTable[kTable];
-
-            const aInsertLog = vDbTableC.aQueryInsertLog;
-            vDbTableC.aQueryInsertLog = [];
-            for (let j = 0; j < aInsertLog.length; j++) {
-                const sInsertLog = aInsertLog[j];
-                aDbLog.push({
-                    id:++this.idQuery,
-                    table:kTable,
-                    schema_id:this.idSchema,
-                    cmd:'insert',
-                    data:sInsertLog
-                })
-            }
-            
-
-            const aUpdateLog = vDbTableC.aQueryUpdateLog;
-            vDbTableC.aQueryUpdateLog = [];
-            for (let j = 0; j < aUpdateLog.length; j++) {
-                const sUpdateLog = aUpdateLog[j];
-                aDbLog.push({
-                    id:++this.idQuery,
-                    table:kTable,
-                    schema_id:this.idSchema,
-                    cmd:'update',
-                    data:sUpdateLog
-                })
-            }
-
-            const aDeleteLog = vDbTableC.aQueryDeleteLog;
-            vDbTableC.aQueryDeleteLog = [];
-            for (let j = 0; j < aDeleteLog.length; j++) {
-                const sDeleteLog = aDeleteLog[j];
-                aDbLog.push({
-                    id:++this.idQuery,
-                    table:kTable,
-                    schema_id:this.idSchema,
-                    cmd:'delete',
-                    data:sDeleteLog
-                })
-            }
-        }
-
-
-        if(aDbLog.length){
-            const aaQueryChunk = _.chunk(aDbLog, 1000);
-            let aPromise:Promise<any>[] = [];
-            for (let i = 0; i < aaQueryChunk.length; i++) {
-                const aQueryChunk = aaQueryChunk[i];
-                
-                aPromise.push(dbProxy('query').insert(aQueryChunk));
-                if(aPromise.length > 100){
-                    await Promise.all(aPromise);
-                    aPromise = [];
-                }
-            }
-            await Promise.all(aPromise);
-
-        }
-
-        if(aDbLog.length && conf.option.replication){
-
-            let aPacket:any[] = [];
-            for (let i = 0; i < aDbLog.length; i++) {
-                const vDbLog = aDbLog[i];
-                
-                aPacket.push({
-                    id:vDbLog.id,
-                    schema_id:vDbLog.schema_id,
-                    cmd:vDbLog.cmd,
-                })
-            }
-
-            const aPromiseQuery:Promise<any>[] = [];
-            for(const i in adb){
-                const db = adb[i];
-
-                aPromiseQuery.push(db('__replication__').insert(aPacket).onConflict().merge());
-            }
-            await Promise.all(aPromiseQuery);
-        }
 
         { // Обновление данных по таблицам
             let aPromise:Promise<any>[] = [];
@@ -1362,6 +1297,9 @@ export class DbServerSys {
             }
             await Promise.all(aPromise);
         }
+
+        // Синхронизация запросов
+        this.dbQueryLogSys.dbSave();
         
     }
 

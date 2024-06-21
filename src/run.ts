@@ -27,7 +27,6 @@ let bReplication = false; // Блокировка наслоения репли�
 const intervalDb = setInterval(async () => {
     
     if(conf.option.replication){
-        
         await gDbServerSys.dbSave();
         if(!bReplication){
             bReplication = true;
