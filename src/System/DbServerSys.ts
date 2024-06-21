@@ -1299,7 +1299,11 @@ export class DbServerSys {
         }
 
         // Синхронизация запросов
-        this.dbQueryLogSys.dbSave();
+        try {
+            this.dbQueryLogSys.dbSave();
+        } catch(e){
+            console.log('ERROR>>> this.dbQueryLogSys.dbSave>>>', e)
+        }
         
     }
 
