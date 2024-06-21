@@ -16,7 +16,7 @@ export class DbQueryLogSys {
         schema_id:number;
         cmd:string;
         data:string;
-        time:string;
+        created_at:string;
     }[] = [];
 
     /** construct */
@@ -32,7 +32,7 @@ export class DbQueryLogSys {
             schema_id:this.dbServerSys.idSchema,
             cmd:'insert',
             data:query,
-            time:mFormatDateTime(Date.now())
+            created_at:mFormatDateTime(Date.now())
         });
     }
 
@@ -43,7 +43,7 @@ export class DbQueryLogSys {
             schema_id:this.dbServerSys.idSchema,
             cmd:'update',
             data:query,
-            time:mFormatDateTime(Date.now())
+            created_at:mFormatDateTime(Date.now())
         });
     }
 
@@ -54,7 +54,7 @@ export class DbQueryLogSys {
             schema_id:this.dbServerSys.idSchema,
             cmd:'delete',
             data:query,
-            time:mFormatDateTime(Date.now())
+            created_at:mFormatDateTime(Date.now())
         });
     }
 
@@ -65,7 +65,7 @@ export class DbQueryLogSys {
             schema_id:this.dbServerSys.idSchema,
             cmd:'schema',
             data:query,
-            time:mFormatDateTime(Date.now())
+            created_at:mFormatDateTime(Date.now())
         });
     }
 
