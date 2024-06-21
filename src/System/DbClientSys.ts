@@ -105,10 +105,16 @@ export class DbClientSys {
                     cnt_update:this.iUpdate,
                     cnt_delete:this.iDelete,
                     cnt_select:this.iSelect,
-                    cnt_sync:this.iStatus
+                    cnt_sync:1
                 },
                 time:Date.now()
             }
+
+            // Обнуляем счетчики
+            this.iInsert = 0;
+            this.iUpdate = 0;
+            this.iDelete = 0;
+            this.iSelect = 0;
 
             this.querySys.fAction((ok:boolean, data:Record<string,string>,resp:QueryStatusI) => {
 

@@ -237,12 +237,13 @@ export class DbServerSys {
                     app_ip:msg.ip,
                     app_name:msg.app,
                     app_date:sDate
-                }).update({
-                    cnt_insert:msg.data?.cnt_insert || 0,
-                    cnt_update:msg.data?.cnt_update || 0,
-                    cnt_delete:msg.data?.cnt_delete || 0,
-                    cnt_select:msg.data?.cnt_select || 0,
-                    cnt_sync:msg.data?.cnt_sync || 0,
+                })
+                .increment('cnt_insert', msg.data?.cnt_insert || 0)
+                .increment('cnt_update', msg.data?.cnt_update || 0)
+                .increment('cnt_delete', msg.data?.cnt_delete || 0)
+                .increment('cnt_select', msg.data?.cnt_select || 0)
+                .increment('cnt_sync', msg.data?.cnt_sync || 0)
+                .update({
                     updated_at:mFormatDateTime()
                 });
             }
