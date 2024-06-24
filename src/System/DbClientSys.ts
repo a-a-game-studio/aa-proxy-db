@@ -521,12 +521,20 @@ export class DbClientSys {
                 }
                 
             } else if(vQueryIn._method == 'del'){
+
+                // console.log('QueryDelete>>>',(<any>query));
                 
                 if(vQueryIn._statements.length == 1 && !vQueryIn._single.limit){
                     if(vQueryIn._statements[0].type == 'whereIn'){
                         out = await this.deleteIn(sTable+'.'+vQueryIn._statements[0].column, vQueryIn._statements[0].value);
                     } else if(vQueryIn._statements[0].type == 'whereBasic' && vQueryIn._statements[0].operator == '='){
-                        out = await this.deleteIn(sTable+'.'+vQueryIn._statements[0].column, [vQueryIn._statements[0].value]);
+
+                        // Если в whereIn передан пустой список, иначе выполняем запрос корректно
+                        if(vQueryIn._statements[0].column == 1 && vQueryIn._statements[0].value == 0){
+                            out = [];
+                        } else {
+                            out = await this.deleteIn(sTable+'.'+vQueryIn._statements[0].column, [vQueryIn._statements[0].value]);
+                        }
                     } else {
                         console.log('ERROR>>> PORXY dbExe DEL НЕ нашел решения', vQueryIn)
                     }
@@ -572,12 +580,17 @@ export class DbClientSys {
                             option
                         );
                     } else if(vQueryIn._statements[0].type == 'whereBasic' && vQueryIn._statements[0].operator == '='){
-                        out = await this.updateIn(
-                            sTable+'.'+vQueryIn._statements[0].column, 
-                            [vQueryIn._statements[0].value],
-                            vQueryIn._single.update || {},
-                            option
-                        );
+                        // Если в whereIn передан пустой список, иначе выполняем запрос корректно
+                        if(vQueryIn._statements[0].column == 1 && vQueryIn._statements[0].value == 0){
+                            out = [];
+                        } else {
+                            out = await this.updateIn(
+                                sTable+'.'+vQueryIn._statements[0].column, 
+                                [vQueryIn._statements[0].value],
+                                vQueryIn._single.update || {},
+                                option
+                            );
+                        }
                     } else {
                         console.log('ERROR>>> PROXY dbExe UPDATE НЕ нашел решения', vQueryIn);
                     }

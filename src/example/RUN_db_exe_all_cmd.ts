@@ -80,39 +80,43 @@ async function run(){
     // DELETE
     // ========================
     
-    // Удаление через запрос по primary key
-    const aidDeleteQueryPrimaryKey:number[] = await dbProxy.exe(db('test')
-        .where('id', aidMsg.splice(0,3)[0])
-        .limit(2)
-        .delete());
-    console.log('aidDeleteQueryPrimaryKey:', aidDeleteQueryPrimaryKey)
+    // // Удаление через запрос по primary key
+    // const aidDeleteQueryPrimaryKey:number[] = await dbProxy.exe(db('test')
+    //     .where('id', aidMsg.splice(0,3)[0])
+    //     .limit(2)
+    //     .delete());
+    // console.log('aidDeleteQueryPrimaryKey:', aidDeleteQueryPrimaryKey)
 
-    // даление через запрос по выбранному ключу
-    const aidDeleteQuery:number[] = await dbProxy.exe(db('test')
-        .where({'num': 25, 'id':3})
-        .del());
-    console.log('aidDeleteQuery:', aidDeleteQuery)
+    // // даление через запрос по выбранному ключу
+    // const aidDeleteQuery:number[] = await dbProxy.exe(db('test')
+    //     .where({'num': 25, 'id':3})
+    //     .del());
+    // console.log('aidDeleteQuery:', aidDeleteQuery)
 
-    // // ========================
-    // // UPDATE
-    // // ========================
+    // // // ========================
+    // // // UPDATE
+    // // // ========================
    
-    // Обновить через запрос по primary key
-    const aidUpdateQueryPrimaryKey:number[] = await dbProxy.exe(db('test')
-        .whereIn('id',aidMsg.splice(0,2))
+    // // Обновить через запрос по primary key
+    // const aidUpdateQueryPrimaryKey:number[] = await dbProxy.exe(db('test')
+    //     .whereIn('id',aidMsg.splice(0,2))
+    //     .update({text:'update_primary_key'}));
+    // console.log('aidUpdateQueryPrimaryKey:', aidUpdateQueryPrimaryKey)
+
+    // const aidUpdateQueryIncrement:number[] = await dbProxy.exe(db('test')
+    //     .whereIn('id',aidMsg.splice(0,2))
+    //     .decrement('num',500));
+    // console.log('aidUpdateQueryIncrement:', aidUpdateQueryIncrement)
+
+    const aidUpdateQueryPrimaryKeyVoidList:number[] = await dbProxy.exe(db('test')
+        .whereIn('id',[])
         .update({text:'update_primary_key'}));
-    console.log('aidUpdateQueryPrimaryKey:', aidUpdateQueryPrimaryKey)
+    console.log('aidUpdateQueryPrimaryKey:', aidUpdateQueryPrimaryKeyVoidList)
 
-    const aidUpdateQueryIncrement:number[] = await dbProxy.exe(db('test')
-        .whereIn('id',aidMsg.splice(0,2))
-        .decrement('num',500));
-    console.log('aidUpdateQueryIncrement:', aidUpdateQueryIncrement)
-
-    console.log(await dbProxy.exe(db({t:'test'})
-        .where('num', '>', 5)
-        .whereIn('id', aidMsg.splice(0,2))
-        .andWhereNot('num', 3)
-        .increment('num', 1)))
+    const aidDeleteQueryPrimaryKeyVoidList:number[] = await dbProxy.exe(db('test')
+        .whereIn('id',[])
+        .delete());
+    console.log('aidUpdateQueryPrimaryKey:', aidDeleteQueryPrimaryKeyVoidList)
 
     await mWait(2000);
 
