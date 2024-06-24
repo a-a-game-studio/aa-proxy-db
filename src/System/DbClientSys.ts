@@ -1007,11 +1007,10 @@ export class DbClientSys {
      * updateQuery('test.num', {text:'update_where_in'}, db('test').whereIn('id',[33,11,44]).pluck('num'))
      */
     public updateQuery(sTableKey:string, dataIn:any, query:Knex.QueryBuilder|Knex.Raw, option?:QueryContextOptionI): Promise<number[]>{
-        const asTableKey = sTableKey.split('.');
-        const sTable = asTableKey[0];
-        const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
-
         return new Promise(async (resolve, reject) => {
+            const asTableKey = sTableKey.split('.');
+            const sTable = asTableKey[0];
+            const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
 
             // Парсинг запроса
             const sql = query.toQuery();
@@ -1162,11 +1161,10 @@ export class DbClientSys {
      * deleteIn('item.item_id', [22,33])
      */
      public deleteIn(sTableKey:string, whereIn:number[]|string[]):Promise<number[]>{
-        const asTableKey = sTableKey.split('.');
-        const sTable = asTableKey[0];
-        const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
-
         return new Promise(async (resolve, reject) => {
+            const asTableKey = sTableKey.split('.');
+            const sTable = asTableKey[0];
+            const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
 
             if(!whereIn?.length){
                 if(this.conf.env == 'dev'){
@@ -1234,11 +1232,12 @@ export class DbClientSys {
      * deleteQuery('item.product_id', db('item').whereIn('item_id':[22,33,44]).pluck('product_id'))
      */
     public deleteQuery(sTableKey:string, query:Knex.QueryBuilder|Knex.Raw):Promise<number[]> {
-        const asTableKey = sTableKey.split('.');
-        const sTable = asTableKey[0];
-        const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
+        
 
         return new Promise(async (resolve, reject) => {
+            const asTableKey = sTableKey.split('.');
+            const sTable = asTableKey[0];
+            const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
 
             // Парсинг запроса
             const sql = query.toQuery();
