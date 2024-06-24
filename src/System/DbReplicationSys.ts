@@ -76,11 +76,14 @@ export class DbReplicationSys {
             //     continue;
             // }
 
-            console.log('>>>dbReplication>>>')
+            
 
             const dbMaster = adb[i];
 
             const vConnect = dbMaster?.client?.config?.connection;
+
+            console.log('>>>dbReplication>>>',vConnect?.host+':'+vConnect?.port+':'+vConnect?.database)
+
             try { // Проверка БД на доступность
                 await dbMaster('__replication__').max({id:'id'});
             } catch (e){
@@ -129,6 +132,8 @@ export class DbReplicationSys {
                         }).onConflict().ignore();
                     } catch (e){
                         console.log('>>>ERROR>>>', e);
+                        console.log('>>>dbReplication_SyncCancel>>>')
+                        return;
                     }
                     
                 }
