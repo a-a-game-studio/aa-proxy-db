@@ -861,7 +861,12 @@ export class DbClientSys {
             const sTable = asTableKey[0];
             const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
 
-            // console.log(whereIn);
+            if(!whereIn?.length){
+                if(this.conf.env == 'dev'){
+                    console.log('WARNING>>> updateIn>>> передан пустой список');
+                }
+                resolve([])
+            }
 
             if(!sTable && !sWhereKey && whereIn.length !== 0){
                 reject(new Error(
@@ -1022,6 +1027,13 @@ export class DbClientSys {
                 try{
                     let aid:number[]|string[] = await this.select(query);
                     aid = _.uniq(<any[]>aid)
+
+                    if(!aid?.length){
+                        if(this.conf.env == 'dev'){
+                            console.log('WARNING>>> updateQuery>>> передан пустой список');
+                        }
+                        resolve([])
+                    }
                     
                     sQuery = sQuery = JSON.stringify(aid);
                 } catch(e) {
@@ -1156,6 +1168,13 @@ export class DbClientSys {
 
         return new Promise(async (resolve, reject) => {
 
+            if(!whereIn?.length){
+                if(this.conf.env == 'dev'){
+                    console.log('WARNING>>> deleteIn>>> передан пустой список');
+                }
+                resolve([])
+            }
+
             if(!sTable && !sWhereKey && whereIn.length !== 0){
                 reject(new Error(
                     'Запрос не корректный deleteIn, не подходит под правило - \n' + sTable +'.'+sWhereKey
@@ -1235,6 +1254,13 @@ export class DbClientSys {
                 try{
                     let aid:number[]|string[] = await this.select(query);
                     aid = _.uniq(<any[]>aid)
+
+                    if(!aid?.length){
+                        if(this.conf.env == 'dev'){
+                            console.log('WARNING>>> deleteQuery>>> передан пустой список');
+                        }
+                        resolve([])
+                    }
                     
                     sQuery = sQuery = JSON.stringify(aid);
                 } catch(e) {
