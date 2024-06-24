@@ -132,7 +132,7 @@ export class DbReplicationSys {
                         }).onConflict().ignore();
                     } catch (e){
                         console.log('>>>ERROR>>>', e);
-                        console.log('>>>dbReplication_SyncCancel>>>')
+                        console.log('>>>dbReplication_SyncCancel>>>',vConnect?.host+':'+vConnect?.port+':'+vConnect?.database)
                         return;
                     }
                     
