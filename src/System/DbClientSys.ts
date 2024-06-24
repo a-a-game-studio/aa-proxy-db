@@ -257,12 +257,11 @@ export class DbClientSys {
 
     /** Заполнить инкрементный ID */
     public fillID(sTableIn:string, aRowsIn:any[]):any{
-
-        const asTable = sTableIn.split('.');
-        const sTable = asTable[0];
-        const idTable =  asTable[1] || this.ixTablePrimaryKey[sTable] || 'id';
-       
         return new Promise(async (resolve, reject) => {
+            const asTable = sTableIn.split('.');
+            const sTable = asTable[0];
+            const idTable =  asTable[1] || this.ixTablePrimaryKey[sTable] || 'id';
+            
             await this.checkConnect('fillId');
 
             this.querySys.fInit();
