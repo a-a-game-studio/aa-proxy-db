@@ -111,13 +111,16 @@ export class DbTableC {
                 col.EXTRA
             FROM information_schema.COLUMNS col
             WHERE 
+            TABLE_SCHEMA = :schema
+            AND
             TABLE_NAME=:table
             GROUP BY COLUMN_NAME
             ORDER BY ORDINAL_POSITION
         `;
 
         const aColumn = (await dbMaster.raw(sql, {
-            table:this.table
+            table:this.table,
+            schema:dbMaster.client.config.connection.database
         }))[0];
 
         let ifSync = false;
