@@ -28,7 +28,7 @@ async function run(){
 
     await dbProxy.schema('test',db.schema.dropTableIfExists('test'));
     const idSchemaTest = await dbProxy.schema('test', db.schema.createTable('test', (table) => {
-        table.increments('id')
+        table.increments('test_id')
             .comment('ID');
 
         table.text('text')
