@@ -1193,15 +1193,19 @@ export class DbServerSys {
                         .comment('Количество синхронизаций');
 
                     table.integer('cnt_insert')
+                        .defaultTo(0)
                         .comment('Количество запросов на запись');
 
                     table.integer('cnt_update')
+                        .defaultTo(0)
                         .comment('Количество запросов на обновление');
 
                     table.integer('cnt_delete')
+                        .defaultTo(0)
                         .comment('Количество запросов на удаление');
 
                     table.integer('cnt_select')
+                        .defaultTo(0)
                         .comment('Количество запросов на чтение');
 
                     table.dateTime('created_at')
