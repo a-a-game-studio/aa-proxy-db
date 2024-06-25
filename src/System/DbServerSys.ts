@@ -66,7 +66,6 @@ export class DbTableC {
            
             // Синхронизировать специальные колонки
             await this.syncSchemaSpecialColumn();
-
             
             const idMaxMaster = this.statusMaster ? (await dbMaster(sTable).max({id:this.columnSpecial.primary || 'id'}))[0]?.id || 0 : 0;
 
