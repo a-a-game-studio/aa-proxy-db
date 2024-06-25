@@ -63,11 +63,12 @@ export class DbTableC {
 
             console.log('this.columnSpecial.primary>>>',this.table, this.columnSpecial.primary);
             const idAutoMaster = this.statusMaster ? this.statusMaster['Auto_Increment'] || 0 : 0;
+            const idMaxMaster = this.statusMaster ? (await dbMaster(sTable).max({id:this.columnSpecial.primary || 'id'}))[0]?.id || 0 : 0;
            
             // Синхронизировать специальные колонки
             await this.syncSchemaSpecialColumn();
 
-            const idMaxMaster = this.statusMaster ? (await dbMaster(sTable).max({id:this.columnSpecial.primary || 'id'}))[0]?.id || 0 : 0;
+            
 
             const idAutoProxy = this.statusProxy?.table_id || 0;
             this.idSchema = this.statusProxy?.schema_id || 0;
