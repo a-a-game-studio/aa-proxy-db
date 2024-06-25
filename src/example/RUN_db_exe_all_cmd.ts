@@ -19,32 +19,32 @@ const dbProxy = new DbClientSys({
 
 /** Тип строки для теста/примера */
 interface RowI {
-    id?:number;
+    test_id?:number;
     text?:string;
     num?:number;
 }
 
 async function run(){
 
-    await dbProxy.schema('test',db.schema.dropTableIfExists('test'));
-    const idSchemaTest = await dbProxy.schema('test', db.schema.createTable('test', (table) => {
-        table.increments('test_id')
-            .comment('ID');
+    // await dbProxy.schema('test',db.schema.dropTableIfExists('test'));
+    // const idSchemaTest = await dbProxy.schema('test', db.schema.createTable('test', (table) => {
+    //     table.increments('test_id')
+    //         .comment('ID');
 
-        table.text('text')
-            .comment('Текст сообщения');
+    //     table.text('text')
+    //         .comment('Текст сообщения');
 
-        table.integer('num')
-            .comment('Текст сообщения');
-    }));
-    console.log('[run:idSchemaTest]:',':',idSchemaTest);
+    //     table.integer('num')
+    //         .comment('Текст сообщения');
+    // }));
+    // console.log('[run:idSchemaTest]:',':',idSchemaTest);
 
     // Вставка
-    const aMsg = []
+    const aMsg:RowI[] = []
     for (let i = 0; i < 50; i++) {
         const sMsg = '['+i+'] СообщениЕ ['+i+']';
 
-        aMsg.push({id:0, text:sMsg, num:i});
+        aMsg.push({text:sMsg, num:i});
         if(i % 1000 == 0){
             process.stdout.write('.');
         }
@@ -52,14 +52,14 @@ async function run(){
     
     const row = await dbProxy.exe(db('test').insert(aMsg));
 
-    const aidMsg = aMsg.map(el => el.id);
+    const aidMsg = aMsg.map(el => el.test_id);
 
     // Вставка
     const aMsg2 = []
     for (let i = 0; i < 20; i++) {
         const sMsg = '['+i+'] СообщениЕ MERGE ['+i+']';
 
-        aMsg2.push({id:aidMsg[i], text:sMsg, num:1000+i});
+        aMsg2.push({test_id:aidMsg[i], text:sMsg, num:1000+i});
         if(i % 1000 == 0){
             process.stdout.write('.');
         }
@@ -71,7 +71,7 @@ async function run(){
     // SELECT
     // ========================
     const selectIn = await dbProxy.exe(db('test')
-        .whereIn('id', aidMsg.splice(0,3))
+        .whereIn('test_id', aidMsg.splice(0,3))
         .limit(2)
     );
     console.log('SELECT>>>', selectIn)
@@ -82,14 +82,14 @@ async function run(){
     
     // Удаление через запрос по primary key
     const aidDeleteQueryPrimaryKey:number[] = await dbProxy.exe(db('test')
-        .where('id', aidMsg.splice(0,3)[0])
+        .where('test_id', aidMsg.splice(0,3)[0])
         .limit(2)
         .delete());
     console.log('aidDeleteQueryPrimaryKey:', aidDeleteQueryPrimaryKey)
 
     // даление через запрос по выбранному ключу
     const aidDeleteQuery:number[] = await dbProxy.exe(db('test')
-        .where({'num': 25, 'id':3})
+        .where({'num': 25, 'test_id':3})
         .del());
     console.log('aidDeleteQuery:', aidDeleteQuery)
 
@@ -99,20 +99,20 @@ async function run(){
    
     // Обновить через запрос по primary key
     const aidUpdateQueryPrimaryKey:number[] = await dbProxy.exe(db('test')
-        .whereIn('id',aidMsg.splice(0,2))
+        .whereIn('test_id',aidMsg.splice(0,2))
         .update({text:'update_primary_key'}));
     console.log('aidUpdateQueryPrimaryKey:', aidUpdateQueryPrimaryKey)
 
     const aidUpdateQueryIncrement:number[] = await dbProxy.exe(db('test')
-        .whereIn('id',aidMsg.splice(0,2))
+        .whereIn('test_id',aidMsg.splice(0,2))
         .decrement('num',500));
     console.log('aidUpdateQueryIncrement:', aidUpdateQueryIncrement)
 
-    console.log(await dbProxy.exe(db({t:'test'})
-        .where('num', '>', 5)
-        .whereIn('id', aidMsg.splice(0,2))
-        .andWhereNot('num', 3)
-        .increment('num', 1)))
+    // console.log(await dbProxy.exe(db({t:'test'})
+    //     .where('num', '>', 5)
+    //     .whereIn('test_id', aidMsg.splice(0,2))
+    //     .andWhereNot('num', 3)
+    //     .increment('num', 1)))
 
     await mWait(2000);
 
