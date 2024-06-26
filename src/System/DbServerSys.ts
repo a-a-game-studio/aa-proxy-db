@@ -4,7 +4,7 @@ import { dbMaster, dbProxy, adb, gixDb, adbError, adbWait, ixDbWaitTime } from '
 import { v4 as uuidv4 } from 'uuid';
 import { mFormatDate, mFormatDateTime } from '../Helper/DateTimeH';
 import _ from 'lodash';
-import { QueryContextI, QueryStatusI } from '../interface/CommonI';
+import { DbT, QueryContextI, QueryStatusI } from '../interface/CommonI';
 import  knex, { Knex } from 'knex';
 import { setInterval } from 'timers';
 import { mRandomInteger } from '../Helper/NumberH';
@@ -44,10 +44,14 @@ export class DbTableC {
         this.table = sTable;
 
         try {
-            this.statusMaster = (await dbMaster.raw(`SHOW TABLE STATUS LIKE :table;`,{
-                // db:conf.cfDbMaster.connection.database,
-                table:sTable
-            }))[0][0]
+            if(conf.common.client == DbT.mysql){
+                this.statusMaster = (await dbMaster.raw(`SHOW TABLE STATUS LIKE :table;`,{
+                    // db:conf.cfDbMaster.connection.database,
+                    table:sTable
+                }))[0][0]
+            } else {
+                console.log('WARNING>>> SHOW TABLE STATUS ON MASTER IGNORE NO MYSQL');
+            }
 
             this.statusProxy = (await dbProxy('table').where('table',sTable).select())[0];
 
@@ -99,6 +103,11 @@ export class DbTableC {
 
 
     async syncSchemaSpecialColumn(){
+        // Поддерживается в данный момент только на mysql
+        if(conf.common.client != DbT.mysql) {
+            console.log('WARNING>>> syncSchemaSpecialColumn IGNORE NO MYSQL');
+            return;
+        } 
         const sql = `
             SELECT 
             COLUMN_NAME,

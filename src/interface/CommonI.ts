@@ -54,3 +54,8 @@ export interface QueryStatusI {
     adbErrorCount:number,
     errors?:Record<string,string>
 }
+
+/** Тип БД */
+export enum DbT {
+    mysql = 'mysql'
+}
