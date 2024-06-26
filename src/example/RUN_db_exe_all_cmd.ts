@@ -26,18 +26,18 @@ interface RowI {
 
 async function run(){
 
-    // await dbProxy.schema('test',db.schema.dropTableIfExists('test'));
-    // const idSchemaTest = await dbProxy.schema('test', db.schema.createTable('test', (table) => {
-    //     table.increments('test_id')
-    //         .comment('ID');
+    await dbProxy.schema('test',db.schema.dropTableIfExists('test'));
+    const idSchemaTest = await dbProxy.schema('test', db.schema.createTable('test', (table) => {
+        table.increments('test_id')
+            .comment('ID');
 
-    //     table.text('text')
-    //         .comment('Текст сообщения');
+        table.text('text')
+            .comment('Текст сообщения');
 
-    //     table.integer('num')
-    //         .comment('Текст сообщения');
-    // }));
-    // console.log('[run:idSchemaTest]:',':',idSchemaTest);
+        table.integer('num')
+            .comment('Текст сообщения');
+    }));
+    console.log('[run:idSchemaTest]:',':',idSchemaTest);
 
     // Вставка
     const aMsg:RowI[] = []
@@ -108,11 +108,20 @@ async function run(){
         .decrement('num',500));
     console.log('aidUpdateQueryIncrement:', aidUpdateQueryIncrement)
 
-    // console.log(await dbProxy.exe(db({t:'test'})
-    //     .where('num', '>', 5)
-    //     .whereIn('test_id', aidMsg.splice(0,2))
-    //     .andWhereNot('num', 3)
-    //     .increment('num', 1)))
+    // Обновление пустоты
+    const aidUpdateQueryIncrementVOID:number[] = await dbProxy.exe(db('test')
+        .whereIn('test_id',[])
+        .decrement('num',500));
+    console.log('aidUpdateQueryIncrementVOID:', aidUpdateQueryIncrementVOID)
+
+    await dbProxy.exe(db({t:'test'})
+        .where('num', '>', 5)
+        .whereIn('test_id', aidMsg.splice(0,2))
+        .andWhereNot('num', 3)
+        .increment('num', 1))
+
+    // Синхронизация количества выполненных запросов
+    await dbProxy.status();
 
     await mWait(2000);
 

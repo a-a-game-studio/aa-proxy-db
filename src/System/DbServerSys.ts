@@ -1188,26 +1188,32 @@ export class DbServerSys {
                         .comment('Дата - День');
 
                     table.integer('cnt_connect')
+                        .notNullable()
                         .defaultTo(0)
                         .comment('Количество соединений');
                     
                     table.integer('cnt_sync')
+                        .notNullable()
                         .defaultTo(0)
                         .comment('Количество синхронизаций');
 
                     table.integer('cnt_insert')
+                        .notNullable()
                         .defaultTo(0)
                         .comment('Количество запросов на запись');
 
                     table.integer('cnt_update')
+                        .notNullable()
                         .defaultTo(0)
                         .comment('Количество запросов на обновление');
 
                     table.integer('cnt_delete')
+                        .notNullable()
                         .defaultTo(0)
                         .comment('Количество запросов на удаление');
 
                     table.integer('cnt_select')
+                        .notNullable()
                         .defaultTo(0)
                         .comment('Количество запросов на чтение');
 
