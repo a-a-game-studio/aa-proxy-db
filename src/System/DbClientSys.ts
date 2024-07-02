@@ -1034,7 +1034,7 @@ export class DbClientSys {
 
             const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
 
-            const aMatch = sQueryStart.match(/^select.+from.+where/);
+            const aMatch = sQueryStart.match(/^select/);
 
             let sQuery = '[]';
             // Проверка синтаксиса
@@ -1261,7 +1261,7 @@ export class DbClientSys {
 
             const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
 
-            const aMatch = sQueryStart.match(/^select.+from.+where/);
+            const aMatch = sQueryStart.match(/^select/);
 
             let sQuery = '[]';
             // Проверка синтаксиса
