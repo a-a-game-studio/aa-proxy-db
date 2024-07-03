@@ -773,16 +773,16 @@ export class DbClientSys {
 
     /** INSERT */
     public async insert<T>(table:string, dataIn:T|T[], option?:QueryContextOptionI): Promise<T[]>{
-        
         // если передается массив и он пустой то ничего не делать
         if((<any>dataIn)?.length === 0){
             return [];
         }
-        const aDatePrepare = ((<any>dataIn)?.length ? dataIn : [dataIn]) as T[];
-
-        await this.fillID(table, aDatePrepare)
 
         return new Promise(async (resolve, reject) => {
+
+            const aDatePrepare = ((<any>dataIn)?.length ? dataIn : [dataIn]) as T[];
+
+            await this.fillID(table, aDatePrepare)
 
             this.querySys.fInit();
 

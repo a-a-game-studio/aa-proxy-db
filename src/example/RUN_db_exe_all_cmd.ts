@@ -48,6 +48,8 @@ async function run(){
         if(i % 1000 == 0){
             process.stdout.write('.');
         }
+
+        const row = await dbProxy.exe(db('test').insert({text:'['+i+'] Сообщени по 1 ['+i+']', num:100+i}));
     }
     
     const row = await dbProxy.exe(db('test').insert(aMsg));
