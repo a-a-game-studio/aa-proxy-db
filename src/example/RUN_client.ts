@@ -50,7 +50,7 @@ async function run(){
     
     const sMsg = 'Обновленное СообщениЕ ['+'] - ' + aidMsg.slice(2,4);
 
-    const updateStatus = await mqClientSys.update({
+    const updateStatus = await mqClientSys.updateQuery('test', {
         text:sMsg
     }, db('test')
         .whereIn('id', aidMsg.slice(2,4))
@@ -75,7 +75,7 @@ async function run(){
 
     // ====================================
     
-    const deleteStatus = await mqClientSys.delete(db('test')
+    const deleteStatus = await mqClientSys.deleteQuery('test', db('test')
         .whereIn('id', aidMsg.slice(4,6))
         .select({id:'id'})
     );

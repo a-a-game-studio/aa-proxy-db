@@ -74,7 +74,7 @@ async function run(){
     console.log('aidDeleteInCount:', aidDeleteIn.length)
 
     // Получить количество удаленных сообщений by QUERY
-    const aidDeleteQuery:number[] = await mqClientSys.delete(db('test')
+    const aidDeleteQuery:number[] = await mqClientSys.deleteQuery('test', db('test')
         .whereIn('id', aidMsg.splice(0,7))
         .select({id:'id'})
     );
@@ -91,7 +91,7 @@ async function run(){
     console.log('aidUpdateInCount:', aidUpdateIn.length)
 
     // Получить количество удаленных сообщений by QUERY
-    const aidUpdateQuery:number[] = await mqClientSys.update({text:'update_in'}, db('test')
+    const aidUpdateQuery:number[] = await mqClientSys.updateQuery('test', {text:'update_in'}, db('test')
         .whereIn('id', aidMsg.splice(0,4))
         .select({id:'id'})
     );
