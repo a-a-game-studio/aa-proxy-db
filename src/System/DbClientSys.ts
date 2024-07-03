@@ -260,9 +260,9 @@ export class DbClientSys {
         return new Promise(async (resolve, reject) => {
             const asTable = sTableIn.split('.');
             const sTable = asTable[0];
-            const idTable =  asTable[1] || this.ixTablePrimaryKey[sTable] || 'id';
-            
+
             await this.checkConnect('fillId');
+            const idTable =  asTable[1] || this.ixTablePrimaryKey[sTable] || 'id';
 
             this.querySys.fInit();
 
@@ -481,6 +481,7 @@ export class DbClientSys {
     public async exe<T = any>(query:Knex.QueryBuilder|Knex.Raw): Promise<T>{
 
         // console.log('Query>>>',(<any>query));
+        await this.checkConnect('exe');
 
         let out = null;
         if((<any>query)._method){
@@ -829,9 +830,9 @@ export class DbClientSys {
 
     /** REPLCAE by primary key */
     public async replace(table:string, dataIn:any|any[]){
-        const aDatePrepare = dataIn.length ? dataIn : [dataIn];
-
+        
         return new Promise(async (resolve, reject) => {
+            const aDatePrepare = dataIn.length ? dataIn : [dataIn];
 
             await this.checkConnect('replace');
 
@@ -874,16 +875,18 @@ export class DbClientSys {
     public updateIn(sTableKey:string, whereIn:number[]|string[], dataIn:any, option?:QueryContextOptionI): Promise<number[]>{
         return new Promise(async (resolve, reject) => {
 
-            const asTableKey = sTableKey.split('.');
-            const sTable = asTableKey[0];
-            const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
-
             if(!whereIn?.length){
                 if(this.conf.env == 'dev'){
                     console.log('WARNING>>> updateIn>>> передан пустой список');
                 }
                 resolve([])
             }
+
+            const asTableKey = sTableKey.split('.');
+            const sTable = asTableKey[0];
+
+            await this.checkConnect('updateIn');
+            const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
 
             if(!sTable && !sWhereKey && whereIn.length !== 0){
                 reject(new Error(
@@ -900,7 +903,7 @@ export class DbClientSys {
                 ))
             }
 
-            await this.checkConnect('updateIn');
+            
 
             this.querySys.fInit();
 
@@ -940,83 +943,83 @@ export class DbClientSys {
         });
     }
 
-    /** UPDATE */
-    public update(dataIn:any, query:Knex.QueryBuilder|Knex.Raw, option?:QueryContextOptionI): Promise<number[]>{
-        return new Promise(async (resolve, reject) => {
+    /** @deprecated UPDATE */
+    // public update(dataIn:any, query:Knex.QueryBuilder|Knex.Raw, option?:QueryContextOptionI): Promise<number[]>{
+    //     return new Promise(async (resolve, reject) => {
 
-            // Парсинг запроса
-            const sql = query.toQuery();
+    //         // Парсинг запроса
+    //         const sql = query.toQuery();
 
-            const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
+    //         const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
 
-            // console.log(sQueryStart);
+    //         // console.log(sQueryStart);
 
-            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/);
+    //         const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/);
 
-            let sSqlNew = ''
-            let sWhereKey = ''
-            let sTable = ''
+    //         let sSqlNew = ''
+    //         let sWhereKey = ''
+    //         let sTable = ''
 
-            // console.log(aMatch);
+    //         // console.log(aMatch);
 
-            // Проверка синтаксиса
-            if(aMatch){
-                const aQueryStartNew = [];
-                aQueryStartNew.push(...['select', aMatch[1], 'as', aMatch[2], 'from', aMatch[3], ' '])
+    //         // Проверка синтаксиса
+    //         if(aMatch){
+    //             const aQueryStartNew = [];
+    //             aQueryStartNew.push(...['select', aMatch[1], 'as', aMatch[2], 'from', aMatch[3], ' '])
 
-                const iWhere = sql.indexOf('where');
+    //             const iWhere = sql.indexOf('where');
 
-                // результат парсинга
-                sSqlNew = aQueryStartNew.join(' ') + sql.substr(iWhere)
-                sWhereKey = aMatch[2];
-                sTable = aMatch[3];
+    //             // результат парсинга
+    //             sSqlNew = aQueryStartNew.join(' ') + sql.substr(iWhere)
+    //             sWhereKey = aMatch[2];
+    //             sTable = aMatch[3];
                 
-            } else {
-                reject(new Error(
-                    'Запрос не корректный, не подходит под правило - \n' + 
-                    '/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/'
-                ))
-            }
+    //         } else {
+    //             reject(new Error(
+    //                 'Запрос не корректный, не подходит под правило - \n' + 
+    //                 '/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/'
+    //             ))
+    //         }
 
-            await this.checkConnect('update');
+    //         await this.checkConnect('update');
 
-            this.querySys.fInit();
+    //         this.querySys.fInit();
 
-            const vMsg:QueryContextI = {
-                uid:uuidv4(),
-                app:this.conf.nameApp,
-                ip:ip.address(),
-                table:sTable,
-                type:MsgT.update,
-                key_in:sWhereKey,
-                query:sSqlNew,
-                data:dataIn,
-                option:option,
-                time:Date.now()
-            }
+    //         const vMsg:QueryContextI = {
+    //             uid:uuidv4(),
+    //             app:this.conf.nameApp,
+    //             ip:ip.address(),
+    //             table:sTable,
+    //             type:MsgT.update,
+    //             key_in:sWhereKey,
+    //             query:sSqlNew,
+    //             data:dataIn,
+    //             option:option,
+    //             time:Date.now()
+    //         }
 
-            this.querySys.fActionOk((dataOut: any) => {
+    //         this.querySys.fActionOk((dataOut: any) => {
 
-                // console.log('[update]:',dataOut);
-                // this.iSendComplete++;
-                resolve(dataOut)
-            });
-            this.querySys.fActionErr((err:any) => {
-                this.iSendErr++;
-                console.error(err);
-                reject(err)
-            });
+    //             // console.log('[update]:',dataOut);
+    //             // this.iSendComplete++;
+    //             resolve(dataOut)
+    //         });
+    //         this.querySys.fActionErr((err:any) => {
+    //             this.iSendErr++;
+    //             console.error(err);
+    //             reject(err)
+    //         });
 
-            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                if(_.size(resp.errors)){
-                    this.workErrorDb(resp.errors);
-                }
-            });
+    //         this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
+    //             if(_.size(resp.errors)){
+    //                 this.workErrorDb(resp.errors);
+    //             }
+    //         });
 
-            this.querySys.fSend(MsgT.update, vMsg);
-            this.iUpdate++;
-        });
-    }
+    //         this.querySys.fSend(MsgT.update, vMsg);
+    //         this.iUpdate++;
+    //     });
+    // }
 
     /** 
      * UPDATE QUERY
@@ -1027,6 +1030,8 @@ export class DbClientSys {
         return new Promise(async (resolve, reject) => {
             const asTableKey = sTableKey.split('.');
             const sTable = asTableKey[0];
+
+            await this.checkConnect('updateQuery');
             const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
 
             // Парсинг запроса
@@ -1064,7 +1069,7 @@ export class DbClientSys {
                 ))
             }
 
-            await this.checkConnect('updateQuery');
+            
 
             this.querySys.fInit();
 
@@ -1102,86 +1107,83 @@ export class DbClientSys {
         });
     }
 
-    /** DELETE */
-    public delete(query:Knex.QueryBuilder|Knex.Raw): Promise<number[]> {
-        return new Promise(async (resolve, reject) => {
+    /** @deprecated DELETE */
+    // public delete(query:Knex.QueryBuilder|Knex.Raw): Promise<number[]> {
+    //     return new Promise(async (resolve, reject) => {
 
-            // Парсинг запроса
-            const sql = query.toQuery();
+    //         // Парсинг запроса
+    //         const sql = query.toQuery();
 
-            const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
+    //         const sQueryStart = sql.substr(0, 100).toLowerCase().trim().replace(/`/g,'');
 
-            const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/);
+    //         const aMatch = sQueryStart.match(/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/);
 
-            let sSqlNew = ''
-            let sWhereKey = ''
-            let sTable = ''
+    //         let sSqlNew = ''
+    //         let sWhereKey = ''
+    //         let sTable = ''
 
-            // Проверка синтаксиса
-            if(aMatch){
-                const aQueryStartNew = [];
-                aQueryStartNew.push(...['select', aMatch[1], 'as', aMatch[2], 'from', aMatch[3], ' '])
+    //         // Проверка синтаксиса
+    //         if(aMatch){
+    //             const aQueryStartNew = [];
+    //             aQueryStartNew.push(...['select', aMatch[1], 'as', aMatch[2], 'from', aMatch[3], ' '])
 
-                const iWhere = sql.indexOf('where');
+    //             const iWhere = sql.indexOf('where');
 
-                // результат парсинга
-                sSqlNew = aQueryStartNew.join(' ') + sql.substr(iWhere)
-                sWhereKey = aMatch[2];
-                sTable = aMatch[3];
+    //             // результат парсинга
+    //             sSqlNew = aQueryStartNew.join(' ') + sql.substr(iWhere)
+    //             sWhereKey = aMatch[2];
+    //             sTable = aMatch[3];
                 
-            } else {
-                reject(new Error(
-                    'Запрос не корректный, не подходит под правило - \n' + 
-                    '/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/'
-                ))
-            }
+    //         } else {
+    //             reject(new Error(
+    //                 'Запрос не корректный, не подходит под правило - \n' + 
+    //                 '/^select\s+([a-z0-9_-]+)\s+as?\s+([a-z0-9_-]+)\s+from\s+([a-z0-9_-]+)\s+where/'
+    //             ))
+    //         }
 
-            await this.checkConnect('delete');
+    //         await this.checkConnect('delete');
 
-            this.querySys.fInit();
+    //         this.querySys.fInit();
 
-            const vMsg:QueryContextI = {
-                uid:uuidv4(),
-                app:this.conf.nameApp,
-                ip:ip.address(),
-                table:sTable,
-                key_in:sWhereKey,
-                type:MsgT.delete,
-                query:query.toString(),
-                time:Date.now()
-            }
+    //         const vMsg:QueryContextI = {
+    //             uid:uuidv4(),
+    //             app:this.conf.nameApp,
+    //             ip:ip.address(),
+    //             table:sTable,
+    //             key_in:sWhereKey,
+    //             type:MsgT.delete,
+    //             query:query.toString(),
+    //             time:Date.now()
+    //         }
 
-            this.querySys.fActionOk((dataOut: any) => {
+    //         this.querySys.fActionOk((dataOut: any) => {
 
-                // console.log('[dataOut]:',dataOut);
-                // this.iSendComplete++;
-                resolve(dataOut)
-            });
-            this.querySys.fActionErr((err:any) => {
-                this.iSendErr++;
-                console.error(err);
-                reject(err)
-            });
+    //             // console.log('[dataOut]:',dataOut);
+    //             // this.iSendComplete++;
+    //             resolve(dataOut)
+    //         });
+    //         this.querySys.fActionErr((err:any) => {
+    //             this.iSendErr++;
+    //             console.error(err);
+    //             reject(err)
+    //         });
 
-            this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
-                if(_.size(resp.errors)){
-                    this.workErrorDb(resp.errors);
-                }
-            });
+    //         this.querySys.fAction((ok:boolean, err:Record<string,string>,resp:any) => {
+    //             if(_.size(resp.errors)){
+    //                 this.workErrorDb(resp.errors);
+    //             }
+    //         });
 
-            this.querySys.fSend(MsgT.delete, vMsg);
-            this.iDelete++;
-        });
-    }
+    //         this.querySys.fSend(MsgT.delete, vMsg);
+    //         this.iDelete++;
+    //     });
+    // }
 
     /** UPDATE IN
      * deleteIn('item.item_id', [22,33])
      */
      public deleteIn(sTableKey:string, whereIn:number[]|string[]):Promise<number[]>{
         return new Promise(async (resolve, reject) => {
-            const asTableKey = sTableKey.split('.');
-            const sTable = asTableKey[0];
-            const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
 
             if(!whereIn?.length){
                 if(this.conf.env == 'dev'){
@@ -1190,6 +1192,12 @@ export class DbClientSys {
                 resolve([])
             }
 
+            const asTableKey = sTableKey.split('.');
+            const sTable = asTableKey[0];
+
+            await this.checkConnect('deleteIn');
+            const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
+            
             if(!sTable && !sWhereKey && whereIn.length !== 0){
                 reject(new Error(
                     'Запрос не корректный deleteIn, не подходит под правило - \n' + sTable +'.'+sWhereKey
@@ -1205,7 +1213,7 @@ export class DbClientSys {
                 ))
             }
 
-            await this.checkConnect('deleteIn');
+            
 
             this.querySys.fInit();
 
@@ -1250,10 +1258,11 @@ export class DbClientSys {
      */
     public deleteQuery(sTableKey:string, query:Knex.QueryBuilder|Knex.Raw):Promise<number[]> {
         
-
         return new Promise(async (resolve, reject) => {
             const asTableKey = sTableKey.split('.');
             const sTable = asTableKey[0];
+
+            await this.checkConnect('deleteQuery');
             const sWhereKey =  asTableKey[1] || this.ixTablePrimaryKey[sTable] || 'id';
 
             // Парсинг запроса
@@ -1290,8 +1299,7 @@ export class DbClientSys {
                     '/^select.+from.+where/'
                 ))
             }
-
-            await this.checkConnect('deleteQuery');
+            
 
             this.querySys.fInit();
 
