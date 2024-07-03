@@ -89,7 +89,7 @@ async function run(){
 
         const sName = ['[',']', 'Обновленный товар', '[',']', sRandCat,sRandColor,sRandSetting,'[',']'].join(' ');
 
-        const updateStatus = await mqClientSys.update({
+        const updateStatus = await mqClientSys.updateQuery('item', {
             name:sName, 
             price:1000
         }, db('item')

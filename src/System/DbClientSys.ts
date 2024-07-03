@@ -943,7 +943,7 @@ export class DbClientSys {
         });
     }
 
-    /** @deprecated UPDATE */
+    // /** @deprecated UPDATE */
     // public update(dataIn:any, query:Knex.QueryBuilder|Knex.Raw, option?:QueryContextOptionI): Promise<number[]>{
     //     return new Promise(async (resolve, reject) => {
 
@@ -1107,7 +1107,7 @@ export class DbClientSys {
         });
     }
 
-    /** @deprecated DELETE */
+    // /** @deprecated DELETE */
     // public delete(query:Knex.QueryBuilder|Knex.Raw): Promise<number[]> {
     //     return new Promise(async (resolve, reject) => {
 
